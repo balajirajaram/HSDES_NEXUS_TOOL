@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Debug Session — HSD {{ session.hsd_id }}</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --primary: #0d6efd;
+    --success: #198754;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --info: #0dcaf0;
+    --tier1: #d4edda;
+    --tier2: #fff3cd;
+    --tier3: #f8d7da;
+    --expand-bg: #f1f3f5;
+    --conf-high: #198754;
+    --conf-med: #fd7e14;
+    --conf-low: #dc3545;
+    --timeline-line: #dee2e6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ───────────────────────────────────────────────────────── */
+  .report-header {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .report-header h1 { font-size: 1.6em; margin-bottom: 4px; }
+  .report-header h1 a { color: inherit; text-decoration: none; }
+  .report-header h1 a:hover { color: var(--primary); }
+  .report-header .subtitle { font-size: 1em; color: var(--text-muted); margin-bottom: 12px; }
+  .report-header .meta { color: var(--text-muted); font-size: 0.88em; margin-bottom: 16px; }
+  .header-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── Pills & Badges ───────────────────────────────────────────────── */
+  .pill {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pill-total    { background: #e9ecef; color: #495057; }
+  .pill-success  { background: var(--tier1); color: #155724; }
+  .pill-warning  { background: var(--tier2); color: #856404; }
+  .pill-danger   { background: var(--tier3); color: #721c24; }
+  .pill-info     { background: #d1ecf1; color: #0c5460; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge-active        { background: #cfe2ff; color: #084298; }
+  .badge-found         { background: var(--tier1); color: #155724; }
+  .badge-abandoned     { background: #e9ecef; color: #495057; }
+  .badge-manual        { background: #e9ecef; color: #495057; }
+  .badge-local         { background: #cfe2ff; color: #084298; }
+  .badge-ssh           { background: #d1ecf1; color: #0c5460; }
+  .badge-auto          { background: var(--tier2); color: #856404; }
+  .badge-high          { background: var(--tier3); color: #721c24; }
+  .badge-medium        { background: var(--tier2); color: #856404; }
+  .badge-low           { background: #d1ecf1; color: #0c5460; }
+
+  /* ── Metric Cards ─────────────────────────────────────────────────── */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .metric-card .value { font-size: 2em; font-weight: 700; color: var(--primary); }
+  .metric-card .label { font-size: 0.82em; color: var(--text-muted); margin-top: 4px; }
+  .metric-card .value.conf-high { color: var(--conf-high); }
+  .metric-card .value.conf-med  { color: var(--conf-med); }
+  .metric-card .value.conf-low  { color: var(--conf-low); }
+
+  /* ── Section Titles ───────────────────────────────────────────────── */
+  .section-title {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  /* ── Hypothesis Evolution Timeline ───────────────────────────────── */
+  .timeline-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .timeline-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86em;
+  }
+  .timeline-table th {
+    background: #343a40;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .timeline-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .timeline-table tr:last-child td { border-bottom: none; }
+  .timeline-table tr:hover td { background: var(--bg); }
+  .conf-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 180px;
+  }
+  .conf-bar-track {
+    flex: 1;
+    height: 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .conf-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.6s ease;
+  }
+  .conf-bar-fill.high { background: var(--conf-high); }
+  .conf-bar-fill.med  { background: var(--conf-med); }
+  .conf-bar-fill.low  { background: var(--conf-low); }
+  .conf-label { font-weight: 700; font-size: 0.85em; min-width: 40px; }
+
+  /* ── Iteration Accordion ─────────────────────────────────────────── */
+  .iterations-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+  }
+  .iter-panel {
+    border-bottom: 1px solid var(--border);
+  }
+  .iter-panel:last-child { border-bottom: none; }
+
+  .iter-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .iter-header:hover { background: var(--bg); }
+  .iter-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #343a40;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.88em;
+    flex-shrink: 0;
+  }
+  .iter-summary { flex: 1; font-size: 0.9em; }
+  .iter-summary strong { display: block; margin-bottom: 2px; }
+  .iter-summary .iter-meta { color: var(--text-muted); font-size: 0.82em; }
+  .iter-toggle {
+    font-size: 1.2em;
+    color: var(--primary);
+    font-weight: 700;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .iter-toggle.open { transform: rotate(45deg); }
+
+  .iter-body {
+    display: none;
+    padding: 0 20px 20px 20px;
+    background: var(--expand-bg);
+  }
+  .iter-body.active { display: block; }
+
+  .iter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .iter-section h4 {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .iter-section p, .iter-section ul {
+    font-size: 0.88em;
+    line-height: 1.6;
+  }
+  .iter-section ul { padding-left: 16px; }
+  .iter-section code {
+    background: #1e1e1e;
+    color: #9cdcfe;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .iter-section pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-top: 6px;
+  }
+
+  /* Hypothesis table inside iteration */
+  .hyp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84em;
+    margin-top: 6px;
+  }
+  .hyp-table th {
+    background: #495057;
+    color: #fff;
+    padding: 6px 10px;
+    text-align: left;
+  }
+  .hyp-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .hyp-table tr:last-child td { border-bottom: none; }
+
+  /* Next-steps list */
+  .next-steps-list { list-style: none; padding: 0; margin-top: 6px; }
+  .next-steps-list li {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 0.88em;
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-body .step-rationale {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    margin-top: 2px;
+  }
+  .step-body code { font-size: 0.82em; }
+
+  /* User input box */
+  .user-input-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.88em;
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  /* ── Field Feedback & Corrections ────────────────────────────────── */
+  .corrections-card {
+    background: #fff8e1;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-left: 5px solid #f59e0b;
+  }
+  .corrections-card .section-title { color: #92400e; }
+  .corrections-card .corr-badge {
+    display: inline-block;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .corrections-card .corr-unchanged {
+    display: inline-block;
+    background: #10b981;
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .corrections-card .corr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 16px;
+  }
+  .corrections-card .corr-section h4 {
+    font-size: 0.82em;
+    color: #92400e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .corrections-card .corr-section p,
+  .corrections-card .corr-section li { font-size: 0.9em; line-height: 1.6; }
+
+  /* ── Final Root Cause ─────────────────────────────────────────────── */
+  .rootcause-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-top: 4px solid var(--success);
+  }
+  .rootcause-card.abandoned { border-top-color: var(--text-muted); }
+  .rootcause-card.active    { border-top-color: var(--warning); }
+
+  .rootcause-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 16px;
+  }
+  .rc-section h4 {
+    font-size: 0.82em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .rc-section p { font-size: 0.9em; line-height: 1.6; }
+  .rc-section code {
+    background: #1e1e1e;
+    color: #9cdcfe;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+
+  /* Evidence chain */
+  .evidence-chain { list-style: none; padding: 0; margin-top: 6px; }
+  .evidence-chain li {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 0.88em;
+    align-items: flex-start;
+  }
+  .evidence-chain .ev-iter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 22px;
+    border-radius: 11px;
+    background: #343a40;
+    color: #fff;
+    font-size: 0.72em;
+    font-weight: 700;
+    flex-shrink: 0;
+    padding: 0 6px;
+  }
+
+  /* ── Related HSDs ─────────────────────────────────────────────────── */
+  .related-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .related-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+    margin-top: 12px;
+  }
+  .related-table th {
+    background: #343a40;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .related-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .related-table tr:last-child td { border-bottom: none; }
+  .related-table tr:hover td { background: var(--bg); }
+
+  /* ── Footer ───────────────────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8em;
+    margin-top: 24px;
+    padding: 16px;
+  }
+
+  /* ── Responsive ───────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .iter-grid     { grid-template-columns: 1fr; }
+    .rootcause-grid { grid-template-columns: 1fr; }
+    .metrics-row   { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SESSION HEADER
+═══════════════════════════════════════════════════════════════ -->
+<div class="report-header">
+  <h1>
+    Live Debug Session —
+    <a href="https://hsdes.intel.com/appstore/article/#/{{ session.hsd_id }}" target="_blank">
+      HSD {{ session.hsd_id }}
+    </a>
+  </h1>
+  <div class="subtitle">{{ session.title }}</div>
+  <div class="meta">
+    Component: <strong>{{ session.component }}</strong> &nbsp;|&nbsp;
+    Started: {{ session.started_at }} &nbsp;|&nbsp;
+    Completed: {{ session.completed_at }} &nbsp;|&nbsp;
+    Generated: {{ generated_timestamp }}
+  </div>
+  <div class="header-badges">
+    {% if session.status == 'root_cause_found' %}
+      <span class="badge badge-found">✓ Root Cause Found</span>
+    {% elif session.status == 'active' %}
+      <span class="badge badge-active">● In Progress</span>
+    {% else %}
+      <span class="badge badge-abandoned">○ Session Ended</span>
+    {% endif %}
+
+    {% if session.execution_mode == 'manual' %}
+      <span class="badge badge-manual">Manual Execution</span>
+    {% elif session.execution_mode == 'local' %}
+      <span class="badge badge-local">Local Execution</span>
+    {% elif session.execution_mode == 'ssh' %}
+      <span class="badge badge-ssh">SSH: {{ session.server | default('') }}</span>
+    {% elif session.execution_mode == 'auto' %}
+      <span class="badge badge-auto">Auto Execution</span>
+    {% endif %}
+
+    <span class="pill pill-total">{{ session.total_iterations }} Iteration{{ 's' if session.total_iterations != 1 else '' }}</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SUMMARY METRIC CARDS
+═══════════════════════════════════════════════════════════════ -->
+<div class="metrics-row">
+  <div class="metric-card">
+    <div class="value">{{ session.total_iterations }}</div>
+    <div class="label">Debug Iterations</div>
+  </div>
+  <div class="metric-card">
+    {% set conf_pct = (session.final_confidence * 100) | round | int %}
+    <div class="value
+      {%- if conf_pct >= 80 %} conf-high
+      {%- elif conf_pct >= 50 %} conf-med
+      {%- else %} conf-low{% endif %}">{{ conf_pct }}%</div>
+    <div class="label">Final Hypothesis Confidence</div>
+  </div>
+  <div class="metric-card">
+    {% set log_count = namespace(n=0) %}
+    {% for it in iterations %}
+      {% set log_count.n = log_count.n + (it.logs_collected | length) %}
+    {% endfor %}
+    <div class="value">{{ log_count.n }}</div>
+    <div class="label">Log Sets Collected</div>
+  </div>
+  <div class="metric-card">
+    {% if session.related_hsds %}
+      <div class="value">{{ session.related_hsds | length }}</div>
+    {% else %}
+      <div class="value" style="color:var(--text-muted)">—</div>
+    {% endif %}
+    <div class="label">Related Past HSDs</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FIELD FEEDBACK & TRIAGE CORRECTIONS
+═══════════════════════════════════════════════════════════════ -->
+{% if fix_recommendation.field_corrections %}
+<div class="corrections-card">
+  <div class="section-title">⚠ Field Feedback &amp; Triage Corrections</div>
+  {{ fix_recommendation.field_corrections }}
+</div>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HYPOTHESIS EVOLUTION TIMELINE
+═══════════════════════════════════════════════════════════════ -->
+<div class="timeline-card">
+  <div class="section-title">Hypothesis Evolution</div>
+  <table class="timeline-table">
+    <thead>
+      <tr>
+        <th>Iteration</th>
+        <th>Top Hypothesis</th>
+        <th>Confidence</th>
+        <th>Key Evidence</th>
+        <th>Logs Collected</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for it in iterations %}
+      {% set top = it.hypotheses[0] if it.hypotheses else {} %}
+      {% set conf_val = (top.confidence * 100) | round | int if top.confidence is defined else 0 %}
+      <tr>
+        <td><strong>Iter {{ it.iteration }}</strong><br><span style="color:var(--text-muted);font-size:0.82em">{{ it.timestamp }}</span></td>
+        <td style="max-width:320px">{{ top.statement | default('—') }}</td>
+        <td>
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-track">
+              <div class="conf-bar-fill
+                {%- if conf_val >= 80 %} high
+                {%- elif conf_val >= 50 %} med
+                {%- else %} low{% endif %}"
+                style="width:{{ conf_val }}%"></div>
+            </div>
+            <span class="conf-label
+              {%- if conf_val >= 80 %}" style="color:var(--conf-high)
+              {%- elif conf_val >= 50 %}" style="color:var(--conf-med)
+              {%- else %}" style="color:var(--conf-low){% endif %}">{{ conf_val }}%</span>
+          </div>
+        </td>
+        <td style="font-size:0.85em; max-width:200px">
+          {% if it.logs_collected %}
+            {{ it.logs_collected | map(attribute='category') | join(', ') }}
+          {% else %}—{% endif %}
+        </td>
+        <td style="font-size:0.85em">{{ it.logs_collected | length }} set{{ 's' if (it.logs_collected | length) != 1 else '' }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5" style="color:var(--text-muted);text-align:center;padding:20px">No iterations recorded yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ITERATION ACCORDION
+═══════════════════════════════════════════════════════════════ -->
+<div class="iterations-card">
+  <div style="padding:20px 24px 0"><div class="section-title">Debug Iterations</div></div>
+
+  {% for it in iterations %}
+  {% set top = it.hypotheses[0] if it.hypotheses else {} %}
+  {% set conf_val = (top.confidence * 100) | round | int if top.confidence is defined else 0 %}
+  <div class="iter-panel">
+    <div class="iter-header" onclick="toggleIter(this)">
+      <span class="iter-num">{{ it.iteration }}</span>
+      <div class="iter-summary">
+        <strong>{{ top.statement | default('Hypothesis pending') | truncate(80) }}</strong>
+        <span class="iter-meta">
+          {{ it.timestamp }}
+          &nbsp;·&nbsp;
+          {{ it.logs_collected | length }} log set{{ 's' if (it.logs_collected | length) != 1 else '' }} collected
+          &nbsp;·&nbsp;
+          Confidence: {{ conf_val }}%
+        </span>
+      </div>
+      <span class="iter-toggle">+</span>
+    </div>
+
+    <div class="iter-body">
+      <div class="iter-grid">
+
+        <!-- Logs Requested -->
+        <div class="iter-section">
+          <h4>Logs Requested</h4>
+          {% if it.logs_requested %}
+            <ul>
+              {% for req in it.logs_requested %}
+              <li>
+                <strong>{{ req.category }}</strong>
+                {% if req.commands %}
+                  <pre>{{ req.commands | join('\n') }}</pre>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p style="color:var(--text-muted)">None recorded.</p>
+          {% endif %}
+        </div>
+
+        <!-- Logs Collected -->
+        <div class="iter-section">
+          <h4>Logs Collected</h4>
+          {% if it.logs_collected %}
+            {% for log in it.logs_collected %}
+            <p><strong>{{ log.category }}</strong>
+              {% if log.full_path %}
+                &nbsp;<span style="color:var(--text-muted);font-size:0.82em">{{ log.full_path }}</span>
+              {% endif %}
+            </p>
+            {% if log.content_snippet %}
+              <pre>{{ log.content_snippet }}</pre>
+            {% endif %}
+            {% endfor %}
+          {% else %}
+            <p style="color:var(--text-muted)">None collected in this iteration.</p>
+          {% endif %}
+        </div>
+
+        <!-- GENI Analysis -->
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>GENI Analysis</h4>
+          <p>{{ it.geni_analysis | default('—') }}</p>
+        </div>
+
+        <!-- Hypothesis Ranking -->
+        <div class="iter-section">
+          <h4>Hypothesis Ranking</h4>
+          {% if it.hypotheses %}
+            <table class="hyp-table">
+              <thead><tr><th>#</th><th>Hypothesis</th><th>Confidence</th></tr></thead>
+              <tbody>
+                {% for hyp in it.hypotheses %}
+                {% set hconf = (hyp.confidence * 100) | round | int if hyp.confidence is defined else 0 %}
+                <tr>
+                  <td>{{ loop.index }}</td>
+                  <td>{{ hyp.statement }}</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill
+                          {%- if hconf >= 80 %} high
+                          {%- elif hconf >= 50 %} med
+                          {%- else %} low{% endif %}"
+                          style="width:{{ hconf }}%"></div>
+                      </div>
+                      <span class="conf-label
+                        {%- if hconf >= 80 %}" style="color:var(--conf-high)
+                        {%- elif hconf >= 50 %}" style="color:var(--conf-med)
+                        {%- else %}" style="color:var(--conf-low){% endif %}">{{ hconf }}%</span>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% else %}
+            <p style="color:var(--text-muted)">No hypotheses recorded.</p>
+          {% endif %}
+        </div>
+
+        <!-- Next Steps -->
+        <div class="iter-section">
+          <h4>Recommended Next Steps</h4>
+          {% if it.next_steps %}
+            <ul class="next-steps-list">
+              {% for step in it.next_steps %}
+              <li>
+                <span class="step-num">{{ loop.index }}</span>
+                <div class="step-body">
+                  <strong>{{ step.step }}</strong>
+                  {% if step.rationale %}
+                    <div class="step-rationale">{{ step.rationale }}</div>
+                  {% endif %}
+                  {% if step.commands %}
+                    <pre>{{ step.commands | join('\n') }}</pre>
+                  {% endif %}
+                </div>
+              </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p style="color:var(--text-muted)">No next steps recorded.</p>
+          {% endif %}
+        </div>
+
+        <!-- User Input -->
+        {% if it.user_input %}
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>User Input / Confirmation</h4>
+          <div class="user-input-box">{{ it.user_input }}</div>
+        </div>
+        {% endif %}
+
+      </div><!-- /iter-grid -->
+    </div><!-- /iter-body -->
+  </div><!-- /iter-panel -->
+  {% else %}
+  <div style="padding:32px;text-align:center;color:var(--text-muted)">No iterations recorded yet.</div>
+  {% endfor %}
+</div><!-- /iterations-card -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FINAL ROOT CAUSE
+═══════════════════════════════════════════════════════════════ -->
+<div class="rootcause-card {{ session.status }}">
+  <div class="section-title">
+    {% if session.status == 'root_cause_found' %}✓ Confirmed Root Cause
+    {% elif session.status == 'active' %}● Current Best Hypothesis (Session In Progress)
+    {% else %}○ Best Hypothesis at Session End
+    {% endif %}
+  </div>
+
+  <div class="rootcause-grid">
+
+    <div class="rc-section" style="grid-column: 1 / -1">
+      <h4>Root Cause / Final Hypothesis</h4>
+      <p style="font-size:1em; font-weight:600">{{ session.final_hypothesis | default('Not yet determined.') }}</p>
+    </div>
+
+    <div class="rc-section">
+      <h4>Evidence Chain</h4>
+      {% if fix_recommendation.evidence_chain %}
+        <ul class="evidence-chain">
+          {% for ev in fix_recommendation.evidence_chain %}
+          <li>
+            <span class="ev-iter">Iter {{ ev.iteration }}</span>
+            <span>{{ ev.finding }}</span>
+          </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p style="color:var(--text-muted)">—</p>
+      {% endif %}
+    </div>
+
+    <div class="rc-section">
+      <h4>Recommended Fix</h4>
+      <p>{{ fix_recommendation.statement | default('—') }}</p>
+      {% if fix_recommendation.spec_reference %}
+        <p style="margin-top:8px"><strong>Spec Reference:</strong> {{ fix_recommendation.spec_reference }}</p>
+      {% endif %}
+    </div>
+
+    {% if fix_recommendation.similar_fixes %}
+    <div class="rc-section" style="grid-column: 1 / -1">
+      <h4>Fix Patterns from Related HSDs</h4>
+      <ul>
+        {% for sf in fix_recommendation.similar_fixes %}
+        <li>
+          <a href="https://hsdes.intel.com/appstore/article/#/{{ sf.hsd_id }}" target="_blank">{{ sf.hsd_id }}</a>
+          — {{ sf.fix_pattern }}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     RELATED PAST HSDs
+═══════════════════════════════════════════════════════════════ -->
+{% if session.related_hsds %}
+<div class="related-card">
+  <div class="section-title">Related Past HSDs</div>
+  <table class="related-table">
+    <thead>
+      <tr>
+        <th>HSD ID</th>
+        <th>Component</th>
+        <th>Symptom</th>
+        <th>Root Cause</th>
+        <th>Fix Pattern</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rel in session.related_hsds %}
+      <tr>
+        <td>
+          <a href="https://hsdes.intel.com/appstore/article/#/{{ rel.hsd_id }}" target="_blank">
+            {{ rel.hsd_id }}
+          </a>
+        </td>
+        <td>{{ rel.component | default('—') }}</td>
+        <td style="max-width:220px">{{ rel.symptom | default('—') }}</td>
+        <td style="max-width:220px">{{ rel.root_cause | default('—') }}</td>
+        <td style="max-width:200px">{{ rel.fix_pattern | default('—') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════════════ -->
+<footer>
+  Generated by HSD Live Debug Agent &nbsp;·&nbsp;
+  Powered by GENI + Co-Design + NGA MCP &nbsp;·&nbsp;
+  {{ generated_timestamp }}
+  <br>
+  Template: {{ template_version }} &nbsp;·&nbsp;
+  Framework: project-c3/hsd-triage
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════ -->
+<script>
+function toggleIter(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.iter-toggle');
+  const isOpen = body.classList.contains('active');
+  body.classList.toggle('active');
+  toggle.classList.toggle('open');
+  toggle.textContent = isOpen ? '+' : '×';
+}
+
+// Animate confidence bars on load
+document.addEventListener('DOMContentLoaded', function () {
+  // Store widths then reset to 0 for animation
+  const fills = document.querySelectorAll('.conf-bar-fill');
+  fills.forEach(function (el) {
+    const target = el.style.width;
+    el.style.width = '0%';
+    requestAnimationFrame(function () {
+      setTimeout(function () { el.style.width = target; }, 80);
+    });
+  });
+
+  // Auto-expand the last iteration
+  const panels = document.querySelectorAll('.iter-panel');
+  if (panels.length > 0) {
+    const lastHeader = panels[panels.length - 1].querySelector('.iter-header');
+    if (lastHeader) toggleIter(lastHeader);
+  }
+});
+</script>
+</body>
+</html>
