@@ -2,7 +2,7 @@
 
 > AI-powered hardware bug triage and live debug skills for Intel silicon validation.
 
-BugScout packages two Copilot CLI skills — **hsd-triage** and **live-debug** — as installable `.copilot/skills/` packages, alongside the full source pipeline, report templates, schemas, and reference samples.
+BugScout packages three Copilot CLI skills — **hsd-triage**, **live-debug**, and **log-search** — as installable `.copilot/skills/` packages, alongside the full source pipeline, report templates, schemas, and reference samples.
 
 ---
 
@@ -12,6 +12,7 @@ BugScout packages two Copilot CLI skills — **hsd-triage** and **live-debug** �
 |---|---|
 | `hsd-triage` | Fetches an HSD ticket, classifies the bug, queries related past HSDs, recommends fix paths, and patches HSD fields. |
 | `live-debug` | Iterative log analysis loop — reads available logs, forms hypotheses, requests new logs, confirms root cause, and generates a verified HTML debug report. |
+| `log-search` | Interactive log file analysis with cached indexing and keyword search capabilities. Index log files once, search many times with context extraction for efficient debugging. |
 
 ---
 
@@ -56,10 +57,18 @@ BugScout/
 │   └── skills/
 │       ├── hsd-triage/
 │       │   └── SKILL.md          # hsd-triage skill definition
-│       └── live-debug/
-│           └── SKILL.md          # live-debug skill definition
+│       ├── live-debug/
+│       │   └── SKILL.md          # live-debug skill definition
+│       └── log-search/
+│           └── SKILL.md          # log-search skill definition
 │
 ├── src/                          # Pipeline Python scripts
+│   ├── cache_log_search/         # Log search implementation
+│   │   ├── __init__.py           # Gated API exports
+│   │   ├── indexer.py            # Log indexing with parallel processing
+│   │   ├── searcher.py           # Keyword search with context extraction
+│   │   ├── example_usage.py      # Usage examples
+│   │   └── README.md             # Log search documentation
 │   ├── live_debug_runner.py      # Main live-debug orchestrator
 │   ├── parse_and_triage.py       # HSD parser & triage logic
 │   ├── write_single_response.py  # Single-turn HSD writer
