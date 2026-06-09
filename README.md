@@ -80,10 +80,15 @@ BugScout/
 │   └── log_taxonomy.md                    # Log file taxonomy and decoding notes
 │
 ├── samples/
-│   └── QAT_LM_segfault_22022566949/
-│       └── session_report.html            # Reference report — HSD 22022566949 (2026-06-01)
-│                                          # 20/20 checks passed · 90% confidence
-│                                          # First report using bugscout_report_template.html v1.0
+│   ├── QAT_LM_segfault_22022566949/
+│   │   └── session_report.html            # Reference report — HSD 22022566949 (2026-06-01)
+│   │                                      # Iter 1–4 · 90% confidence (Iter 4 root cause subsequently revised)
+│   │                                      # First report using bugscout_report_template.html v1.0
+│   └── QAT_LM_segfault_22022566949_r2/
+│       └── session_report_r2.html         # 2nd Regression report — HSD 22022566949 (2026-06-09)
+│                                          # Iter 5 · 85% confidence · Engineer correction applied
+│                                          # vtd_interrupt_remap_msi invalidated; kernel regression identified
+│                                          # Key finding: vfio-pci reset-done absent on kernel 6.18.8.4.9
 │
 └── README.md                              # This file
 ```
