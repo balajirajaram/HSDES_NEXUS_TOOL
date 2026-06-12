@@ -61,6 +61,8 @@ triage skill (which recommends logs from symptoms alone), this skill:
 6. **Waits for confirmation** before proceeding
 7. **Repeats** until root cause is confirmed or user stops the session
 
+If the CLI bootstrap wrote `session_init.json`, the runner reads that file first and merges it with any prompt-derived parameters. The `--initial-logs` payload is also stored in session state and surfaced in the session report, so bootstrap evidence stays available throughout the session.
+
 ---
 
 ## Inputs
@@ -79,6 +81,8 @@ Parameters are resolved in this priority order: **NLP prompt → `session_init.j
 | `testcase_name` | — | (in `--initial-logs` file) | from NGA MCP |
 | `testcase_command` | — | (in `--initial-logs` file) | from NGA MCP |
 
+> **Bootstrap logs are persisted.** When `--initial-logs` is provided, the session runner stores the collected logs in session state and includes them in the generated markdown/HTML reports.
+
 > **CLI session pre-init is optional.** If `session_init.json` exists (created by
 > `python parse_and_triage.py --mode live-debug --hsd-id <id> [options]`),
 > the agent loads it as the base configuration; NLP parameters override any field in it.
@@ -95,6 +99,7 @@ Do NOT proceed to the next iteration without explicit user go-ahead.
 **Validation skills used conditionally** (do NOT invoke unless conditions are met):
 - `codesign_validation-rtl-scenario-analysis` — in Phase LD-2c and LD-4 Step 3 (Conditional A): only when `model_path` is available and hypothesis names specific RTL signals
 - `codesign_validation-constraint-scan` — in Phase LD-4 Step 3 (Conditional B): only when hypothesis language implies a chicken bit, config knob, or defeature gate
+- `handbook-rag` — in Phase LD-2a and LD-4 Step 2 (Conditional C): when `component` contains `dsa`, `iaa`, `qat`, `mce`, `imc`, or `upi` AND initial symptom includes hang, crash, fatal, or MCA keywords. Use `HandbookRAG.from_default_root().triage_retrieve(parsed)` to retrieve the top 4 matching handbook sections and include them in the GENI analysis prompt to ground the hypothesis in known ACD root-cause patterns.
 
 ---
 
@@ -414,6 +419,8 @@ Analyze the new evidence:
 5. Is there a hypothesis with confidence >= 0.85? If so, is root cause confirmed?
 6. What critical questions remain unanswered?
 
+Important: if the same warning or log fragment is present in both the passing and failing scenarios, treat it as non-discriminating evidence and discard it as a root-cause candidate.
+
 Output as JSON:
 {
   "new_evidence_summary": "...",
@@ -592,18 +599,59 @@ Proposed fix: {recommended_fix}
 3. Are there side effects or spec-defined constraints for this fix?
 ```
 
-**Step LD-5c** — Generate all reports.
+**Step LD-5c** — Generate HTML report directly.
 
-Run in terminal:
-```bash
-cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\project-c3\hsd-triage"
-python live_debug_runner.py --report-only {session_id}
+**The agent writes the HTML report itself** using the template structure in `templates/live_debug_report_template.html`.
+Do NOT rely on an external Python runner. Follow these steps:
+
+1. **Create the output directory** (PowerShell):
+```powershell
+New-Item -ItemType Directory -Path "src/output/live_debug_{session_id}" -Force
 ```
 
-This generates three files in `output/live_debug_{session_id}/`:
-- `session_report.html`   — interactive HTML report (live_debug_report_template.html)
-- `session_report.md`     — Markdown debug trail
-- `session_data.json`     — full machine-readable session dump
+2. **Write `live_debug_report.html`** to `src/output/live_debug_{session_id}/live_debug_report.html`.
+
+   The report **must** include the following sections in order, populated with all evidence from the session:
+   - `<div class="banner">` — HSD title, platform, mode, confidence
+   - `<div class="meta-row">` — HSD link, component badge, confidence, stepping, log count
+   - Stats row (iterations, log sources, confidence, failure type, failing unit)
+   - `<div class="rc-box">` — green root cause summary box with classification badge
+   - **Phase card LD-0** — session parameters table
+   - **Phase card LD-1** — symptom, reproduction steps, log file descriptions
+   - **Phase card LD-2** — before/after comparison table + ranked hypotheses with `.conf-bar-wrap`
+   - **Phase card LD-3** — log enablement plan table
+   - **Phase card LD-4** (one `<div class="card">` per iteration) — dark `.log-box` excerpts,
+     `.mca-table` for MCA decodes, `.finding-box` variants, hypothesis update table
+   - **Phase card LD-5** — `.ev-chain`/`.ev-step` numbered evidence chain, `.finding-box` fix cards,
+     session timeline, logs analyzed & gaps table
+   - `<div class="corrections-card">` — Field Feedback & Triage Corrections
+     (discarded indicators with `.discard-list`, confirmed indicators with `.unchanged-list`,
+     recommended HSD field updates)
+   - `<div class="rootcause-card active">` — structured root cause card with `.rootcause-grid`:
+     left column = evidence chain (`.evidence-chain` list with `.ev-iter` labels),
+     right column = recommended fix + spec reference
+   - `<div class="related-card">` — Related Past HSDs table (`.related-table`) with HSD links,
+     component, symptom, root cause, fix pattern; include HSD search suggestions if no exact related HSDs are known
+   - `<footer>` — generated timestamp, session ID, template version, BugScout framework
+
+   **CSS**: All required CSS classes are defined in `templates/live_debug_report_template.html`.
+   Copy the full `<style>` block from that template into the generated report's `<head>`.
+   Key classes for agent-generated content:
+   - `.log-box` with `.err`/`.warn`/`.ok`/`.cmd`/`.info`/`.key` spans — dark terminal excerpts
+   - `.finding-box.finding-confirmed/.finding-mechanism/.finding-topology/.finding-fix` — evidence boxes
+   - `.mca-table` with `.field-set`/`.field-zero` — MCA register decode tables
+   - `.ev-chain`/`.ev-step`/`.ev-num`/`.ev-body`/`.ev-arrow` — numbered evidence chain
+   - `.discard-list`/`.unchanged-list` — corrections card lists
+   - `.iter-label` — gradient sub-section header within phase cards
+   - `.rootcause-card.active` + `.rootcause-grid`/`.rc-section` — final root cause
+   - `.related-card`/`.related-table` — related HSDs
+   - `.corrections-card` — field feedback
+
+3. **Write `session_report.md`** to the same directory — a concise Markdown version of the root cause, evidence chain, and fix recommendation.
+
+This generates these files in `src/output/live_debug_{session_id}/`:
+- `live_debug_report.html` — full interactive HTML report (primary output)
+- `session_report.md`      — Markdown debug trail (secondary output)
 
 **Step LD-5d** — Update session status.
 
@@ -637,9 +685,8 @@ ldr.update_session(db_path, session_id,
    Session ID:      {session_id}
 
 📁 REPORTS:
-   HTML:     output/live_debug_{session_id}/session_report.html
-   Markdown: output/live_debug_{session_id}/session_report.md
-   JSON:     output/live_debug_{session_id}/session_data.json
+   HTML:     src/output/live_debug_{session_id}/live_debug_report.html
+   Markdown: src/output/live_debug_{session_id}/session_report.md
 ══════════════════════════════════════════════════════════════
 ```
 
@@ -680,6 +727,7 @@ ldr.update_session(db_path, session_id,
 4. **Testcase type determines enablement.** Never suggest PythonSV enablement for a `shell` or `python-script` testcase.
 5. **Hypothesis confidence drives priority.** Always address the highest-confidence unfalsified hypothesis first.
 6. **Session state is always persisted.** Every iteration must be written to the DB before presenting to user.
+7. **Shared pass/fail warnings are non-causal.** If a warning also appears in the passing scenario, do not promote it as a root-cause indicator.
 
 ---
 

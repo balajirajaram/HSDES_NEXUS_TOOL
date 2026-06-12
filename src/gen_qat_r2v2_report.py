@@ -1,0 +1,458 @@
+#!/usr/bin/env python3
+"""
+gen_qat_r2v2_report.py
+──────────────────────────────────────────────────────────────────────────────
+One-shot report generator for HSD 22022566949 — 2nd Regression, 2nd Analytical
+Pass (2026-06-10).
+
+Builds a session_data dict from the verified log analysis and calls
+live_debug_runner.generate_html_report() so the canonical Jinja2 template
+does all the HTML work.
+
+Output:
+  samples/QAT_LM_segfault_22022566949_r2/session_report_r2_v2.html
+  samples/QAT_LM_segfault_22022566949_r2/session_report_r2_v2.md
+  samples/QAT_LM_segfault_22022566949_r2/session_data_r2_v2.json
+"""
+
+from __future__ import annotations
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).parent.parent.resolve()
+SRC_DIR   = REPO_ROOT / "src"
+OUT_DIR   = REPO_ROOT / "samples" / "QAT_LM_segfault_22022566949_r2"
+
+sys.path.insert(0, str(SRC_DIR))
+import live_debug_runner as ldr
+
+# ── Patch template path to templates/ folder ──────────────────────────────────
+ldr.LIVE_DEBUG_TEMPLATE_PATH = REPO_ROOT / "templates" / "live_debug_report_template.html"
+
+# ── Session data ───────────────────────────────────────────────────────────────
+SESSION = {
+    "hsd_id":          "22022566949",
+    "title":           "[OKS][DMR][VT][X4][VV] Segfault observed while performing QAT LM to Dest VM with cpa_sample_code running",
+    "component":       "QAT / VFIO Live Migration / KVM (kernel regression)",
+    "execution_mode":  "manual",
+    "server":          "",
+    "status":          "active",
+    "created_at":      "2026-06-01",
+    "updated_at":      "2026-06-10",
+    # derived fields expected by generate_html_report
+    "total_iterations":    5,
+    "final_confidence":    0.85,
+    "final_hypothesis": (
+        "Kernel 6.18.8.4.9 regression in post-FLR VFIO/KVM VF state-restore — VF hardware "
+        "reset completes on both kernels but subsequent IRQ vector / MSI-X / callback-pointer "
+        "restoration is broken in 6.18.8.4.9; crash at first QAT completion IRQ post-migration."
+    ),
+    "started_at":      "2026-06-01",
+    "completed_at":    "In Progress — pending A/B isolation",
+    "related_hsds": [
+        {"hsd_id": "22022566950", "component": "QAT/KVM/DMR",     "symptom": "LFE for 22022566949 — QAT LM segfault kernel regression",        "root_cause": "Kernel regression 6.18.5.2.5→6.18.8.4.9 in VFIO/KVM path",       "fix_pattern": "Assigned to Linux KVM team"},
+        {"hsd_id": "22022297974", "component": "QAT/VFIO/DMR",    "symptom": "QAT VF live migration — interrupt state not restored on destination", "root_cause": "VFIO IRQ state not re-established post-migration",                "fix_pattern": "IRQ eventfd rebind after migration"},
+        {"hsd_id": "22022530567", "component": "VFIO/KVM/DMR",    "symptom": "VFIO device migration — reset not completing on destination VM",     "root_cause": "VF FLR timeout in migration path",                               "fix_pattern": "Increase FLR timeout / fix reset ordering"},
+        {"hsd_id": "22022413643", "component": "KVM/VFIO-PCI/DMR","symptom": "KVM LM with VFIO-PCI device — segfault in guest after migration",   "root_cause": "KVM VFIO migration state machine defect",                        "fix_pattern": "KVM patch for VFIO device state restore"},
+        {"hsd_id": "22022530565", "component": "iommufd/QAT/DMR", "symptom": "iommufd IOAS mapping failure with QAT VF PCI BAR",                   "root_cause": "PCI BAR peer-to-peer mapping not supported in iommufd",          "fix_pattern": "Known limitation — non-fatal in all configs"},
+        {"hsd_id": "22022383538", "component": "QAT/DMR",         "symptom": "cpa_sample_code crash with QAT VF after VM operations",              "root_cause": "Application-level null ptr after invalid QAT VF state",          "fix_pattern": "VF state reset before cpa re-run"},
+    ],
+    "initial_logs_collected": [],
+}
+
+# ── Iterations ─────────────────────────────────────────────────────────────────
+ITERATIONS = [
+    # ── Iter 1 ──────────────────────────────────────────────────────────────────
+    {
+        "iteration":  1,
+        "timestamp":  "2026-06-01",
+        "hypotheses": [
+            {"statement": "QAT VF migration state not properly restored on destination — system characterization only", "confidence": 0.40},
+        ],
+        "logs_requested": [
+            {"category": "host_terminal",  "commands": ["uname -r", "yum info qatlib", "nproc"]},
+        ],
+        "logs_collected": [
+            {
+                "category": "host_terminal_log.rtf",
+                "full_path": "QAT_LM_segfault_logs/host_terminal_log.rtf (4,818 bytes)",
+                "content_snippet": (
+                    "[root@cs16ca101ds0506 ~]# yum info qatlib\n"
+                    "qatlib.x86_64  25.08-0.9.5  installed\n"
+                    "[root@cs16ca101ds0506 ~]# uname -r\n"
+                    "6.18.0-dmr.bkc.6.18.8.4.9.x86_64\n"
+                    "[root@cs16ca101ds0506 ~]# nproc\n160"
+                ),
+            }
+        ],
+        "geni_analysis": (
+            "Host confirmed as DMR bare metal (Oak Stream AP A0) with BKC kernel "
+            "6.18.8.4.9 and QAT library 25.08/0.9.5. 160 CPU threads available. "
+            "Preliminary hypothesis: segfault is migration-induced from driver or "
+            "interrupt remapping state not properly restored on destination. "
+            "Additional logs needed to characterize crash signature."
+        ),
+        "next_steps": [
+            {
+                "step": "Read host_dmesg_log.rtf",
+                "rationale": "Crash signature and error code will be in host dmesg",
+                "commands": [],
+            }
+        ],
+        "user_input": "",
+    },
+
+    # ── Iter 2 ──────────────────────────────────────────────────────────────────
+    {
+        "iteration":  2,
+        "timestamp":  "2026-06-01",
+        "hypotheses": [
+            {"statement": "Crash at [98.8s] — NULL function pointer in libc.so.6 (error 44) after QAT migration [CONFIRMED STILL VALID]", "confidence": 1.00},
+            {"statement": "vtd_interrupt_remap_msi: MSI address=0x0 as root cause trigger [DISCARDED — appears in PASS too]", "confidence": 0.00},
+        ],
+        "logs_requested": [
+            {"category": "host_dmesg", "commands": ["dmesg | grep -E 'segfault|vtd|vfio|qat|cpa'"]},
+        ],
+        "logs_collected": [
+            {
+                "category": "host_dmesg_log.rtf",
+                "full_path": "QAT_LM_segfault_logs/host_dmesg_log.rtf (90,189 bytes)",
+                "content_snippet": (
+                    "# CRASH (L793):\n"
+                    "[   98.836781] cpa_sample_code[1213]: segfault at 0 ip 00007f8a95d71623\n"
+                    "               error 44 in libc.so.6  ← PFEC 0x2C: I+U+~P = NULL fn ptr\n"
+                    "# FLR also present in FAIL (L790-L792):\n"
+                    "[   52.692337] vfio-pci 0000:00:03.0: reset done  ← FLR 1 completed\n"
+                    "[   60.179925] vfio-pci 0000:00:03.0: reset done  ← FLR 2 completed\n"
+                    "# DISCARDED (L16 — also in PASS):\n"
+                    "qemu-kvm: vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0\n"
+                    "Segmentation fault (core dumped)"
+                ),
+            }
+        ],
+        "geni_analysis": (
+            "CRASH SIGNATURE CONFIRMED: segfault at address 0, error 44 (0x2C = PFEC: "
+            "I-bit=1, U-bit=1, P-bit=0) — instruction fetch from unmapped user-mode page, "
+            "i.e., a NULL function pointer call in libc.so.6.\n\n"
+            "ENGINEER CORRECTION (2026-06-09): vtd_interrupt_remap_msi: MSI address low "
+            "32 bit invalid: 0x0 — engineer confirmed this warning ALSO appears in the "
+            "passing scenario. Verified from PASS logs: Destination_VM_terminal_dmesg.rtf "
+            "L1424 and Source_VM_terminal_logs.rtf L2028. DISCARDED as non-causal.\n\n"
+            "FLR PRESENT IN FAIL (v2 correction): host_dmesg_log.rtf L790-L792 confirms "
+            "reset done at [52.69s] and [60.18s]. Regression is post-FLR, not in FLR itself."
+        ),
+        "next_steps": [
+            {
+                "step": "Read source VM logs for QEMU flags and workload state",
+                "rationale": "Need to confirm QAT workload was active during migration and check QEMU configuration differences",
+                "commands": [],
+            }
+        ],
+        "user_input": (
+            "Engineer feedback (vijayag1, 2026-06-09): \"earlier analysis pointed to the "
+            "warning vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0. "
+            "Actually this is the warning even comes in the passing scenario also. "
+            "Need to ignore this warning.\""
+        ),
+    },
+
+    # ── Iter 3 ──────────────────────────────────────────────────────────────────
+    {
+        "iteration":  3,
+        "timestamp":  "2026-06-01",
+        "hypotheses": [
+            {"statement": "cpa_sample_code active with in-flight ops at migration time — QAT VF busy during handoff (VALID)", "confidence": 0.90},
+            {"statement": "IOMMU_IOAS_MAP BAR mapping failures as root cause [DISCARDED — identical pattern in PASS source VM]", "confidence": 0.00},
+        ],
+        "logs_requested": [
+            {"category": "source_VM_terminal", "commands": ["dmesg | grep -E 'IOMMU|vfio|cpa|qat'"]},
+        ],
+        "logs_collected": [
+            {
+                "category": "source_VM_terminal_logsrtf.rtf",
+                "full_path": "QAT_LM_segfault_logs/source_VM_terminal_logsrtf.rtf (226,569 bytes)",
+                "content_snippet": (
+                    "qemu-kvm: warning: IOMMU_IOAS_MAP failed: Bad address, PCI BAR?\n"
+                    "  ← DISCARDED: same lines at L8, L11, L12, L493-495 in PASS source VM\n"
+                    "# cpa_sample_code active on source (591/864 Mbps before migration):\n"
+                    "Cipher AES128-XTS Encrypt 64B: 200000 subm, 200000 resp, 591 Mbps\n"
+                    "Cipher AES256-XTS Encrypt 256B: 200000 subm, 200000 resp, 864 Mbps\n"
+                    "# Source FLR (comparable to PASS source at [72.47s]/[85.47s]):\n"
+                    "[52.336437] vfio-pci 0000:00:03.0: resetting\n"
+                    "[52.692337] vfio-pci 0000:00:03.0: reset done  ← source FLR 1\n"
+                    "[59.818125] vfio-pci 0000:00:03.0: resetting\n"
+                    "[60.179925] vfio-pci 0000:00:03.0: reset done  ← source FLR 2"
+                ),
+            }
+        ],
+        "geni_analysis": (
+            "cpa_sample_code running with high throughput (200K/200K ops) at migration "
+            "trigger — QAT VF has in-flight operations. This remains valid.\n\n"
+            "IOMMU_IOAS_MAP warnings DISCARDED: 2nd regression passing logs "
+            "(Source_VM_terminal_logs.rtf L8, L11, L12, L493-495) show identical "
+            "IOMMU_IOAS_MAP pattern. Known iommufd PCI BAR mapping limitation for "
+            "QAT 6xxx device 4949 — non-fatal, present in all configurations.\n\n"
+            "Source-side FLR completes normally at [52.69s]/[60.18s], comparable to "
+            "PASS source FLR at [72.47s]/[85.47s]. Migration timing differs by ~20s "
+            "but FLR sequence is structurally identical."
+        ),
+        "next_steps": [
+            {
+                "step": "Examine MobaXterm host session for qat_vfio_pci binding and QEMU flags",
+                "rationale": "Confirm driver binding, destination VF PCI domain, and QEMU command line differences",
+                "commands": [],
+            }
+        ],
+        "user_input": "",
+    },
+
+    # ── Iter 4 ──────────────────────────────────────────────────────────────────
+    {
+        "iteration":  4,
+        "timestamp":  "2026-06-01",
+        "hypotheses": [
+            {"statement": "qat_vfio_pci correctly bound on both VFs; dest domain 0001 vs source 0000 — secondary variable (VALID)", "confidence": 0.70},
+            {"statement": "qat_vfio_pci save/restore does not include MSI-X table entries — VT-d IRTE address=0x0 [INVALIDATED by engineer]", "confidence": 0.00},
+        ],
+        "logs_requested": [
+            {"category": "host_session_MobaXterm", "commands": ["dmesg | grep qat_vfio_pci"]},
+        ],
+        "logs_collected": [
+            {
+                "category": "MobaXterm_10.49.152.143_20260601_055012.rtf",
+                "full_path": "QAT_LM_segfault_logs/MobaXterm_10.49.152.143_20260601_055012.rtf (369,344 bytes)",
+                "content_snippet": (
+                    "[ 1089.405937] qat_vfio_pci 0000:0f:00.1: enabling device (0000 -> 0002)\n"
+                    "[ 1089.416108] qat_vfio_pci 0000:0f:00.1: resetting\n"
+                    "[ 1092.403753] qat_vfio_pci 0000:0f:00.1: resetting\n"
+                    "[ 1113.899971] qat_vfio_pci 0001:0f:00.1: enabling device (0000 -> 0002)\n"
+                    "[ 1113.907280] qat_vfio_pci 0001:0f:00.1: resetting\n"
+                    "# QEMU dest command includes: -global kvm-apic.vapic=false\n"
+                    "#   (NEW discriminator — PASS dest does NOT have this flag)\n"
+                    "# Dest sysfsdev: /sys/bus/pci/devices/0001:0f:00.1 (domain 0001)"
+                ),
+            }
+        ],
+        "geni_analysis": (
+            "qat_vfio_pci correctly bound and FLR triggered on both source (0000:0f:00.1) "
+            "and destination (0001:0f:00.1). Driver setup is correct.\n\n"
+            "INVALIDATED ROOT CAUSE: Original Iter 4 stated qat_vfio_pci save/restore "
+            "does not include MSI-X table entries, leaving VT-d IRTE address=0x0. "
+            "This was based on vtd_interrupt_remap_msi as trigger — now confirmed benign.\n\n"
+            "NEW DISCRIMINATOR FOUND (2026-06-10): FAIL QEMU destination command "
+            "includes -global kvm-apic.vapic=false (vAPIC disabled). PASS destination "
+            "QEMU command does NOT include this flag. vAPIC disablement forces all "
+            "LAPIC accesses through MMIO emulation rather than the virtualized APIC page, "
+            "potentially altering MSI-X re-arm behavior post-migration when combined with "
+            "the kernel regression."
+        ),
+        "next_steps": [
+            {
+                "step": "Compare pass vs fail destination dmesg for all configuration deltas",
+                "rationale": "Need pass logs to establish full pass/fail differential",
+                "commands": [],
+            }
+        ],
+        "user_input": "Engineer: vtd_interrupt_remap_msi warning also appears in passing scenario — need to ignore.",
+    },
+
+    # ── Iter 5 ──────────────────────────────────────────────────────────────────
+    {
+        "iteration":  5,
+        "timestamp":  "2026-06-10",
+        "hypotheses": [
+            {
+                "statement": (
+                    "Kernel 6.18.8.4.9 regression in post-FLR VFIO/KVM VF state-restore — "
+                    "hardware FLR completes on both kernels but subsequent IRQ vector/MSI-X/"
+                    "callback-pointer restoration broken in 6.18.8.4.9; crash at first QAT "
+                    "completion IRQ post-migration"
+                ),
+                "confidence": 0.85,
+            },
+            {
+                "statement": (
+                    "PCI domain 0001 (FAIL) vs 0000 (PASS) triggers domain-specific IOMMU "
+                    "group handling defect in kernel 6.18.8.4.9 — secondary variable"
+                ),
+                "confidence": 0.55,
+            },
+            {
+                "statement": (
+                    "-global kvm-apic.vapic=false (FAIL only) + kernel regression = specific "
+                    "combination that breaks MSI-X re-arm on destination VM"
+                ),
+                "confidence": 0.35,
+            },
+        ],
+        "logs_requested": [
+            {"category": "passing_dest_dmesg",   "commands": ["dmesg > Destination_VM_terminal_dmesg.rtf"]},
+            {"category": "passing_source_logs",  "commands": ["dmesg > Source_VM_terminal_logs.rtf"]},
+            {"category": "passing_host_dmesg",   "commands": ["dmesg > host_dmesg_terminal_log.rtf"]},
+        ],
+        "logs_collected": [
+            {
+                "category": "Destination_VM_terminal_dmesg.rtf (PASS · 6.18.5.2.5)",
+                "full_path": "QAT_LM_Passing_logs_6.18.5.2.5_kernel/Destination_VM_terminal_dmesg.rtf (180,553 bytes)",
+                "content_snippet": (
+                    "QEMU dest cmd: sysfsdev=.../0000:0f:00.2  (NO -global kvm-apic.vapic=false)\n"
+                    "# FLR on PASS dest:\n"
+                    "[   72.115616] vfio-pci 0000:00:03.0: resetting\n"
+                    "[   72.469061] vfio-pci 0000:00:03.0: reset done  ← FLR 1 (+353ms)\n"
+                    "[   85.115966] vfio-pci 0000:00:03.0: resetting\n"
+                    "[   85.468760] vfio-pci 0000:00:03.0: reset done  ← FLR 2 (+353ms)\n"
+                    "# TSC skew (L11) — 12x FAIL value, NO crash:\n"
+                    "[  131.067230] clocksource: 'tsc' skewed -139066744 ns (-139 ms)\n"
+                    "# vtd warning (L1424) — same as FAIL, confirms benign:\n"
+                    "qemu-kvm: vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0\n"
+                    "# cpa_sample_code PASSES post-migration:\n"
+                    "Cipher AES256-XTS  → Throughput(Mbps)  1342 / 1857 / 1331\n"
+                    "Cipher AES128-CTR  → Throughput(Mbps)  414 → 680 → 943 → ... → 1821"
+                ),
+            },
+            {
+                "category": "Source_VM_terminal_logs.rtf (PASS · 6.18.5.2.5)",
+                "full_path": "QAT_LM_Passing_logs_6.18.5.2.5_kernel/Source_VM_terminal_logs.rtf (247,491 bytes)",
+                "content_snippet": (
+                    "# IOMMU_IOAS_MAP (L8, L11, L12, L493-495) — IDENTICAL to FAIL:\n"
+                    "qemu-kvm: warning: IOMMU_IOAS_MAP failed: Bad address, PCI BAR?\n"
+                    "# vtd warning (L2028) — also in PASS:\n"
+                    "qemu-kvm: vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0\n"
+                    "# Source FLR on PASS (comparable timing to FAIL):\n"
+                    "[   72.469061] vfio-pci 0000:00:03.0: reset done"
+                ),
+            },
+            {
+                "category": "host_dmesg_terminal)log.rtf (PASS · 6.18.5.2.5)",
+                "full_path": "QAT_LM_Passing_logs_6.18.5.2.5_kernel/host_dmesg_terminal)log.rtf (341,963 bytes)",
+                "content_snippet": "Linux version 6.18.0-dmr.bkc.6.18.5.2.5.x86_64 — no crash, qat_vfio_pci setup OK",
+            },
+        ],
+        "geni_analysis": (
+            "PASS/FAIL COMPARISON — KEY FINDINGS:\n\n"
+            "1. vtd_interrupt_remap_msi DISCARDED (engineer-confirmed + log-verified):\n"
+            "   Present at L1424 (PASS dest) and L2028 (PASS source). Non-causal QEMU "
+            "   warn_report() during VF re-initialization.\n\n"
+            "2. TSC skew DISCARDED (log-verified): PASS = -139ms (L11), FAIL = -11ms (L13).\n"
+            "   12x larger skew in PASS with no crash. TSC instability is a side-effect "
+            "   of imprecise offset migration; kvm-clock takes over in both cases.\n\n"
+            "3. IOMMU_IOAS_MAP DISCARDED (log-verified): Identical at L8/L11/L12/L493-495\n"
+            "   in both PASS and FAIL source VMs. Known iommufd/QAT BAR limitation.\n\n"
+            "4. FLR CORRECTION (v2): FAIL also has vfio-pci reset done at [52.69s]+[60.18s]\n"
+            "   (host_dmesg_log.rtf L790-L792). Regression is post-FLR state restoration,\n"
+            "   not in the FLR sequence itself.\n\n"
+            "5. NEW DISCRIMINATOR: FAIL QEMU dest has -global kvm-apic.vapic=false;\n"
+            "   PASS does NOT. vAPIC disablement alters LAPIC MMIO path — possible\n"
+            "   interaction with kernel regression in MSI-X vector re-arm.\n\n"
+            "6. KEY DISCRIMINATORS SUMMARY:\n"
+            "   FAIL: kernel 6.18.8.4.9 | VF domain 0001 | vapic=false | crash [98.8s]\n"
+            "   PASS: kernel 6.18.5.2.5 | VF domain 0000 | vapic enabled | 1342-1857 Mbps\n\n"
+            "CONCLUSION: Kernel regression between 6.18.5.2.5 and 6.18.8.4.9 in the "
+            "VFIO/KVM post-FLR state restoration path. After hardware FLR completes, "
+            "the 6.18.8.4.9 kernel fails to properly reinstate the QAT VF's IRQ vectors, "
+            "MSI-X entries, or VFIO eventfd bindings. When cpa_sample_code fires its first "
+            "completion callback at [98.8s], it calls through an uninitialized function "
+            "pointer at address 0x0 — fatal segfault (PFEC error 44)."
+        ),
+        "next_steps": [
+            {
+                "step": "A/B isolation: kernel 6.18.8.4.9 with PASS topology (VF 0000:0f:00.2, vapic enabled)",
+                "rationale": "Isolates kernel as primary variable independent of PCI domain and vapic flag",
+                "commands": ["# Modify dest QEMU: sysfsdev=.../0000:0f:00.2, remove -global kvm-apic.vapic=false"],
+            },
+            {
+                "step": "A/B: kernel 6.18.5.2.5 with -global kvm-apic.vapic=false added",
+                "rationale": "Determines whether vapic=false alone (on passing kernel) triggers the crash",
+                "commands": ["# Add -global kvm-apic.vapic=false to PASS dest QEMU command"],
+            },
+            {
+                "step": "Enable vfio_pci dynamic debug on failing kernel (post-FLR trace)",
+                "rationale": "Reveals what happens after reset done — IRQ vector and MSI-X re-arm details",
+                "commands": ["echo 'module vfio_pci +p' > /sys/kernel/debug/dynamic_debug/control && dmesg -w | grep -i 'vfio\\|msi\\|irq\\|0001:0f'"],
+            },
+            {
+                "step": "Kernel git log delta 6.18.5.2.5 → 6.18.8.4.9 (VFIO/KVM/iommufd paths)",
+                "rationale": "Direct commit-level evidence of the regression — focus on FLR, MSI-X, migration callbacks",
+                "commands": ["git log --oneline v6.18.5.2.5..v6.18.8.4.9 drivers/vfio/pci/ virt/kvm/ | grep -i 'reset\\|msi\\|migrat\\|flr\\|irq'"],
+            },
+        ],
+        "user_input": "",
+    },
+]
+
+# ── Fix recommendation ─────────────────────────────────────────────────────────
+FIX = {
+    "statement": (
+        "Primary fix (kernel/LFE 22022566950): Linux KVM team to identify the regressing "
+        "commit between 6.18.5.2.5 and 6.18.8.4.9 in the VFIO/KVM post-FLR state "
+        "restoration path for migrated QAT SR-IOV VFs. Focus: drivers/vfio/pci/, "
+        "virt/kvm/, drivers/iommu/ — specifically VF MSI-X vector reinstatement, VFIO "
+        "IRQ eventfd re-binding, or IOMMU domain reattachment ordering after FLR.\n\n"
+        "Immediate workaround: downgrade to kernel 6.18.5.2.5 (DMR BKC WW14). "
+        "Confirmed passing by engineer on multiple systems.\n\n"
+        "Isolation tests needed:\n"
+        "  ① 6.18.8.4.9 + dest VF 0000:0f:00.2 + vapic enabled → kernel is primary variable\n"
+        "  ② 6.18.5.2.5 + -global kvm-apic.vapic=false → vapic flag alone causal?"
+    ),
+    "spec_reference": (
+        "PCIe Base Spec §6.6.2 — FLR completes within 100ms (confirmed: ~354ms in both cases). "
+        "VFIO kernel docs (Documentation/driver-api/vfio.rst) — post-reset device state must be "
+        "fully re-established before guest access resumes. "
+        "Intel SDM Vol 3 §6.15 Table 6-7 — PFEC 0x2C = I+U+~P = NULL function pointer call."
+    ),
+    "evidence_chain": [
+        {"iteration": 1, "finding": "QAT qatlib 25.08/0.9.5 + BKC kernel 6.18.8.4.9 on DMR host confirmed"},
+        {"iteration": 2, "finding": "segfault at 0, error 44 in libc.so.6 at [98.8s] — NULL function pointer confirmed"},
+        {"iteration": 2, "finding": "vtd_interrupt_remap_msi DISCARDED: verified in PASS logs L1424 (dest) + L2028 (source)"},
+        {"iteration": 2, "finding": "FLR present in FAIL (host_dmesg L790-L792): reset done at [52.69s]+[60.18s] — v2 correction"},
+        {"iteration": 3, "finding": "cpa_sample_code active (591/864 Mbps) at migration trigger — VF busy during handoff"},
+        {"iteration": 3, "finding": "IOMMU_IOAS_MAP DISCARDED: identical at L8/L11/L12/L493-495 in PASS source VM"},
+        {"iteration": 4, "finding": "qat_vfio_pci correctly bound on both VFs — driver setup valid"},
+        {"iteration": 4, "finding": "NEW: FAIL QEMU has -global kvm-apic.vapic=false; PASS does NOT — additional config delta"},
+        {"iteration": 5, "finding": "PASS FLR at [72.47s]+[85.47s]; cpa throughput 1342-1857 Mbps — full success on 6.18.5.2.5"},
+        {"iteration": 5, "finding": "TSC skew DISCARDED: PASS −139ms (12×), FAIL −11ms — larger in PASS with no crash"},
+        {"iteration": 5, "finding": "Kernel regression confirmed: 6.18.5.2.5 passes, 6.18.8.4.9 fails; LFE 22022566950 assigned to Linux KVM team"},
+    ],
+    "similar_fixes": [],
+    "field_corrections": (
+        "<p><strong>⚠ Engineer Correction (2026-06-09, vijayag1):</strong> "
+        "The warning <code>vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0</code> "
+        "cited in Iter 4 (90% confidence) <strong>also appears in the passing scenario</strong>. "
+        "It is a cosmetic QEMU VT-d diagnostic — not a root cause indicator.</p>"
+        "<p style='margin-top:8px'><strong>DISCARDED indicators (all present in PASS):</strong></p>"
+        "<ul style='margin-left:16px'>"
+        "<li>❌ vtd_interrupt_remap_msi (PASS dest L1424, PASS source L2028)</li>"
+        "<li>❌ IOMMU_IOAS_MAP failed: Bad address (PASS source L8/L11/L12/L493-495)</li>"
+        "<li>❌ TSC skew as contributing factor (PASS: −139ms, FAIL: −11ms — 12× in PASS)</li>"
+        "<li>❌ vfio-pci FLR absent in FAIL — CORRECTED: reset done present at [52.69s]+[60.18s]</li>"
+        "</ul>"
+        "<p style='margin-top:8px'><strong>Recommended HSD field updates:</strong><br>"
+        "Component: platform.operating_system.vmm.kvm | Regression: yes | "
+        "Workaround: downgrade to kernel 6.18.5.2.5 (DMR BKC WW14)</p>"
+    ),
+}
+
+# ── Run report generation ──────────────────────────────────────────────────────
+def main() -> None:
+    session_data = {
+        "session":    SESSION,
+        "iterations": ITERATIONS,
+    }
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+
+    html_out = OUT_DIR / "session_report_r2_v2.html"
+    md_out   = OUT_DIR / "session_report_r2_v2.md"
+    json_out = OUT_DIR / "session_data_r2_v2.json"
+
+    ldr.generate_html_report(session_data,     html_out, FIX)
+    ldr.generate_markdown_report(session_data, md_out,   FIX)
+    ldr.generate_json_session(session_data,    json_out, FIX)
+
+    print(f"✓  HTML  → {html_out}")
+    print(f"✓  MD    → {md_out}")
+    print(f"✓  JSON  → {json_out}")
+
+
+if __name__ == "__main__":
+    main()

@@ -59,6 +59,7 @@ def init_session_db(db_path: Path) -> None:
                 component       TEXT,
                 execution_mode  TEXT,
                 server          TEXT,
+                initial_logs_json TEXT,
                 status          TEXT DEFAULT 'active',
                 created_at      TEXT,
                 updated_at      TEXT
@@ -78,18 +79,35 @@ def init_session_db(db_path: Path) -> None:
             );
         """)
 
+        # Keep older session databases forward-compatible if the column was added later.
+        existing_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(live_debug_sessions)")
+        }
+        if "initial_logs_json" not in existing_columns:
+            conn.execute("ALTER TABLE live_debug_sessions ADD COLUMN initial_logs_json TEXT")
+
 
 def create_session(db_path: Path, session_id: str, hsd_id: str,
-                   execution_mode: str, server: str = "") -> None:
+                   execution_mode: str, server: str = "",
+                   initial_logs: list[dict] | None = None) -> None:
     """Insert a new session record."""
     import sqlite3
     now = _now_iso()
     with sqlite3.connect(db_path) as conn:
         conn.execute(
             """INSERT OR REPLACE INTO live_debug_sessions
-               (session_id, hsd_id, execution_mode, server, status, created_at, updated_at)
-               VALUES (?, ?, ?, ?, 'active', ?, ?)""",
-            (session_id, hsd_id, execution_mode, server, now, now),
+               (session_id, hsd_id, execution_mode, server, initial_logs_json,
+                status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, 'active', ?, ?)""",
+            (
+                session_id,
+                hsd_id,
+                execution_mode,
+                server,
+                json.dumps(initial_logs or [], ensure_ascii=False),
+                now,
+                now,
+            ),
         )
 
 
@@ -148,6 +166,7 @@ def load_session(db_path: Path, session_id: str) -> dict:
         ).fetchall()
 
     session = dict(session_row)
+    session["initial_logs_collected"] = _safe_json(session.pop("initial_logs_json", "[]"))
     iterations = []
     for r in iter_rows:
         it = dict(r)
@@ -345,6 +364,7 @@ def generate_html_report(session_data: dict, output_path: Path,
             "completed_at": session.get("updated_at", "In Progress"),
             "related_hsds": session.get("related_hsds", []),
             "server": session.get("server", ""),
+            "initial_logs_collected": session.get("initial_logs_collected", []),
         },
         "iterations": iterations,
         "fix_recommendation": fix_recommendation or {
@@ -392,6 +412,21 @@ def generate_markdown_report(session_data: dict, output_path: Path,
         "---",
         "",
     ]
+
+    initial_logs = session.get("initial_logs_collected", [])
+    if initial_logs:
+        lines += ["## Initial Logs", ""]
+        for log in initial_logs:
+            lines.append(f"- **{log.get('category', 'unknown')}**")
+            if log.get("collection_command"):
+                lines.append(f"  - Command: {log['collection_command']}")
+            if log.get("notes"):
+                lines.append(f"  - Notes: {log['notes']}")
+            snippet = log.get("content", "") or log.get("content_snippet", "")
+            if snippet:
+                preview = snippet.splitlines()[:8]
+                lines += ["  ```", *[f"  {l}" for l in preview], "  ```"]
+        lines += ["", "---", ""]
 
     # Hypothesis evolution summary
     lines += ["## Hypothesis Evolution", ""]
@@ -581,22 +616,25 @@ def main() -> None:
     db_path = _get_db_path(session_id)
     out_dir = db_path.parent
 
+    # Load initial logs before we persist the session so the DB captures the bootstrap state.
+    initial_logs: list[dict] = []
+    if args.initial_logs:
+        try:
+            initial_logs_path = Path(args.initial_logs)
+            data = json.loads(initial_logs_path.read_text(encoding="utf-8"))
+            initial_logs = data.get("initial_logs_collected", [])
+            logger.info("Loaded %d initial log entries from %s", len(initial_logs), initial_logs_path)
+        except Exception as exc:
+            logger.warning("Could not load --initial-logs: %s", exc)
+
     logger.info("Starting live debug session %s", session_id)
     init_session_db(db_path)
     create_session(
         db_path, session_id, hsd_id,
         execution_mode=args.execution_mode,
         server=args.server,
+        initial_logs=initial_logs,
     )
-
-    # Load initial logs if provided
-    initial_logs: list[dict] = []
-    if args.initial_logs:
-        try:
-            data = json.loads(Path(args.initial_logs).read_text(encoding="utf-8"))
-            initial_logs = data.get("initial_logs_collected", [])
-        except Exception as exc:
-            logger.warning("Could not load --initial-logs: %s", exc)
 
     adapter = make_adapter(args.execution_mode, args.server, args.ssh_user)
 

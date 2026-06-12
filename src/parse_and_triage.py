@@ -8,6 +8,7 @@ Modes:
   --mode prepare    : Parse input CSV → output/run_<timestamp>/triage_prompts.jsonl
   --mode finalize   : Process GHCP responses → output/run_<timestamp>/triage_results.csv
   --mode report     : Render CSV → output/run_<timestamp>/triage_report.html
+    --mode crashdump  : Parse a structured crashdump and produce a local summary
 
 Each run is isolated in a timestamped subfolder under output/.
 The finalize and report modes auto-detect the latest run folder unless --output-dir is specified.
@@ -16,6 +17,7 @@ Usage:
   python parse_and_triage.py --input <csv_path> --mode prepare
   python parse_and_triage.py --mode finalize --responses <responses.jsonl> [--output-dir output/run_...]
   python parse_and_triage.py --mode report --input <results.csv> [--output-dir output/run_...]
+    python parse_and_triage.py --mode crashdump --input crashdump.json
 """
 
 from __future__ import annotations
@@ -31,6 +33,7 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from crashdump_router import route_crashdump
 
 # Handle large HTML description fields in HSD CSVs
 csv.field_size_limit(10 * 1024 * 1024)  # 10 MB
@@ -44,6 +47,7 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 OUTPUT_BASE = SCRIPT_DIR / "output"
 TEMPLATE_PATH = SCRIPT_DIR / "report_template.html"
 TAXONOMY_PATH = SCRIPT_DIR / "log_taxonomy.md"
+HANDBOOK_PATH = SCRIPT_DIR.parent / "docs" / "handbooks"
 
 
 _CLEAN_MAP = str.maketrans({
@@ -161,6 +165,7 @@ OUTPUT_COLUMNS = [
     "verified_problem_statement", "verified_root_cause", "verified_fix",
     "recommended_log_categories", "recommended_commands", "beyond_sme_recommendations",
     "actual_logs_collected", "actual_root_cause",
+    "acd_verification",
     "root_cause_domain", "domain_relationship", "recommendation_accuracy",
     "recommendation_rationale", "iteration_savings",
 ]
@@ -488,6 +493,95 @@ Output as structured JSON:
 }}"""
 
 
+# ─── Handbook-Backed ACD Verification ────────────────────────────────────────
+
+def load_handbook_context(component: str, failure_modes: list[str]) -> str:
+    """Load relevant handbook sections from the bundled debug handbook.
+
+    Tries HandbookRAG retrieval first; falls back to the full ACD debug steps
+    file if the handbook directory is empty or RAG returns no results.
+    """
+    if not HANDBOOK_PATH.exists():
+        return "(handbook not present — install docs/handbooks/ for ACD verification)"
+    try:
+        from handbook_rag import HandbookRAG
+    except ImportError:
+        return "(handbook_rag module not available)"
+
+    query = " ".join(filter(None, [component] + list(failure_modes)))
+    rag = HandbookRAG(HANDBOOK_PATH)
+    matches = rag.retrieve(query, top_k=4)
+
+    if matches:
+        parts: list[str] = []
+        for match in matches:
+            parts.append(f"### {match['title']} (source: {match['source_file']})")
+            parts.append(match["content_preview"])
+            parts.append("")
+        return "\n".join(parts)
+
+    # Fallback: return a compact slice of the ACD debug steps file
+    acd_path = HANDBOOK_PATH / "acd_debug_steps.md"
+    if acd_path.exists():
+        return acd_path.read_text(encoding="utf-8")[:3000]
+    return "(no handbook content available)"
+
+
+def build_acd_verify_prompt(parsed: dict, handbook_context: str) -> str:
+    """Build the ACD handbook-backed verification prompt (Phase ACD in triage pipeline).
+
+    Positioned between Phase 3 (ground-truth verification) and Phase 4
+    (log recommendation).  Validates the failure mechanism against known ACD
+    root causes and checks ACD collection coverage for the component.
+    """
+    failure_summary = ", ".join(parsed["failure_modes"]) or "unknown"
+    platform = parsed.get("domain", "DMR")
+
+    return f"""Using GENI MCP (DebugAssistantAgentTool) AND Co-Design Specs MCP (codesign-ask-specs-and-wikis):
+
+This is the ACD Handbook Verification step.  Validate the failure mechanism against
+known Autonomous Crash Dump (ACD) and Crash Log patterns before recommending debug logs.
+
+---
+HSD ID: {parsed['hsd_id']}
+Component: {parsed['component']}
+Accelerator: {parsed['accelerator_type']}
+Failure mode(s): {failure_summary}
+Initial symptom: {parsed['initial_symptom'][:500]}
+---
+
+GENI — Handbook-backed root cause verification:
+1. Which MCA bank range (0-3 core, 4-5 MLC, 6-7 LLC, 8-9 UPI, 10-13 IMC, 14-15 IIO/PCIe)
+   would capture the primary failure evidence for {parsed['component']}?
+2. Does the failure mode ({failure_summary}) match any known ACD root-cause pattern
+   in the handbook reference below?  If yes, name the pattern and confidence (0.0-1.0).
+3. What additional registers would confirm or rule out the top hypothesis if collected
+   via ACD or Crash Log?
+4. Is there a documented workaround for this failure class?
+
+Co-Design Specs — ACD coverage validation:
+1. Is {parsed['component']} on {parsed['accelerator_type']} covered by the platform ACD
+   collection path?  (Reference: Oak Stream RAS PAS Section 6.7.4 / OKS Platform Debug Spec)
+2. Are there any known limitations in ACD coverage for this subsystem on {platform}?
+
+Output as structured JSON:
+{{
+  "acd_coverage": "covered|partial|not-covered",
+  "acd_mca_bank_range": "...",
+  "acd_subsystem": "...",
+  "handbook_match": "exact|partial|none",
+  "matched_pattern": "...",
+  "handbook_confidence": 0.0,
+  "acd_verification_summary": "...",
+  "recommended_acd_registers": ["reg1", "reg2"],
+  "known_workaround": "..."
+}}
+
+--- ACD HANDBOOK REFERENCE ---
+{handbook_context}
+--- END HANDBOOK REFERENCE ---"""
+
+
 # ─── Mode: Prepare ───────────────────────────────────────────────────────────
 
 def mode_prepare(input_path: str):
@@ -535,6 +629,10 @@ def mode_prepare(input_path: str):
                     "phase3_verify": build_phase3_prompt(parsed),
                     "phase4_recommend": build_phase4_prompt(parsed, taxonomy_content),
                     "phase5_validate": build_phase5_prompt(parsed),
+                    "phase_acd_verify": build_acd_verify_prompt(
+                        parsed,
+                        load_handbook_context(parsed["component"], parsed["failure_modes"]),
+                    ),
                 },
             }
             out.write(json.dumps(prompt_record, ensure_ascii=False) + "\n")
@@ -670,6 +768,14 @@ def mode_finalize(responses_path: str, output_dir: str | None = None):
             out_row["recommendation_accuracy"] = phase5.get("recommendation_accuracy", "")
             out_row["recommendation_rationale"] = phase5.get("recommendation_rationale", "")
             out_row["iteration_savings"] = phase5.get("iteration_savings", "")
+
+            # Merge Phase ACD Verify (handbook-backed verification)
+            phase_acd = responses.get("phase_acd_verify", {})
+            out_row["acd_verification"] = (
+                phase_acd.get("acd_verification_summary", "")
+                or phase_acd.get("handbook_match", "")
+                or ""
+            )
 
             # Normalise Unicode whitespace / invisible chars in every string field
             # so UTF-8 CSV opens cleanly in Excel without "Â " mojibake.
@@ -814,15 +920,7 @@ def mode_live_debug(hsd_id: str, initial_logs: str, execution_mode: str,
     db_path = ldr._get_db_path(session_id)
     out_dir = db_path.parent
 
-    logger.info("Initialising live debug session %s", session_id)
-    ldr.init_session_db(db_path)
-    ldr.create_session(
-        db_path, session_id, hsd_id,
-        execution_mode=execution_mode,
-        server=server,
-    )
-
-    # Load initial logs if provided
+    # Load initial logs before persisting session state so the bootstrap context is saved.
     initial_logs_data: list[dict] = []
     if initial_logs:
         logs_path = Path(initial_logs)
@@ -835,6 +933,15 @@ def mode_live_debug(hsd_id: str, initial_logs: str, execution_mode: str,
             logger.info("Loaded %d initial log entries from %s", len(initial_logs_data), logs_path)
         except Exception as exc:
             logger.warning("Could not parse --initial-logs: %s", exc)
+
+    logger.info("Initialising live debug session %s", session_id)
+    ldr.init_session_db(db_path)
+    ldr.create_session(
+        db_path, session_id, hsd_id,
+        execution_mode=execution_mode,
+        server=server,
+        initial_logs=initial_logs_data,
+    )
 
     print(f"\n{'═' * 60}")
     print(f"  HSD Live Debug Session")
@@ -882,6 +989,15 @@ def mode_live_debug(hsd_id: str, initial_logs: str, execution_mode: str,
     logger.info("Session init file: %s", init_file)
 
 
+def mode_crashdump(input_path: str, output_dir: str | None = None) -> None:
+    """Parse a crashdump file and emit a local summary + artifacts."""
+    result = route_crashdump(input_path, output_dir)
+    print(f"\n✅ Crashdump summary generated")
+    print(f"   Output folder: {result['output_dir']}")
+    print(f"   JSON: {result['json_path']}")
+    print(f"   Markdown: {result['markdown_path']}")
+
+
 # ─── CLI ──────────────────────────────────────────────────────────────────────
 
 def main():
@@ -906,7 +1022,7 @@ Examples:
     )
     parser.add_argument(
         "--mode", required=True,
-        choices=["prepare", "finalize", "report", "live-debug"],
+        choices=["prepare", "finalize", "report", "live-debug", "crashdump"],
         help="Operating mode",
     )
     # Batch modes
@@ -928,6 +1044,7 @@ Examples:
                         help="SSH username (default: current OS user)")
     parser.add_argument("--max-iterations", type=int, default=10,
                         help="Safety cap on debug loop iterations (default: 10)")
+    parser.add_argument("--output", help="Optional output directory or file base for crashdump mode")
 
     args = parser.parse_args()
 
@@ -956,6 +1073,10 @@ Examples:
             ssh_user=args.ssh_user,
             max_iterations=args.max_iterations,
         )
+    elif args.mode == "crashdump":
+        if not args.input:
+            parser.error("--input is required for crashdump mode")
+        mode_crashdump(args.input, args.output_dir or args.output)
 
 
 if __name__ == "__main__":

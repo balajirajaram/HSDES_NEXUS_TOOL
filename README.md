@@ -2,7 +2,7 @@
 
 > AI-powered hardware bug triage and live debug skills for Intel silicon validation.
 
-BugScout packages three Copilot CLI skills — **hsd-triage**, **live-debug**, and **log-search** — as installable `.copilot/skills/` packages, alongside the full source pipeline, report templates, schemas, and reference samples.
+BugScout packages five Copilot CLI skills — **hsd-triage**, **live-debug**, **log-search**, **crash-parser**, and **handbook-rag** — as installable `.copilot/skills/` packages, alongside the full source pipeline, report templates, schemas, and reference samples.
 
 ---
 
@@ -13,6 +13,8 @@ BugScout packages three Copilot CLI skills — **hsd-triage**, **live-debug**, a
 | `hsd-triage` | Fetches an HSD ticket, classifies the bug, queries related past HSDs, recommends fix paths, and patches HSD fields. |
 | `live-debug` | Iterative log analysis loop — reads available logs, forms hypotheses, requests new logs, confirms root cause, and generates a verified HTML debug report. |
 | `log-search` | Interactive log file analysis with cached indexing and keyword search capabilities. Index log files once, search many times with context extraction for efficient debugging. |
+| `crash-parser` | Normalizes crashdump JSON or text into a structured summary with platform, signature, bank, and severity fields. |
+| `handbook-rag` | Retrieves the most relevant handbook sections for a crashdump or symptom query from local markdown sources. |
 
 ---
 
@@ -46,6 +48,16 @@ The agent will:
 - Run iterative hypothesis refinement
 - Generate a fully verified HTML debug report
 
+When using the live-debug path, any `--initial-logs` JSON is preserved in the session DB and surfaced in the session report so the starting evidence is never lost between runs.
+
+There is also a local crashdump route for structured dumps and text crash logs:
+
+```sh
+python src/parse_and_triage.py --mode crashdump --input path\to\crashdump.json
+```
+
+That path writes a machine-readable summary JSON and a compact markdown report, and it can be paired with the handbook retrieval helpers for offline analysis.
+
 ---
 
 ## Repository Structure
@@ -61,6 +73,12 @@ BugScout/
 │       │   └── SKILL.md          # live-debug skill definition
 │       └── log-search/
 │           └── SKILL.md          # log-search skill definition
+│       ├── crash-parser/
+│       │   └── SKILL.md          # crashdump normalization skill definition
+│       ├── handbook-rag/
+│       │   └── SKILL.md          # handbook retrieval helper skill definition
+│       └── handbook-kb-builder/
+│           └── SKILL.md          # handbook KB builder helper skill definition
 │
 ├── src/                          # Pipeline Python scripts
 │   ├── cache_log_search/         # Log search implementation
@@ -69,6 +87,10 @@ BugScout/
 │   │   ├── searcher.py           # Keyword search with context extraction
 │   │   ├── example_usage.py      # Usage examples
 │   │   └── README.md             # Log search documentation
+│   ├── crashdump_router.py       # Crashdump parsing and routing helper
+│   ├── debug_handbook.py         # Handbook discovery and retrieval primitives
+│   ├── handbook_kb_builder.py    # Local handbook KB builder
+│   ├── handbook_rag.py           # Local handbook retrieval helper
 │   ├── live_debug_runner.py      # Main live-debug orchestrator
 │   ├── parse_and_triage.py       # HSD parser & triage logic
 │   ├── write_single_response.py  # Single-turn HSD writer
@@ -86,7 +108,10 @@ BugScout/
 │   └── live_debug_input.schema.json       # JSON schema for live-debug runner inputs
 │
 ├── docs/
-│   └── log_taxonomy.md                    # Log file taxonomy and decoding notes
+│   ├── log_taxonomy.md                    # Log file taxonomy and decoding notes
+│   └── handbooks/                         # ACD / Crash Log debug handbooks (used by handbook_rag.py)
+│       ├── acd_debug_steps.md             # ACD + Crash Log trigger flow, MCA banks, known DMR failure patterns
+│       └── acd_handbook_kb.json           # Pre-built keyword KB (avoids first-run build cost)
 │
 ├── samples/
 │   ├── QAT_LM_segfault_22022566949/
