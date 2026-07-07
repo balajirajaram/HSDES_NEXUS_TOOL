@@ -20,11 +20,35 @@ BugScout packages five Copilot CLI skills — **hsd-triage**, **live-debug**, **
 
 ## Install
 
+Use the installer scripts (recommended) to set up BugScout as one GHCP agent.
+Run them **from inside this local checkout** — they install directly from the files on
+disk (no git clone/pull), so local edits are picked up immediately without needing to
+commit or push first:
+
+```powershell
+.\scripts\install.ps1
+```
+
+```bash
+bash scripts/install.sh
+```
+
+What gets installed:
+- Skills go to `~/.copilot/skills/<skill-name>/SKILL.md`
+- A single agent goes to `~/.copilot/agents/bugscout.agent.md`
+- Skills are not installed as separate agents
+
+After installing, reload the VS Code window (or restart) so the Set Agent picker
+re-scans `~/.copilot/agents/` and shows `bugscout`.
+
+Manual option (skills only):
+
 Copy the `.copilot/skills/` directory into any repo where you want these skills available:
 
 ```sh
 cp -r .copilot/skills/ /path/to/your/project/.copilot/skills/
 ```
+
 
 Or clone BugScout directly and open it in the Copilot CLI — skills in `.copilot/skills/` are automatically discovered.
 

@@ -85,8 +85,7 @@ def parse_crashdump(path: Path) -> CrashdumpSummary:
 def parse_crashdump_json(payload: dict[str, Any], source_name: str = "") -> CrashdumpSummary:
     """Parse a structured JSON crashdump payload."""
     platform = _first_non_empty(
-        _extract_field(payload, ["platform", "cpu_platform", "programName", "stepping"]),
-        _platform_from_text(source_name),
+        _extract_field(payload, ["platform", "cpu_platform", "programName", "stepping"]) + [_platform_from_text(source_name)],
         "Unknown",
     )
     stepping = _first_non_empty(_extract_field(payload, ["stepping", "cpu_stepping", "step"]), "")

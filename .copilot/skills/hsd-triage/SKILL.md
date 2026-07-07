@@ -8,6 +8,9 @@ description: |
   "what logs to collect for HSD", "first-pass triage", or "log recommendation for sighting".
 ---
 
+> **Canonical copy.** This is the authoritative version of the hsd-triage skill.
+> The copy at `project-c3/hsd-triage/skill.md` is a downstream mirror.
+
 # HSD Triage & Log Recommendation Agent
 
 ## Trigger
@@ -40,7 +43,7 @@ generates the final report — fully hands-off.
 
 Execute in terminal:
 ```bash
-cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\project-c3\hsd-triage"
+cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\BugScout\src"
 python parse_and_triage.py --input "c:\Users\smeenak1\OneDrive - Intel Corporation\Project Files\AI COE\pss-models\Accelerator HSDs\dmr_accelerator_full.csv" --mode prepare
 ```
 
@@ -430,7 +433,7 @@ Do NOT generate ad-hoc `python -c` commands for this — use the script.
    `output/run_*/` if not already set).
 3. Run:
    ```bash
-   cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\project-c3\hsd-triage"
+   cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\BugScout\src"
    python write_batch_responses.py
    ```
 4. The script skips already-written HSD IDs (idempotent — safe to re-run).
@@ -458,7 +461,7 @@ Then run the script. It appends only new entries and reports a summary.
 
 Execute in terminal (replace `<RUN_DIR>` with the actual run folder path):
 ```bash
-cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\project-c3\hsd-triage"
+cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\BugScout\src"
 python parse_and_triage.py --mode finalize --responses <RUN_DIR>/responses.jsonl --output-dir <RUN_DIR>
 ```
 
@@ -471,7 +474,7 @@ python parse_and_triage.py --mode finalize --responses <RUN_DIR>/responses.jsonl
 Run the following audit script to detect gaps between `responses.jsonl` and `triage_results.csv`:
 
 ```bash
-cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\project-c3\hsd-triage"
+cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\BugScout\src"
 python -c "
 import csv, json, sys
 from pathlib import Path
@@ -713,15 +716,26 @@ If the user says "triage HSD <id>" or provides a single HSD ID **without** live 
 
 ## Live Debug Mode (Interactive — with Live Server Access)
 
-If the user says **"live-debug HSD <id>"**, **"debug HSD <id>"**, or **"interactive debug HSD <id>"**,
-or if they have a live server and want to iteratively collect logs and converge on root cause:
+If the user wants to iteratively collect logs and converge on root cause with live server access,
+route to one of two sibling skills based on the trigger phrase:
 
-**Use `live_debug_skill.md` instead of this skill.**
+| Trigger | Skill | When to use |
+|---------|-------|-------------|
+| `live-debug HSD <id>` | `live-debug` | First time debugging this failure; need full human control after every iteration; non-PythonSV testcases |
+| `loop-debug HSD <id>` | `loop-debug` | Have an initial hypothesis already; want agent autonomy with contract + adversarial evaluator; overnight autonomous runs |
 
+**`live-debug`** — human-pause-per-iteration, no pre-committed contract:
 ```
 Trigger: "live-debug HSD <id>"
-Skill:   live_debug_skill.md
+Skill:   live-debug
 CLI:     python parse_and_triage.py --mode live-debug --hsd-id <id> [options]
+```
+
+**`loop-debug`** — Planner/Generator/Evaluator with configurable autonomy and on-disk state:
+```
+Trigger: "loop-debug HSD <id>"
+Skill:   loop-debug
+Module:  src/loop_debug/ (loop_orchestrator, loop_planner, loop_generator, loop_evaluator)
 ```
 
 All session parameters can be passed inline in the NLP prompt — no CLI step required:
