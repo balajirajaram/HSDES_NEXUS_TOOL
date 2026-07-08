@@ -20,6 +20,7 @@
   <nav class="tabs">
     <button class="tab active" data-tab="analyse">Analyse</button>
     <button class="tab" data-tab="kb">Knowledge Base</button>
+    <button class="tab" data-tab="settings">Settings</button>
   </nav>
 
   <main>
@@ -44,6 +45,25 @@
     <section id="tab-kb" class="panel">
       <button id="refresh-kb">Refresh</button>
       <div id="kb-list" class="kb-list"></div>
+    </section>
+
+    <section id="tab-settings" class="panel">
+      <h3>Your HSDES access</h3>
+      <p class="hint">Paste <strong>your own</strong> HSDES REST token. It is stored
+        only in <em>this browser</em> (localStorage) and sent with each request as a
+        header — it is never saved on the server and never shared with other users.</p>
+      <label>
+        HSDES token
+        <input id="hsdes-token" type="password" placeholder="paste your personal token" />
+      </label>
+      <div class="row">
+        <button id="save-token">Save</button>
+        <button id="clear-token" class="secondary">Clear</button>
+        <span id="token-state" class="hint"></span>
+      </div>
+      <p class="hint">No token? The tool still runs in OFFLINE mode (KB-only, no live
+        HSDES fetch). For a shared deployment without per-user tokens, host the tool
+        with an IT-provisioned HSDES <em>service account</em> instead.</p>
     </section>
   </main>
 

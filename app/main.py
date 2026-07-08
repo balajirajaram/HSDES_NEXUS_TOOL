@@ -2,10 +2,11 @@
 
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from typing import Optional
 
 from .analyzer import analyze, kb
 from .hsdes_client import hsdes
@@ -28,7 +29,9 @@ async def index():
 @app.get("/api/health")
 async def health():
     return {
-        "hsdes_enabled": hsdes.enabled,
+        # True only if a server-side fallback token is configured. Each user
+        # normally supplies their own token from the browser instead.
+        "server_hsdes_fallback": hsdes.enabled,
         "llm_enabled": llm.enabled,
         "mode": "llm" if llm.enabled else "offline",
         "kb_entries": kb.count(),
@@ -36,13 +39,19 @@ async def health():
 
 
 @app.post("/api/analyze")
-async def api_analyze(req: AnalyzeRequest):
+async def api_analyze(
+    req: AnalyzeRequest,
+    x_hsdes_token: Optional[str] = Header(default=None),
+):
     if not req.hsd_id.strip() or not req.symptoms.strip():
         return JSONResponse(
             status_code=400,
             content={"error": "Both 'hsd_id' and 'symptoms' are required."},
         )
-    return await analyze(req.hsd_id.strip(), req.symptoms.strip())
+    # The user's own token arrives per-request via the X-HSDES-Token header and
+    # is never stored server-side.
+    return await analyze(req.hsd_id.strip(), req.symptoms.strip(),
+                         hsdes_token=x_hsdes_token)
 
 
 @app.get("/api/kb")

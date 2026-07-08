@@ -15,10 +15,13 @@ from .config import config
 
 
 class HSDESClient:
-    def __init__(self):
+    def __init__(self, token: Optional[str] = None):
+        # Per-user token (from the browser request) takes precedence over any
+        # server-side fallback token. The token is used only for this request
+        # and is never persisted.
         self.base = config.HSDES_BASE_URL.rstrip("/")
-        self.token = config.HSDES_API_TOKEN
-        self.enabled = config.hsdes_enabled
+        self.token = (token or "").strip() or config.HSDES_API_TOKEN
+        self.enabled = bool(self.token)
 
     def _headers(self) -> Dict[str, str]:
         h = {"Accept": "application/json"}
@@ -85,4 +88,10 @@ class HSDESClient:
         return out
 
 
+def get_client(token: Optional[str] = None) -> "HSDESClient":
+    """Build a request-scoped client using the caller's own token."""
+    return HSDESClient(token)
+
+
+# Default client using server-side config only (optional local/dev fallback).
 hsdes = HSDESClient()

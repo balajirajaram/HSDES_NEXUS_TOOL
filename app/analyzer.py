@@ -7,8 +7,10 @@ Flow (runs on every request):
   Step 3 WRITE-BACK  -> upsert KB entry (confirmed vs hypothesis)
   Step 4 REPORT      -> A-H markdown report
 
-Uses the LLM when configured; otherwise produces a deterministic OFFLINE
-report from the retrieved KB + HSDES data (never fabricates HSD IDs).
+HSDES access uses a PER-REQUEST token supplied by the caller (each user's own
+token, passed from the browser). No shared secret is stored on the server.
+Uses the LLM when configured; otherwise produces a deterministic OFFLINE report
+from the retrieved KB + HSDES data (never fabricates HSD IDs).
 """
 
 import json
@@ -16,7 +18,7 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from .config import config
-from .hsdes_client import hsdes
+from .hsdes_client import HSDESClient
 from .kb_store import KBStore, normalize_terms
 from .llm_client import llm
 
@@ -70,26 +72,29 @@ def _detect_family(text: str) -> Optional[str]:
     return None
 
 
-async def analyze(hsd_id: str, symptoms: str) -> Dict[str, Any]:
+async def analyze(hsd_id: str, symptoms: str,
+                  hsdes_token: Optional[str] = None) -> Dict[str, Any]:
+    # Request-scoped HSDES client using the caller's own token.
+    client = HSDESClient(hsdes_token)
     family = _detect_family(f"{symptoms} {hsd_id}")
 
     # Step 0 - RECALL
     recall = kb.search(symptoms, family=family)
 
     # Step 2 - INVESTIGATE (target always fetched; similar only if KB not High)
-    target = await hsdes.get_article(hsd_id)
+    target = await client.get_article(hsd_id)
     similar: List[Dict[str, Any]] = []
     if recall["confidence"] != "High":
-        similar = await hsdes.search_similar(symptoms)
+        similar = await client.search_similar(symptoms)
 
     # Step 4 - REPORT
     if llm.enabled:
         report_md, kb_entry = await _llm_report(
-            hsd_id, symptoms, family, recall, target, similar
+            hsd_id, symptoms, family, recall, target, similar, client.enabled
         )
     else:
         report_md, kb_entry = _offline_report(
-            hsd_id, symptoms, family, recall, target, similar
+            hsd_id, symptoms, family, recall, target, similar, client.enabled
         )
 
     # Step 3 - WRITE-BACK
@@ -97,7 +102,7 @@ async def analyze(hsd_id: str, symptoms: str) -> Dict[str, Any]:
 
     return {
         "mode": "llm" if llm.enabled else "offline",
-        "hsdes_enabled": hsdes.enabled,
+        "hsdes_enabled": client.enabled,
         "family": family,
         "kb_recall": recall,
         "target": target,
@@ -107,8 +112,8 @@ async def analyze(hsd_id: str, symptoms: str) -> Dict[str, Any]:
     }
 
 
-async def _llm_report(hsd_id, symptoms, family, recall, target, similar
-                      ) -> Tuple[str, Dict[str, Any]]:
+async def _llm_report(hsd_id, symptoms, family, recall, target, similar,
+                      hsdes_enabled) -> Tuple[str, Dict[str, Any]]:
     context = {
         "input": {"hsd_id": hsd_id, "symptoms": symptoms, "family": family},
         "kb_recall": recall,
@@ -123,10 +128,10 @@ async def _llm_report(hsd_id, symptoms, family, recall, target, similar
     parsed = _extract_json(raw)
     if parsed and "report_markdown" in parsed:
         return parsed["report_markdown"], parsed.get("kb_entry") or _fallback_entry(
-            hsd_id, symptoms, family, target
+            hsd_id, symptoms, family, target, hsdes_enabled
         )
     # LLM returned prose only - use it as the report, still learn a basic entry.
-    return raw, _fallback_entry(hsd_id, symptoms, family, target)
+    return raw, _fallback_entry(hsd_id, symptoms, family, target, hsdes_enabled)
 
 
 def _extract_json(text: str) -> Optional[Dict[str, Any]]:
@@ -145,7 +150,7 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _fallback_entry(hsd_id, symptoms, family, target) -> Dict[str, Any]:
+def _fallback_entry(hsd_id, symptoms, family, target, hsdes_enabled) -> Dict[str, Any]:
     from time import gmtime, strftime
     return {
         "signature": {
@@ -155,21 +160,20 @@ def _fallback_entry(hsd_id, symptoms, family, target) -> Dict[str, Any]:
             "error_string": symptoms,
             "key_terms": normalize_terms(symptoms),
         },
-        "similar_hsds": [{"id": s.get("id", ""), "why_matched": "HSDES keyword match"}
-                         for s in (target and [] or [])],
+        "similar_hsds": [],
         "root_cause": {"text": "", "confidence": "hypothesis"},
         "debug_steps": [],
         "resolution": {"text": "", "source_hsd": ""},
         "provenance": {
-            "source": "HSDES" if hsdes.enabled else "KB",
+            "source": "HSDES" if hsdes_enabled else "KB",
             "timestamp": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime()),
             "confidence_tag": "Low",
         },
     }
 
 
-def _offline_report(hsd_id, symptoms, family, recall, target, similar
-                    ) -> Tuple[str, Dict[str, Any]]:
+def _offline_report(hsd_id, symptoms, family, recall, target, similar,
+                    hsdes_enabled) -> Tuple[str, Dict[str, Any]]:
     fam = family or "unknown"
     unit = "RDT" if "rdt" in symptoms.lower() else (
         "UPI" if "upi" in symptoms.lower() else "unknown")
@@ -196,7 +200,8 @@ def _offline_report(hsd_id, symptoms, family, recall, target, similar
         lines.append(f"- **Status:** {tval('status')}")
         lines.append(f"- **Owner:** {tval('owner')}")
     else:
-        reason = target.get("error") if target else "HSDES token not configured"
+        reason = (target.get("error") if target
+                  else "no HSDES token supplied for this request")
         lines.append(f"- **ID:** {hsd_id}")
         lines.append(f"- HSDES data unavailable ({reason}).")
     lines.append(f"- **Reported signature (from input):** {symptoms}")
@@ -281,6 +286,6 @@ def _offline_report(hsd_id, symptoms, family, recall, target, similar
     else:
         lines.append("- **Likely new sighting** — no confident KB/HSDES match found.")
 
-    entry = _fallback_entry(hsd_id, symptoms, family, target)
+    entry = _fallback_entry(hsd_id, symptoms, family, target, hsdes_enabled)
     entry["signature"]["unit"] = unit if unit != "unknown" else ""
     return "\n".join(lines), entry

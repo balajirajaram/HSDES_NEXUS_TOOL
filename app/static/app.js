@@ -1,5 +1,10 @@
 "use strict";
 
+const TOKEN_KEY = "hsdes_token";
+function getToken() {
+  return localStorage.getItem(TOKEN_KEY) || "";
+}
+
 // ---- Minimal offline Markdown renderer (headings, bold, code, lists, tables) ----
 function renderMarkdown(md) {
   const lines = md.replace(/\r\n/g, "\n").split("\n");
@@ -115,7 +120,8 @@ async function loadHealth() {
     const r = await fetch("/api/health");
     const h = await r.json();
     setBadge("badge-mode", "mode: " + h.mode, h.mode === "llm");
-    setBadge("badge-hsdes", "HSDES: " + (h.hsdes_enabled ? "on" : "off"), h.hsdes_enabled);
+    const hasToken = !!getToken();
+    setBadge("badge-hsdes", "HSDES: " + (hasToken ? "your token" : (h.server_hsdes_fallback ? "server" : "off")), hasToken || h.server_hsdes_fallback);
     setBadge("badge-llm", "LLM: " + (h.llm_enabled ? "on" : "off"), h.llm_enabled);
     setBadge("badge-kb", "KB: " + h.kb_entries + " entries", true);
   } catch (e) {
@@ -144,7 +150,10 @@ document.getElementById("analyse-form").addEventListener("submit", async (e) => 
   try {
     const r = await fetch("/api/analyze", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(getToken() ? { "X-HSDES-Token": getToken() } : {}),
+      },
       body: JSON.stringify({
         hsd_id: document.getElementById("hsd_id").value,
         symptoms: document.getElementById("symptoms").value,
@@ -200,4 +209,24 @@ async function loadKB() {
 }
 
 document.getElementById("refresh-kb").addEventListener("click", loadKB);
+
+// ---- Settings: per-user token (browser-only) ----
+function renderTokenState() {
+  const el = document.getElementById("token-state");
+  el.textContent = getToken() ? "Token saved in this browser." : "No token set (OFFLINE mode).";
+}
+document.getElementById("save-token").addEventListener("click", () => {
+  const v = document.getElementById("hsdes-token").value.trim();
+  if (v) localStorage.setItem(TOKEN_KEY, v);
+  document.getElementById("hsdes-token").value = "";
+  renderTokenState();
+  loadHealth();
+});
+document.getElementById("clear-token").addEventListener("click", () => {
+  localStorage.removeItem(TOKEN_KEY);
+  renderTokenState();
+  loadHealth();
+});
+renderTokenState();
+
 loadHealth();
