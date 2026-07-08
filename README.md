@@ -1,17 +1,86 @@
 # Auto HSD Analyser — RDT & UPI (GNR / SRF / CWF)
 
-A self-learning post-silicon **HSD-ES triage assistant** for Intel GNR (Granite Rapids),
-SRF (Sierra Forest) and CWF (Clearwater Forest). It packages an expert silicon-debug
-agent prompt that:
+A self-learning post-silicon **HSD-ES triage tool** for Intel GNR (Granite Rapids),
+SRF (Sierra Forest) and CWF (Clearwater Forest). It ships in **two forms**:
 
-- Recalls previously resolved cases from a persistent **Learned Knowledge Base (KB)** first.
-- Falls back to the **HSDES database** when the KB has no confident match.
-- **Writes back** every new finding into the KB so the model keeps improving.
-- Produces a structured triage report: target-HSD summary, similar cases, ranked
-  root-cause hypotheses, and an ordered PythonSV debug plan.
+1. **Web app** (this repo's `app/`) — a browser UI + Python backend that runs the
+   triage itself: recalls from a local learning KB, queries HSDES, calls an LLM to
+   reason, and writes findings back to the KB.
+2. **VS Code Copilot prompt** ([prompts/auto-hsd-analyser.prompt.md](prompts/auto-hsd-analyser.prompt.md)) —
+   the same agent spec, runnable inside Copilot Chat with the Intel MCP tools.
 
 > Scope: RDT (Resource Director Technology) and UPI (Ultra Path Interconnect) failure
 > signatures on GNR / SRF / CWF, stepping-aware.
+
+---
+
+## What it does
+
+For a given **HSD ID** + **symptoms**, it produces a structured report (sections A–H):
+target-HSD summary, KB recall confidence, similar cases, ranked root-cause hypotheses,
+an ordered PythonSV debug plan, data-to-collect, a learning summary, and a
+known-issue verdict. Every run **grows the Knowledge Base** so future queries with the
+same signature are answered faster.
+
+```
+Step 0 RECALL      -> search local KB, score confidence (High/Medium/Low/None)
+Step 1 DECIDE      -> High = KB-first; else HSDES fallback
+Step 2 INVESTIGATE -> fetch target HSD + similar HSDs
+Step 3 WRITE-BACK  -> upsert KB entry (confirmed vs hypothesis)
+Step 4 REPORT      -> A-H markdown report
+```
+
+---
+
+## Run the web tool (UI)
+
+### Prerequisites
+- Python 3.10+
+- (Optional but recommended) an HSDES REST API token and an OpenAI-compatible LLM
+  endpoint. Without them the tool runs in **OFFLINE mode** (deterministic report,
+  KB still learns the signature).
+
+### Start it (Windows PowerShell)
+```powershell
+# from the repo root
+./run.ps1
+```
+This creates a venv, installs dependencies, copies `.env.example` -> `.env` on first
+run, and serves the UI at **http://127.0.0.1:8000**.
+
+### Manual start (any OS)
+```bash
+python -m venv .venv
+. .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+cp .env.example .env          # then edit .env
+uvicorn app.main:app --reload
+```
+
+### Configure full mode
+Edit `.env`:
+```
+HSDES_API_TOKEN=<your token>          # enables live HSDES lookups
+LLM_BASE_URL=<openai-compatible url>  # e.g. Azure OpenAI / internal gateway
+LLM_API_KEY=<key>
+LLM_MODEL=gpt-4o
+```
+The status badges at the top of the UI show whether HSDES / LLM are active.
+
+> The HSDES field mapping in [app/hsdes_client.py](app/hsdes_client.py) is best-effort;
+> adjust `_normalize` / `search_similar` to match your tenant's actual REST contract.
+
+---
+
+## Use the VS Code Copilot prompt (alternative)
+
+1. Open this folder in VS Code with GitHub Copilot Chat enabled (Agent mode).
+2. Run `/auto-hsd-analyser` in chat, or open
+   [prompts/auto-hsd-analyser.prompt.md](prompts/auto-hsd-analyser.prompt.md) and press ▶.
+3. Enter the **HSD ID** and **Symptoms** when prompted.
+
+This path uses the Intel MCP tools (`codesign-debug-*`, `codesign-ask-hsd-agent` /
+`HSDIndexTool`) instead of the built-in HSDES/LLM clients.
 
 ---
 
@@ -19,43 +88,34 @@ agent prompt that:
 
 | Path | Purpose |
 |------|---------|
-| [prompts/auto-hsd-analyser.prompt.md](prompts/auto-hsd-analyser.prompt.md) | The runnable VS Code Copilot prompt (agent mode). |
-| [docs/AGENT_SPEC.md](docs/AGENT_SPEC.md) | The full, human-readable agent specification. |
-| [docs/SHARING.md](docs/SHARING.md) | How to publish and share this repo with others. |
-| [docs/KB_SCHEMA.md](docs/KB_SCHEMA.md) | The Knowledge-Base entry schema used by the self-learning loop. |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | How teammates add cases and improve the prompt. |
-| [LICENSE](LICENSE) | Intel internal-use notice. |
+| [app/](app/) | FastAPI backend + browser UI (the runnable tool). |
+| [app/analyzer.py](app/analyzer.py) | The self-learning loop orchestration. |
+| [app/kb_store.py](app/kb_store.py) | SQLite learning Knowledge Base (recall + write-back). |
+| [app/hsdes_client.py](app/hsdes_client.py) | HSDES REST client (best-effort). |
+| [app/llm_client.py](app/llm_client.py) | OpenAI-compatible chat client. |
+| [app/static/](app/static/) | HTML / CSS / JS single-page UI. |
+| [prompts/auto-hsd-analyser.prompt.md](prompts/auto-hsd-analyser.prompt.md) | VS Code Copilot prompt version. |
+| [docs/AGENT_SPEC.md](docs/AGENT_SPEC.md) | Full human-readable agent spec. |
+| [docs/KB_SCHEMA.md](docs/KB_SCHEMA.md) | KB entry schema. |
+| [docs/SHARING.md](docs/SHARING.md) | How to publish and share this repo. |
+| [run.ps1](run.ps1) | One-command launcher. |
 
 ---
 
-## Quick start (VS Code + GitHub Copilot)
+## API (for automation)
 
-1. Clone the repo (see [docs/SHARING.md](docs/SHARING.md)).
-2. Open the folder in VS Code with GitHub Copilot Chat enabled.
-3. In Copilot Chat, run the prompt file:
-   ```
-   /auto-hsd-analyser
-   ```
-   or open [prompts/auto-hsd-analyser.prompt.md](prompts/auto-hsd-analyser.prompt.md)
-   and press the **Run** (▶) button.
-4. Provide the two inputs when prompted:
-   - **HSD ID** — the target ticket to triage.
-   - **Symptoms** — key terms (unit, bucket, MCE bank, RIP, signal, error string, stepping).
+| Method | Route | Purpose |
+|--------|-------|---------|
+| `GET` | `/api/health` | Mode + HSDES/LLM/KB status. |
+| `POST` | `/api/analyze` | Body `{ "hsd_id": "...", "symptoms": "..." }` -> full result JSON. |
+| `GET` | `/api/kb` | List all learned KB entries. |
 
-The agent will emit the Markdown report described in [docs/AGENT_SPEC.md](docs/AGENT_SPEC.md)
-(sections A–H).
-
----
-
-## Required tools / MCP servers
-
-The prompt expects the following to be available in the environment:
-
-- `codesign-debug-search-in-memories` / `codesign-debug-store-memory` — the KB (memory) layer.
-- `codesign-ask-hsd-agent` and/or `HSDIndexTool` — HSDES access.
-- PythonSV runtime for executing the suggested register-access commands.
-
-If a tool is unavailable, the agent will state the limitation instead of fabricating results.
+Example:
+```bash
+curl -X POST http://127.0.0.1:8000/api/analyze \
+  -H "Content-Type: application/json" \
+  -d '{"hsd_id":"1234567890","symptoms":"UPI CRC error, MCE bank 5, GNR B0"}'
+```
 
 ---
 
@@ -64,11 +124,11 @@ If a tool is unavailable, the agent will state the limitation instead of fabrica
 - Never invents HSD IDs, register names, root causes, or commands.
 - HSDES is the source of truth; conflicting KB entries are corrected and re-tagged.
 - Every KB entry is tagged **confirmed** vs **hypothesis**, with provenance + timestamp.
-- Entries stay GNR/SRF/CWF-scoped and stepping-aware — no blind cross-application.
+- Raw silicon data (RPT, waveforms, dumps) is `.gitignore`d and must never be committed.
 
 ---
 
-## Status
+## Sharing
 
-Seed corpus. The KB grows automatically as cases are triaged. See
-[CONTRIBUTING.md](CONTRIBUTING.md) to add curated cases manually.
+See [docs/SHARING.md](docs/SHARING.md). This is **Intel Internal** — host on Intel
+Innersource or another approved internal Git server.

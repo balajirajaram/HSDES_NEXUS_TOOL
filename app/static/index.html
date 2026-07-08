@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto HSD Analyser — GNR / SRF / CWF</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Auto HSD Analyser <span class="scope">GNR · SRF · CWF · RDT / UPI</span></h1>
+    <div id="status" class="status-bar">
+      <span class="badge" id="badge-mode">mode: …</span>
+      <span class="badge" id="badge-hsdes">HSDES: …</span>
+      <span class="badge" id="badge-llm">LLM: …</span>
+      <span class="badge" id="badge-kb">KB: … entries</span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="analyse">Analyse</button>
+    <button class="tab" data-tab="kb">Knowledge Base</button>
+  </nav>
+
+  <main>
+    <section id="tab-analyse" class="panel active">
+      <form id="analyse-form">
+        <label>
+          HSD ID
+          <input id="hsd_id" type="text" placeholder="e.g. 1234567890" required />
+        </label>
+        <label>
+          Symptoms / failure signature
+          <textarea id="symptoms" rows="4" required
+            placeholder="e.g. UPI CRC error, MCE bank 5, GNR B0, bucket=upi_link_retrain"></textarea>
+        </label>
+        <button type="submit" id="run-btn">Analyse</button>
+      </form>
+
+      <div id="meta" class="meta hidden"></div>
+      <div id="report" class="report"></div>
+    </section>
+
+    <section id="tab-kb" class="panel">
+      <button id="refresh-kb">Refresh</button>
+      <div id="kb-list" class="kb-list"></div>
+    </section>
+  </main>
+
+  <footer>Intel Internal Use Only — do not paste raw silicon data into external tools.</footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

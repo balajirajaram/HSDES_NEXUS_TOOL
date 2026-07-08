@@ -33,6 +33,10 @@ dumps/
 kb_cache/
 *.kb.local.json
 
+# Runtime learned KB (SQLite) — keep the kb/ folder, ignore the DB
+kb/*.sqlite
+kb/*.sqlite-*
+
 # Secrets / credentials
 .env
 *.pem
