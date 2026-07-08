@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto HSD Analyser — SSO (GNR / SRF / CWF)</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <div class="header-row">
+      <h1>Auto HSD Analyser <span class="scope">SSO · GNR · SRF · CWF · RDT / UPI</span></h1>
+      <div id="account" class="account">
+        <span id="account-name" class="hint">not signed in</span>
+        <a id="login-btn" class="btn-link" href="/login">Sign in</a>
+        <a id="logout-btn" class="btn-link hidden" href="/logout">Sign out</a>
+      </div>
+    </div>
+    <div id="status" class="status-bar">
+      <span class="badge" id="badge-mode">mode: …</span>
+      <span class="badge" id="badge-auth">auth: …</span>
+      <span class="badge" id="badge-llm">LLM: …</span>
+      <span class="badge" id="badge-kb">KB: … entries</span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="analyse">Analyse</button>
+    <button class="tab" data-tab="kb">Knowledge Base</button>
+  </nav>
+
+  <main>
+    <section id="tab-analyse" class="panel active">
+      <div id="signin-notice" class="notice hidden">
+        Please <a href="/login">sign in with your Intel account</a> to run live
+        HSDES analysis. Your identity is used directly — no tokens are shared.
+      </div>
+      <form id="analyse-form">
+        <label>
+          HSD ID
+          <input id="hsd_id" type="text" placeholder="e.g. 1234567890" required />
+        </label>
+        <label>
+          Symptoms / failure signature
+          <textarea id="symptoms" rows="4" required
+            placeholder="e.g. UPI CRC error, MCE bank 5, GNR B0, bucket=upi_link_retrain"></textarea>
+        </label>
+        <button type="submit" id="run-btn">Analyse</button>
+      </form>
+
+      <div id="meta" class="meta hidden"></div>
+      <div id="report" class="report"></div>
+    </section>
+
+    <section id="tab-kb" class="panel">
+      <button id="refresh-kb">Refresh</button>
+      <div id="kb-list" class="kb-list"></div>
+    </section>
+  </main>
+
+  <footer>Intel Internal Use Only — authenticated per user via SSO; no shared credentials.</footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

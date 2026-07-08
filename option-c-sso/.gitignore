@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+
+# Secrets / env
+.env
+
+# Runtime learned KB (SQLite)
+kb/*.sqlite
+kb/*.sqlite-*
