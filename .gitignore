@@ -1,0 +1,40 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*~
+
+# VS Code (keep shared settings, ignore local)
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Logs / silicon debug artifacts (never commit raw silicon data)
+*.log
+*.rpt
+*.rpt.gz
+*.gz
+*.vcd
+*.fsdb
+*.wlf
+waveforms/
+dumps/
+
+# Local KB caches / exports (KB lives in the memory server, not in git)
+kb_cache/
+*.kb.local.json
+
+# Secrets / credentials
+.env
+*.pem
+*.key
+credentials*

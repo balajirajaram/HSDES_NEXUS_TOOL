@@ -1,0 +1,21 @@
+Intel Corporation — Internal Use Only
+=====================================
+
+Copyright (c) 2026 Intel Corporation. All rights reserved.
+
+This repository and its contents (the "Materials") are Intel confidential and are
+intended for internal Intel use only. The Materials may reference internal systems,
+tools, ticket identifiers (HSD-ES), register names, and debug procedures that are
+proprietary to Intel.
+
+You may use, copy, and modify the Materials solely for internal Intel engineering
+purposes, subject to applicable Intel policies. Do not distribute the Materials, or
+any silicon debug data derived from them, outside of Intel without prior written
+authorization.
+
+THE MATERIALS ARE PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND. INTEL DISCLAIMS ALL
+WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE, AND NON-INFRINGEMENT.
+
+If you received these Materials in error, or believe they contain data that should not
+be shared, contact the repository owner immediately.
