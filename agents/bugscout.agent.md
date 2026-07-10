@@ -5,10 +5,6 @@ description: >
   It uses internal skills by name (hsd-triage, live-debug, pythonsv-debug, log-search,
   crash-parser, handbook-rag, handbook-kb-builder) instead of exposing each skill as a
   separate agent.
-tools:
-  - read
-  - search
-  - execute
 model: gpt-4o
 argument-hint: "triage <hsd_id> | live-debug <hsd_id> [mode/options] | pythonsv-debug <host> [collect ...] | log-search <file> <keywords> | crash-parser <file> | handbook-rag <query>"
 user-invocable: true
