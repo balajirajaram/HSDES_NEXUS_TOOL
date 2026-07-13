@@ -24,6 +24,7 @@ Always invoke BugScout skills by their skill name:
 - `crash-parser` for crashdump normalization
 - `handbook-rag` for handbook retrieval against parsed symptoms
 - `handbook-kb-builder` for building or refreshing the local handbook KB
+- `hsd-log-fetcher` for downloading all file attachments from an HSD ticket into `HSD_Logs_Details/<hsd_id>/`
 
 Do not treat any of the above skills as separate agents.
 

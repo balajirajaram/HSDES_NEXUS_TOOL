@@ -39,6 +39,22 @@ When this skill is triggered, execute ALL steps below **automatically, in order,
 stopping for user input**. The agent reads files, calls MCP tools, writes outputs, and
 generates the final report — fully hands-off.
 
+### Step 0.5: Auto-Fetch HSD Attachments (hsd-log-fetcher)
+
+**Purpose**: Before parsing, auto-download any log files attached to HSD tickets so they
+are available for analysis. Run this step for each HSD ID that does not already have files
+in `HSD_Logs_Details/HSD_<id>/`.
+
+```bash
+cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\BugScout\src"
+python hsd_log_fetcher.py <hsd_id>
+```
+
+- Repeat for each HSD ID in the input CSV (extracted from the `id` column).
+- If `HSD_Logs_Details/HSD_<id>/` already contains files, **skip that ticket** (files will not be re-downloaded).
+- If no attachments exist on the ticket, continue — do not block the workflow.
+- Collect any errors and surface them in the final report as "Logs not available via HSD API".
+
 ### Step 1: Run Phase 1 (CSV Parsing)
 
 Execute in terminal:

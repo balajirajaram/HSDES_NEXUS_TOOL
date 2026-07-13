@@ -124,6 +124,27 @@ Parse the trigger phrase and extract the following fields using pattern matching
 
 Store all extracted values as the **NLP parameter set**.
 
+**Step LD-0a.5**: Auto-fetch HSD attachments (hsd-log-fetcher).
+
+Before loading any logs, check whether `HSD_Logs_Details/HSD_<hsd_id>/` already contains files.
+If it is **empty or does not exist**, run:
+
+```bash
+cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\BugScout\src"
+python hsd_log_fetcher.py <hsd_id>
+```
+
+- If files are downloaded successfully, set `initial_logs_path` to the output directory
+  (overrides any `--initial-logs` absence) so LD-0c can reference the files.
+- If the ticket has **no attachments**, continue without blocking — note
+  "No HSD attachments found; proceeding with manual/SSH log collection" in the session report.
+- If auth fails (Kerberos error), skip this step and remind the user:
+  ```
+  Kerberos ticket expired. Run: kinit <idsid>
+  Proceeding without HSD attachment pre-fetch.
+  ```
+- If `HSD_Logs_Details/HSD_<hsd_id>/` already has files, skip this step entirely.
+
 **Step LD-0b**: Load CLI `session_init.json` if it exists (optional baseline).
 
 Check if `output/live_debug_<hsd_id>_*/session_init.json` exists (created by CLI):
