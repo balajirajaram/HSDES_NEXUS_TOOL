@@ -3,24 +3,47 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Auto HSD Analyser — GNR / SRF / CWF</title>
+  <title>Auto HSD Analyser (Server Platforms)</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
   <header>
-    <h1>Auto HSD Analyser <span class="scope">GNR · SRF · CWF · RDT / UPI</span></h1>
+    <div class="header-row">
+      <h1>Auto HSD Analyser <span class="scope">Intel Server Platforms — any domain</span></h1>
+      <div id="account" class="account">
+        <span id="account-name" class="hint">not signed in</span>
+        <button id="logout-btn" class="btn-link hidden">Sign out</button>
+      </div>
+    </div>
     <div id="status" class="status-bar">
       <span class="badge" id="badge-mode">mode: …</span>
-      <span class="badge" id="badge-hsdes">HSDES: …</span>
+      <span class="badge" id="badge-auth">auth: …</span>
       <span class="badge" id="badge-llm">LLM: …</span>
       <span class="badge" id="badge-kb">KB: … entries</span>
     </div>
   </header>
 
+  <!-- Login overlay shown at launch when not signed in -->
+  <div id="login-overlay" class="overlay hidden">
+    <form id="login-form" class="login-card">
+      <h2>Sign in with your Intel account</h2>
+      <p class="hint">Your credentials authenticate to HSDES and are held only for this
+        session on the server — never saved to disk, never shared. Prefer Kerberos SSO
+        (<code>HSDES_AUTH_MODE=auto</code>) to skip this prompt entirely.</p>
+      <label>Intel username (IDSID)
+        <input id="login-user" type="text" autocomplete="username" placeholder="e.g. jdoe" required />
+      </label>
+      <label>Password
+        <input id="login-pass" type="password" autocomplete="current-password" required />
+      </label>
+      <button type="submit" id="login-submit">Sign in</button>
+      <div id="login-error" class="error"></div>
+    </form>
+  </div>
+
   <nav class="tabs">
     <button class="tab active" data-tab="analyse">Analyse</button>
     <button class="tab" data-tab="kb">Knowledge Base</button>
-    <button class="tab" data-tab="settings">Settings</button>
   </nav>
 
   <main>
@@ -33,7 +56,7 @@
         <label>
           Symptoms / failure signature
           <textarea id="symptoms" rows="4" required
-            placeholder="e.g. UPI CRC error, MCE bank 5, GNR B0, bucket=upi_link_retrain"></textarea>
+            placeholder="e.g. system hung after UPI degradation; or: Windows 11 fails to enter S4 during DPMO"></textarea>
         </label>
         <button type="submit" id="run-btn">Analyse</button>
       </form>
@@ -46,28 +69,9 @@
       <button id="refresh-kb">Refresh</button>
       <div id="kb-list" class="kb-list"></div>
     </section>
-
-    <section id="tab-settings" class="panel">
-      <h3>Your HSDES access</h3>
-      <p class="hint">Paste <strong>your own</strong> HSDES REST token. It is stored
-        only in <em>this browser</em> (localStorage) and sent with each request as a
-        header — it is never saved on the server and never shared with other users.</p>
-      <label>
-        HSDES token
-        <input id="hsdes-token" type="password" placeholder="paste your personal token" />
-      </label>
-      <div class="row">
-        <button id="save-token">Save</button>
-        <button id="clear-token" class="secondary">Clear</button>
-        <span id="token-state" class="hint"></span>
-      </div>
-      <p class="hint">No token? The tool still runs in OFFLINE mode (KB-only, no live
-        HSDES fetch). For a shared deployment without per-user tokens, host the tool
-        with an IT-provisioned HSDES <em>service account</em> instead.</p>
-    </section>
   </main>
 
-  <footer>Intel Internal Use Only — do not paste raw silicon data into external tools.</footer>
+  <footer>Intel Internal Use Only — credentials are used only to authenticate to HSDES for your session.</footer>
 
   <script src="/static/app.js"></script>
 </body>

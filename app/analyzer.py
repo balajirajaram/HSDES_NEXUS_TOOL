@@ -134,8 +134,10 @@ def _detect_domains(text: str) -> List[Tuple[str, List[str]]]:
 
 
 async def analyze(hsd_id: str, symptoms: str,
-                  hsdes_token: Optional[str] = None) -> Dict[str, Any]:
-    client = HSDESClient(hsdes_token)
+                  hsdes_token: Optional[str] = None,
+                  username: Optional[str] = None,
+                  password: Optional[str] = None) -> Dict[str, Any]:
+    client = HSDESClient(hsdes_token, username, password)
     # Text we reason over = typed symptoms (target text is added after fetch).
     platform = _detect_platform(f"{symptoms} {hsd_id}")
 

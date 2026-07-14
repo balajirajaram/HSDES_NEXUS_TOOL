@@ -92,6 +92,19 @@ footer { text-align: center; color: var(--muted); font-size: 12px; padding: 18px
 
 .error { color: var(--bad); }
 
+.header-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.account { display: flex; align-items: center; gap: 12px; }
+.btn-link { color: var(--accent); background: transparent; text-decoration: none; border: 1px solid var(--border); padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.btn-link:hover { border-color: var(--accent); }
+.hint { color: var(--muted); font-size: 13px; }
+
+.overlay { position: fixed; inset: 0; background: rgba(1, 4, 9, 0.75); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.login-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 28px; width: 380px; max-width: 92vw; display: flex; flex-direction: column; gap: 12px; }
+.login-card h2 { margin: 0 0 4px; font-size: 18px; }
+.login-card input { background: #0d1117; border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 10px; font-size: 14px; }
+.login-card button { background: var(--accent); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.login-card button:disabled { opacity: 0.6; cursor: progress; }
+
 .hint { color: var(--muted); font-size: 13px; }
 .row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
 button.secondary { background: transparent; border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 6px; cursor: pointer; }

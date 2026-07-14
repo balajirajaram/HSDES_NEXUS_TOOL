@@ -22,16 +22,32 @@ _ARTICLE_FIELDS = ",".join([
 
 
 class HSDESClient:
-    def __init__(self, token: Optional[str] = None):
-        # Per-user token (from the SSO session) takes precedence over any
-        # server-side fallback. Used only for this request; never persisted.
+    def __init__(self, token: Optional[str] = None,
+                 username: Optional[str] = None,
+                 password: Optional[str] = None):
+        # Auth precedence: explicit token (bearer) > username/password (Basic) >
+        # server-side fallback token > Kerberos 'auto' (uses the logged-in Intel
+        # user, no prompt). Credentials are used only for this request; the web
+        # layer keeps them in a server-side session, never on disk or in cookies.
         self.base = config.HSDES_BASE_URL.rstrip("/")
         self.token = (token or "").strip() or config.HSDES_API_TOKEN
-        self.enabled = bool(self.token)
+        self.username = (username or "").strip()
+        self.password = password or ""
+        self._auth = None
+        if self.username and self.password:
+            self._auth = httpx.BasicAuth(self.username, self.password)
+        self.kerberos = config.HSDES_AUTH_MODE.lower() in ("auto", "kerberos")
+        self.enabled = bool(self.token or self._auth or self.kerberos)
+
+    def _client(self, timeout: float = 45) -> httpx.AsyncClient:
+        # Use BasicAuth when username/password supplied; otherwise a plain client
+        # (bearer header added per-request, or Kerberos/Negotiate handled by the
+        # platform when configured).
+        return httpx.AsyncClient(timeout=timeout, auth=self._auth)
 
     def _headers(self) -> Dict[str, str]:
         h = {"Accept": "application/json"}
-        if self.token:
+        if self.token and not self._auth:
             h["Authorization"] = f"Bearer {self.token}"
         return h
 
@@ -41,7 +57,7 @@ class HSDESClient:
             return None
         url = f"{self.base}/article/{hsd_id}"
         try:
-            async with httpx.AsyncClient(timeout=45) as cx:
+            async with self._client(45) as cx:
                 r = await cx.get(url, headers=self._headers(),
                                  params={"fields": _ARTICLE_FIELDS})
                 r.raise_for_status()
@@ -121,7 +137,7 @@ class HSDESClient:
         url = f"{self.base}/query"
         payload = {"query": symptoms, "max": limit}
         try:
-            async with httpx.AsyncClient(timeout=30) as cx:
+            async with self._client(30) as cx:
                 r = await cx.post(url, headers=self._headers(), json=payload)
                 r.raise_for_status()
                 data = r.json()
@@ -138,9 +154,10 @@ class HSDESClient:
         return out
 
 
-def get_client(token: Optional[str] = None) -> "HSDESClient":
-    """Build a request-scoped client using the caller's own token."""
-    return HSDESClient(token)
+def get_client(token: Optional[str] = None, username: Optional[str] = None,
+               password: Optional[str] = None) -> "HSDESClient":
+    """Build a request-scoped client using the caller's own credentials."""
+    return HSDESClient(token, username, password)
 
 
 # Default client using server-side config only (optional local/dev fallback).
