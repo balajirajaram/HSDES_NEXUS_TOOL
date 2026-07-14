@@ -17,6 +17,27 @@ same as the main tool — only the auth layer differs.
 
 ---
 
+## Agentic self-learning loop (team-wide)
+
+Every analysis runs the loop and **grows a shared, server-side Knowledge Base** — so the
+hosted app gets smarter for the whole team over time (not just one laptop):
+
+```
+READ (full HSD: header + description + comments, via the user's SSO token)
+  -> RECALL (search shared KB, score confidence)
+  -> ANALYZE (LLM produces A-H report + a structured learned case)
+  -> WRITE-BACK (upsert the case into the shared KB, tagged confirmed vs hypothesis)
+  -> next user with the same signature gets an instant, KB-first answer
+```
+
+- The HSDES client reads the ticket **fully** — description **and the comment/update
+  thread** (the real debug narrative), not just the header.
+- The learned KB is a single SQLite DB on the server (`KB_DB_PATH`), shared by all users.
+- Nothing fabricated: entries store only what was read/confirmed, with provenance +
+  timestamp; HSDES remains the source of truth on any conflict.
+
+---
+
 ## When to use this vs the other options
 - **Option C (this)** — you want to **host one shared web app** but keep per-user HSDES
   permissions and avoid distributing secrets. Requires an SSO app registration.

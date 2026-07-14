@@ -152,22 +152,29 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
 
 def _fallback_entry(hsd_id, symptoms, family, target, hsdes_enabled) -> Dict[str, Any]:
     from time import gmtime, strftime
+    target = target or {}
+    # Learn from the full ticket text when available (title + description + comments),
+    # not just the typed symptoms.
+    ticket_text = target.get("full_text") or target.get("description") or ""
+    error_string = (symptoms + ("\n" + ticket_text if ticket_text else "")).strip()
+    fam = family or target.get("family") or ""
     return {
         "signature": {
-            "family": family or "",
-            "unit": "RDT" if "rdt" in symptoms.lower() else (
-                "UPI" if "upi" in symptoms.lower() else ""),
-            "error_string": symptoms,
-            "key_terms": normalize_terms(symptoms),
+            "family": fam,
+            "stepping": target.get("stepping", ""),
+            "unit": "RDT" if "rdt" in error_string.lower() else (
+                "UPI" if "upi" in error_string.lower() else ""),
+            "error_string": error_string[:2000],
+            "key_terms": normalize_terms(f"{symptoms} {target.get('title', '')}"),
         },
         "similar_hsds": [],
         "root_cause": {"text": "", "confidence": "hypothesis"},
         "debug_steps": [],
-        "resolution": {"text": "", "source_hsd": ""},
+        "resolution": {"text": "", "source_hsd": hsd_id if target.get("title") else ""},
         "provenance": {
             "source": "HSDES" if hsdes_enabled else "KB",
             "timestamp": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime()),
-            "confidence_tag": "Low",
+            "confidence_tag": "Medium" if target.get("full_text") else "Low",
         },
     }
 
@@ -195,10 +202,17 @@ def _offline_report(hsd_id, symptoms, family, recall, target, similar,
     if target and not target.get("error"):
         lines.append(f"- **ID:** {hsd_id}")
         lines.append(f"- **Title:** {tval('title')}")
+        lines.append(f"- **Family / Release:** {tval('family')} / {tval('release')}")
         lines.append(f"- **Component:** {tval('component')}")
         lines.append(f"- **Stepping:** {tval('stepping')}")
-        lines.append(f"- **Status:** {tval('status')}")
+        lines.append(f"- **Status:** {tval('status')}  |  **Priority:** {tval('priority')}")
         lines.append(f"- **Owner:** {tval('owner')}")
+        desc = target.get("description") or ""
+        if desc:
+            snippet = desc if len(desc) <= 600 else desc[:600] + "…"
+            lines.append(f"- **Description:** {snippet}")
+        ncomments = len(target.get("comments") or [])
+        lines.append(f"- **Comments read:** {ncomments}")
     else:
         reason = (target.get("error") if target
                   else "no HSDES token supplied for this request")
