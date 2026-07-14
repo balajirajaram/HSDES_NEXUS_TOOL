@@ -1,16 +1,19 @@
-"""Orchestrates the self-learning triage loop.
+"""Orchestrates the self-learning triage loop — DOMAIN-AGNOSTIC.
+
+Works for ANY Intel server-platform HSD (silicon RAS/UPI/MCA, memory, PCIe/CXL,
+power / S-states, BIOS/IFWI/BMC/boot, OS/driver, manageability, etc.) — it is
+NOT tied to any single unit or domain.
 
 Flow (runs on every request):
   Step 0 RECALL      -> KB search + confidence
-  Step 1 DECIDE      -> High = KB-first; else HSDES fallback
-  Step 2 INVESTIGATE -> target HSD + similar HSDs
+  Step 1 DECIDE      -> High = KB-first; else source fallback
+  Step 2 INVESTIGATE -> read target HSD (fully) + similar HSDs
   Step 3 WRITE-BACK  -> upsert KB entry (confirmed vs hypothesis)
   Step 4 REPORT      -> A-H markdown report
 
-HSDES access uses a PER-REQUEST token supplied by the caller (each user's own
-token, passed from the browser). No shared secret is stored on the server.
-Uses the LLM when configured; otherwise produces a deterministic OFFLINE report
-from the retrieved KB + HSDES data (never fabricates HSD IDs).
+Reads via the configured reader (MCP reader if enabled, else HSDES REST). Uses
+the LLM when configured; otherwise a deterministic OFFLINE report. Never
+fabricates HSD IDs, register names, or commands.
 """
 
 import json
@@ -24,65 +27,127 @@ from .llm_client import llm
 
 kb = KBStore(config.KB_DB_PATH)
 
-SYSTEM_PROMPT = """You are an expert Intel silicon debug engineer specializing in GNR
-(Granite Rapids), SRF (Sierra Forest), and CWF (Clearwater Forest). You triage HSD-ES
-tickets for RDT and UPI failures. You reason strictly from the evidence provided and
-NEVER fabricate HSD IDs, register names, or commands.
+SYSTEM_PROMPT = """You are an expert Intel server-platform debug engineer. You triage
+HSD-ES tickets across ANY domain — CPU/silicon RAS (MCA/MCE/IERR/CATERR), UPI/coherency,
+memory (DDR/DIMM/training), IO (PCIe/CXL), power and sleep states (S3/S4/S5/Sx, ACPI),
+BIOS/IFWI/BMC/CPLD and boot/hang/reset, OS/driver (Windows/Linux), and manageability.
+Adapt your analysis to whatever domain the ticket is actually about. You reason strictly
+from the evidence provided and NEVER fabricate HSD IDs, register names, or commands.
 
-You are given: the target HSD data (from HSDES, may be empty), matched cases from a
-learned Knowledge Base (KB), and similar HSDs from a fresh HSDES lookup. Produce a
-Markdown report with EXACTLY these sections:
+You are given: the target HSD data (title, description, comments — may be partial),
+matched cases from a learned Knowledge Base (KB), and similar HSDs. Produce a Markdown
+report with EXACTLY these sections:
 
-A. Target HSD summary (title, component, stepping, status, owner, failure signature)
+A. Target HSD summary (title, platform/family, component, status, owner, priority,
+   and the failure signature distilled from description + comments)
 B. KB recall result (confidence + matched learned cases)
 C. Similar HSDs table (ID | Source: KB/HSDES | Similarity reason | Root cause | Status)
-D. Ranked root-cause hypotheses, each tied to supporting evidence
-E. Detailed next debug steps - numbered, each with: what to check & why, exact PythonSV
-   command(s) (e.g. sv.socket0.<unit>.<reg>.read(), MCE decode, log/RPT greps), and a
+D. Ranked root-cause hypotheses, each tied to specific supporting evidence from the ticket
+E. Detailed next debug steps - numbered; for each give what to check & why, the EXACT
+   command(s) appropriate to the DOMAIN (e.g. PythonSV `sv.socket0.<unit>.<reg>.read()` and
+   MCA decode for silicon; `powercfg /a`, Kernel-Power event queries, `pmc.Sx_check()` for
+   power/Sx; `lspci`/LTSSM for PCIe/CXL; BIOS/serial log greps for boot/hang), and a
    decision branch (if X -> conclusion, else -> next step)
-F. Data to request/collect (RPT/rpt.gz fields, ucode/BIOS rev, cluster, bucket)
+F. Data to request/collect (logs, RPT/rpt.gz, ucode/BIOS/IFWI/BMC revs, OS build, config)
 G. Learning summary (what KB entry was created/updated + confidence tag)
-H. Known-issue verdict (known + cite HSD, or new sighting)
+H. Known-issue verdict (known + cite HSD / workaround, or new sighting)
 
-Rules: Only cite HSD IDs present in the provided data. If unsure of a register path,
-say so and give the closest known path plus how to confirm it. Clearly separate
+Rules: Only cite HSD IDs present in the provided data. If unsure of an exact register/command
+path, say so and give the closest known one plus how to confirm it. Clearly separate
 "confirmed from data" vs "hypothesis".
 
 Return a SINGLE JSON object (no prose outside it) with keys:
   "report_markdown": string  (the full A-H report)
   "kb_entry": object matching this schema:
     {
-      "signature": {"family","stepping","unit","bucket","mce_bank","rip","signal",
-                    "error_string","key_terms":[...]},
+      "signature": {"family","platform","stepping","domain","component","error_string",
+                    "key_terms":[...]},
       "similar_hsds": [{"id","why_matched"}],
       "root_cause": {"text","confidence":"confirmed|hypothesis"},
       "debug_steps": ["..."],
       "resolution": {"text","source_hsd"},
-      "provenance": {"source":"KB|HSDES","timestamp","confidence_tag":"High|Medium|Low"}
+      "provenance": {"source":"KB|HSDES|MCP","timestamp","confidence_tag":"High|Medium|Low"}
     }
 Store only confirmed/observed content in kb_entry. Tag unproven items as hypothesis.
 """
 
+# Broad platform tag list (extend freely). Used only as a label, not a filter.
+_PLATFORMS = [
+    "GNR AP", "GNR-AP", "GNR", "SRF", "CWF", "SPR", "EMR", "ICX", "CLX",
+    "Eagle Stream", "Birch Stream", "Mountain Stream", "Diamond Rapids", "DMR",
+]
 
-def _detect_family(text: str) -> Optional[str]:
+# Domain hint library: keyword -> (domain label, [representative commands]).
+_DOMAIN_HINTS: List[Tuple[str, str, List[str]]] = [
+    (r"\bupi|ktil|kti\b|coheren|link\s*retrain",
+     "UPI / coherency",
+     ["`sv.socket0.upi.upi<port>.ktilk_ph_ctr_status.read()`  # confirm reg via tab-complete",
+      "If CRC/retry counters set -> link-integrity path; else protocol/transaction path."]),
+    (r"\brdt|rmid|clos|\bmba\b|qos|cmt|mbm",
+     "RDT / QoS (RAS)",
+     ["`sv.socket0.uncore.rdt.<reg>.read()`  # confirm path for your stepping",
+      "Counter mismatch -> RMID/CLOS mapping; else enforcement path."]),
+    (r"\bmca|mce|machine\s*check|ierr|caterr|mcerr|\bmsmi\b",
+     "RAS / MCA",
+     ["`sv.socket0.uncore.mca_bank<N>.status.read()` then decode MCACOD/MSCOD/RIP",
+      "Bank + RIP identify the failing unit."]),
+    (r"\bddr|dimm|memory|mrc|\btrain|rank|\bce\b|\bue\b|patrol\s*scrub",
+     "Memory",
+     ["Grep MRC/BIOS log for training step + channel/rank; capture DIMM SPD/config.",
+      "Correlate CE/UE address to channel/rank/bank."]),
+    (r"pcie|\bcxl\b|ltssm|link\s*train|lane|aer|retimer",
+     "IO / PCIe / CXL",
+     ["OS: `lspci -vvv` (Windows: check Device Manager / PnP); inspect LTSSM state + AER.",
+      "Degraded width/speed -> equalization/retimer; AER errors -> correctable vs fatal."]),
+    (r"\bs3\b|\bs4\b|\bs5\b|\bsx\b|hibernat|suspend|resume|\bacpi\b|sleep|\bdpmo\b|power\s*state",
+     "Power / Sleep-state (Sx)",
+     ["OS: `powercfg /a` (S-states available?), `powercfg /lastwake`, `powercfg /waketimers`.",
+      "PythonSV/PMC: `pmc.Sx_check()`; inspect PMC SLP_Sx status registers.",
+      "Kernel-Power events: Get-WinEvent System | where Id -in 41,42,107,187."]),
+    (r"bios|ifwi|\bbmc\b|cpld|\bpost\b|\bboot|\bhang|\breset|coldboot|\bsbsp\b|\bs3m\b|softstrap",
+     "BIOS / firmware / boot-hang",
+     ["Capture serial/BIOS boot log; find last successful POST/checkpoint before hang.",
+      "PythonSV: `sv.socket0.uncore.ubox.ncdecs.biosscratchpad<N>_cfg...read()` for progress.",
+      "Compare firmware/ucode/IFWI/BMC revisions across passing vs failing runs."]),
+    (r"windows|linux|driver|\bos\b|bsod|\bhang\b|watchdog|\bwhea\b",
+     "OS / driver",
+     ["Collect OS event/kernel logs; note OS build and driver versions.",
+      "A/B the OS build (passing vs failing) to isolate OS vs firmware."]),
+]
+
+
+def _detect_platform(text: str) -> Optional[str]:
     t = (text or "").upper()
-    for fam in ("GNR", "SRF", "CWF"):
-        if fam in t:
-            return fam
+    for p in _PLATFORMS:
+        if p.upper() in t:
+            return p
     return None
+
+
+def _detect_domains(text: str) -> List[Tuple[str, List[str]]]:
+    t = (text or "").lower()
+    hits: List[Tuple[str, List[str]]] = []
+    for pattern, label, cmds in _DOMAIN_HINTS:
+        if re.search(pattern, t):
+            hits.append((label, cmds))
+    return hits
 
 
 async def analyze(hsd_id: str, symptoms: str,
                   hsdes_token: Optional[str] = None) -> Dict[str, Any]:
-    # Request-scoped HSDES client using the caller's own token.
     client = HSDESClient(hsdes_token)
-    family = _detect_family(f"{symptoms} {hsd_id}")
+    # Text we reason over = typed symptoms (target text is added after fetch).
+    platform = _detect_platform(f"{symptoms} {hsd_id}")
 
-    # Step 0 - RECALL
-    recall = kb.search(symptoms, family=family)
+    # Step 0 - RECALL (domain-agnostic: no family filter)
+    recall = kb.search(symptoms)
 
-    # Step 2 - INVESTIGATE (target always fetched; similar only if KB not High)
+    # Step 2 - INVESTIGATE
     target = await client.get_article(hsd_id)
+    blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or ""
+                             if target else "")
+    if not platform:
+        platform = _detect_platform(blob)
     similar: List[Dict[str, Any]] = []
     if recall["confidence"] != "High":
         similar = await client.search_similar(symptoms)
@@ -90,11 +155,11 @@ async def analyze(hsd_id: str, symptoms: str,
     # Step 4 - REPORT
     if llm.enabled:
         report_md, kb_entry = await _llm_report(
-            hsd_id, symptoms, family, recall, target, similar, client.enabled
+            hsd_id, symptoms, platform, recall, target, similar, client.enabled
         )
     else:
         report_md, kb_entry = _offline_report(
-            hsd_id, symptoms, family, recall, target, similar, client.enabled
+            hsd_id, symptoms, platform, recall, target, similar, client.enabled
         )
 
     # Step 3 - WRITE-BACK
@@ -103,7 +168,7 @@ async def analyze(hsd_id: str, symptoms: str,
     return {
         "mode": "llm" if llm.enabled else "offline",
         "hsdes_enabled": client.enabled,
-        "family": family,
+        "family": platform,          # kept key name for UI compatibility
         "kb_recall": recall,
         "target": target,
         "similar": similar,
@@ -112,10 +177,10 @@ async def analyze(hsd_id: str, symptoms: str,
     }
 
 
-async def _llm_report(hsd_id, symptoms, family, recall, target, similar,
+async def _llm_report(hsd_id, symptoms, platform, recall, target, similar,
                       hsdes_enabled) -> Tuple[str, Dict[str, Any]]:
     context = {
-        "input": {"hsd_id": hsd_id, "symptoms": symptoms, "family": family},
+        "input": {"hsd_id": hsd_id, "symptoms": symptoms, "platform": platform},
         "kb_recall": recall,
         "target_hsd": target,
         "similar_hsds": similar,
@@ -128,10 +193,9 @@ async def _llm_report(hsd_id, symptoms, family, recall, target, similar,
     parsed = _extract_json(raw)
     if parsed and "report_markdown" in parsed:
         return parsed["report_markdown"], parsed.get("kb_entry") or _fallback_entry(
-            hsd_id, symptoms, family, target, hsdes_enabled
+            hsd_id, symptoms, platform, target, hsdes_enabled
         )
-    # LLM returned prose only - use it as the report, still learn a basic entry.
-    return raw, _fallback_entry(hsd_id, symptoms, family, target, hsdes_enabled)
+    return raw, _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled)
 
 
 def _extract_json(text: str) -> Optional[Dict[str, Any]]:
@@ -150,142 +214,138 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _fallback_entry(hsd_id, symptoms, family, target, hsdes_enabled) -> Dict[str, Any]:
+def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled) -> Dict[str, Any]:
     from time import gmtime, strftime
+    target = target or {}
+    ticket_text = target.get("full_text") or target.get("description") or ""
+    error_string = (symptoms + ("\n" + ticket_text if ticket_text else "")).strip()
+    domains = [d for d, _ in _detect_domains(error_string)]
     return {
         "signature": {
-            "family": family or "",
-            "unit": "RDT" if "rdt" in symptoms.lower() else (
-                "UPI" if "upi" in symptoms.lower() else ""),
-            "error_string": symptoms,
-            "key_terms": normalize_terms(symptoms),
+            "family": platform or target.get("family") or "",
+            "platform": platform or target.get("family") or "",
+            "stepping": target.get("stepping", ""),
+            "domain": ", ".join(domains),
+            "component": target.get("component", ""),
+            "error_string": error_string[:2000],
+            "key_terms": normalize_terms(f"{symptoms} {target.get('title', '')}"),
         },
         "similar_hsds": [],
         "root_cause": {"text": "", "confidence": "hypothesis"},
         "debug_steps": [],
-        "resolution": {"text": "", "source_hsd": ""},
+        "resolution": {"text": "", "source_hsd": hsd_id if target.get("title") else ""},
         "provenance": {
             "source": "HSDES" if hsdes_enabled else "KB",
             "timestamp": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime()),
-            "confidence_tag": "Low",
+            "confidence_tag": "Medium" if target.get("full_text") else "Low",
         },
     }
 
 
-def _offline_report(hsd_id, symptoms, family, recall, target, similar,
+def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
                     hsdes_enabled) -> Tuple[str, Dict[str, Any]]:
-    fam = family or "unknown"
-    unit = "RDT" if "rdt" in symptoms.lower() else (
-        "UPI" if "upi" in symptoms.lower() else "unknown")
+    target = target or {}
+    plat = platform or "unknown platform"
+    blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or "")
+    domains = _detect_domains(blob)
 
     def tval(k, default="_not available_"):
-        if target and target.get(k):
-            return target[k]
-        return default
+        return target[k] if target.get(k) else default
 
-    lines: List[str] = []
-    lines.append(f"# Auto HSD Analyser report — {hsd_id}")
-    lines.append("")
-    lines.append("> **OFFLINE mode** — no LLM configured. This is a deterministic "
-                 "report built from KB + HSDES data. Configure `LLM_BASE_URL` / "
-                 "`LLM_API_KEY` for full reasoning.")
-    lines.append("")
+    L: List[str] = []
+    L.append(f"# Auto HSD Analyser report — {hsd_id}")
+    L.append("")
+    L.append("> **OFFLINE mode** — no LLM configured. Deterministic report from KB + "
+             "ticket data. Configure `LLM_BASE_URL` / `LLM_API_KEY` for full reasoning.")
+    L.append("")
 
-    lines.append("## A. Target HSD summary")
+    L.append("## A. Target HSD summary")
     if target and not target.get("error"):
-        lines.append(f"- **ID:** {hsd_id}")
-        lines.append(f"- **Title:** {tval('title')}")
-        lines.append(f"- **Component:** {tval('component')}")
-        lines.append(f"- **Stepping:** {tval('stepping')}")
-        lines.append(f"- **Status:** {tval('status')}")
-        lines.append(f"- **Owner:** {tval('owner')}")
+        L.append(f"- **ID:** {hsd_id}")
+        L.append(f"- **Title:** {tval('title')}")
+        L.append(f"- **Platform / Family:** {plat} / {tval('family')}")
+        L.append(f"- **Component:** {tval('component')}")
+        L.append(f"- **Status:** {tval('status')}  |  **Priority:** {tval('priority')}")
+        L.append(f"- **Owner:** {tval('owner')}")
+        desc = target.get("description") or ""
+        if desc:
+            L.append(f"- **Description:** {desc if len(desc) <= 600 else desc[:600] + '…'}")
+        if target.get("comments") is not None:
+            L.append(f"- **Comments read:** {len(target.get('comments') or [])}")
     else:
         reason = (target.get("error") if target
-                  else "no HSDES token supplied for this request")
-        lines.append(f"- **ID:** {hsd_id}")
-        lines.append(f"- HSDES data unavailable ({reason}).")
-    lines.append(f"- **Reported signature (from input):** {symptoms}")
-    lines.append("")
+                  else "no reader token/credential supplied for this request")
+        L.append(f"- **ID:** {hsd_id}")
+        L.append(f"- Ticket data unavailable ({reason}).")
+    L.append(f"- **Detected domain(s):** {', '.join(d for d, _ in domains) or 'general'}")
+    L.append(f"- **Reported signature (input):** {symptoms}")
+    L.append("")
 
-    lines.append("## B. KB recall result")
-    lines.append(f"- **Confidence:** {recall['confidence']} "
-                 f"(best score {recall['best_score']})")
+    L.append("## B. KB recall result")
+    L.append(f"- **Confidence:** {recall['confidence']} (best score {recall['best_score']})")
     if recall["matches"]:
         for m in recall["matches"]:
-            lines.append(f"  - `{m.get('sig_key','')}` — root cause: "
-                         f"{m.get('root_cause') or '_none recorded_'} "
-                         f"(score {m.get('match_score')})")
+            L.append(f"  - `{m.get('sig_key','')}` — root cause: "
+                     f"{m.get('root_cause') or '_none recorded_'} (score {m.get('match_score')})")
     else:
-        lines.append("- No matching learned cases yet — this will seed the KB.")
-    lines.append("")
+        L.append("- No matching learned cases yet — this will seed the KB.")
+    L.append("")
 
-    lines.append("## C. Similar HSDs")
-    lines.append("| ID | Source | Similarity reason | Root cause | Status |")
-    lines.append("|----|--------|-------------------|------------|--------|")
+    L.append("## C. Similar HSDs")
+    L.append("| ID | Source | Similarity reason | Root cause | Status |")
+    L.append("|----|--------|-------------------|------------|--------|")
     for m in recall["matches"]:
-        lines.append(f"| {m.get('source_hsd') or '—'} | KB | "
-                     f"terms: {', '.join(m.get('matched_terms', []))} | "
-                     f"{m.get('root_cause') or '—'} | {m.get('confidence_tag','—')} |")
+        L.append(f"| {m.get('source_hsd') or '—'} | KB | terms: "
+                 f"{', '.join(m.get('matched_terms', []))} | {m.get('root_cause') or '—'} "
+                 f"| {m.get('confidence_tag','—')} |")
     for s in similar:
-        lines.append(f"| {s.get('id','')} | HSDES | keyword match | — | "
-                     f"{s.get('status','')} |")
+        L.append(f"| {s.get('id','')} | HSDES | keyword match | — | {s.get('status','')} |")
     if not recall["matches"] and not similar:
-        lines.append("| — | — | no matches | — | — |")
-    lines.append("")
+        L.append("| — | — | no matches | — | — |")
+    L.append("")
 
-    lines.append("## D. Ranked root-cause hypotheses")
-    lines.append(f"1. *(hypothesis)* {unit} failure on {fam} consistent with the "
-                 "reported signature. Evidence: input symptoms; "
-                 f"{'KB match' if recall['matches'] else 'no prior KB match'}.")
-    lines.append("2. *(hypothesis)* Configuration / stepping-specific behavior — "
-                 "confirm stepping and ucode before deeper isolation.")
-    lines.append("")
+    L.append("## D. Ranked root-cause hypotheses")
+    dom_label = ", ".join(d for d, _ in domains) or "unclassified"
+    L.append(f"1. *(hypothesis)* {dom_label} issue on {plat} consistent with the reported "
+             f"signature. Evidence: ticket text; {'KB match' if recall['matches'] else 'no prior KB match'}.")
+    L.append("2. *(hypothesis)* Config / firmware / OS-build specific behavior — A/B the "
+             "relevant revision (ucode/BIOS/IFWI/OS) before deeper isolation.")
+    L.append("")
 
-    lines.append("## E. Detailed next debug steps")
-    if unit == "UPI":
-        lines.append("1. **Check UPI link/CRC error status** — read the UPI error "
-                     "registers to confirm the failing link and error type.")
-        lines.append("   - `sv.socket0.upi.upi<port>.ktilk_dfx_error_status.read()` "
-                     "*(confirm exact reg name for your stepping)*")
-        lines.append("   - If CRC/retry counters are set → link-integrity path; "
-                     "else → protocol/transaction path.")
-        lines.append("2. **Decode the MCE** for the reported bank (RIP + status).")
-        lines.append("   - `sv.socket0.uncore.mca_bank<N>.status.read()` then decode "
-                     "MCACOD/MSCOD.")
-    elif unit == "RDT":
-        lines.append("1. **Check RDT (RMID/CLOS) programming and QoS event state.**")
-        lines.append("   - `sv.socket0.uncore.rdt.<reg>.read()` "
-                     "*(confirm exact path for your stepping)*")
-        lines.append("   - If monitoring counters mismatch → RMID mapping issue; "
-                     "else → enforcement path.")
-        lines.append("2. **Decode the associated MCE** if any bank is flagged.")
+    L.append("## E. Detailed next debug steps")
+    step = 1
+    if domains:
+        for label, cmds in domains:
+            L.append(f"{step}. **{label}** — check the domain-specific state first.")
+            for c in cmds:
+                L.append(f"   - {c}")
+            step += 1
     else:
-        lines.append("1. **Identify failing unit** from the bucket / MCE bank in the "
-                     "symptom signature, then read that unit's error status register.")
-        lines.append("   - `sv.socket0.<unit>.<error_status_reg>.read()`")
-    lines.append("3. **Collect logs** — grep the RPT for the error string and bucket "
-                 "id; capture ucode/BIOS rev.")
-    lines.append("")
+        L.append(f"{step}. **Identify the failing domain** from the ticket signature, then "
+                 "read that subsystem's status/log.")
+        step += 1
+    L.append(f"{step}. **Isolate by revision** — A/B ucode / BIOS / IFWI / BMC / OS build "
+             "between passing and failing runs.")
+    L.append(f"{step + 1}. **Collect logs** — grep serial/BIOS/OS logs for the error string; "
+             "capture full config and revisions.")
+    L.append("")
 
-    lines.append("## F. Data to request/collect")
-    lines.append("- RPT / rpt.gz (full), failing bucket id, cluster")
-    lines.append("- Silicon stepping, ucode patch rev, BIOS/IFWI rev")
-    lines.append("- MCE bank number + RIP, relevant waveform if available")
-    lines.append("")
+    L.append("## F. Data to request/collect")
+    L.append("- Full logs (serial/BIOS/OS/RPT), failing config/test, cluster/system id")
+    L.append("- Revisions: silicon stepping, ucode, BIOS/IFWI, BMC/CPLD, OS build")
+    L.append("- Domain specifics (MCA bank+RIP, DIMM/channel, PCIe lane, Sx target, etc.)")
+    L.append("")
 
-    lines.append("## G. Learning summary")
-    lines.append("- A KB entry is being created/updated for this signature, tagged "
-                 "**Low / hypothesis** (offline mode collects the signature but not a "
-                 "confirmed root cause).")
-    lines.append("")
+    L.append("## G. Learning summary")
+    conf = "Medium" if target.get("full_text") else "Low"
+    L.append(f"- KB entry created/updated for this signature, tagged **{conf} / hypothesis** "
+             "(full reasoning requires the LLM; offline captures the signature).")
+    L.append("")
 
-    lines.append("## H. Known-issue verdict")
+    L.append("## H. Known-issue verdict")
     if recall["confidence"] in ("High", "Medium"):
-        lines.append("- **Likely known** — see KB matches in section C. Verify against "
-                     "HSDES before closing.")
+        L.append("- **Likely known** — see KB matches in section C. Verify before closing.")
     else:
-        lines.append("- **Likely new sighting** — no confident KB/HSDES match found.")
+        L.append("- **Likely new sighting** — no confident KB match found.")
 
-    entry = _fallback_entry(hsd_id, symptoms, family, target, hsdes_enabled)
-    entry["signature"]["unit"] = unit if unit != "unknown" else ""
-    return "\n".join(lines), entry
+    return "\n".join(L), _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled)

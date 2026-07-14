@@ -1,16 +1,19 @@
-# Auto HSD Analyser — RDT & UPI (GNR / SRF / CWF)
+# Auto HSD Analyser (Server Platforms)
 
-A self-learning post-silicon **HSD-ES triage tool** for Intel GNR (Granite Rapids),
-SRF (Sierra Forest) and CWF (Clearwater Forest). It ships in **two forms**:
+A self-learning **HSD-ES triage tool** for Intel **server platforms** — works across **any
+domain**: CPU/silicon RAS (MCA/MCE/IERR/CATERR), UPI/coherency, memory (DDR/DIMM/training),
+IO (PCIe/CXL), power & sleep states (S3/S4/S5/Sx, ACPI), BIOS/IFWI/BMC/CPLD and boot/hang,
+OS/driver (Windows/Linux), and manageability. It is **not** tied to any single unit like
+RDT or UPI. It ships in **two forms**:
 
 1. **Web app** (this repo's `app/`) — a browser UI + Python backend that runs the
-   triage itself: recalls from a local learning KB, queries HSDES, calls an LLM to
+   triage itself: recalls from a local learning KB, reads the HSD, calls an LLM to
    reason, and writes findings back to the KB.
 2. **VS Code Copilot prompt** ([prompts/auto-hsd-analyser.prompt.md](prompts/auto-hsd-analyser.prompt.md)) —
    the same agent spec, runnable inside Copilot Chat with the Intel MCP tools.
 
-> Scope: RDT (Resource Director Technology) and UPI (Ultra Path Interconnect) failure
-> signatures on GNR / SRF / CWF, stepping-aware.
+> Scope: **any Intel server-platform HSD**, across all domains and platforms
+> (GNR, SRF, CWF, SPR, EMR, Eagle Stream, Birch Stream, and beyond).
 
 ---
 
