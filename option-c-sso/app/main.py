@@ -82,6 +82,7 @@ async def me(request: Request):
 async def health():
     return {
         "oidc_enabled": config.oidc_enabled,
+        "mcp_enabled": config.mcp_enabled,
         "llm_enabled": llm.enabled,
         "mode": "llm" if llm.enabled else "offline",
         "kb_entries": kb.count(),

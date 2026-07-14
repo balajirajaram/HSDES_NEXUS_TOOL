@@ -24,6 +24,7 @@ from .config import config
 from .hsdes_client import HSDESClient
 from .kb_store import KBStore, normalize_terms
 from .llm_client import llm
+from .mcp_reader import get_mcp_reader
 
 kb = KBStore(config.KB_DB_PATH)
 
@@ -142,8 +143,19 @@ async def analyze(hsd_id: str, symptoms: str,
     # Step 0 - RECALL (domain-agnostic: no family filter)
     recall = kb.search(symptoms)
 
-    # Step 2 - INVESTIGATE
-    target = await client.get_article(hsd_id)
+    # Step 2 - INVESTIGATE — MCP-first (internal MCP over HTTPS), REST fallback.
+    reader_source = "HSDES"
+    target = None
+    mcp = get_mcp_reader(hsdes_token)
+    if mcp.enabled:
+        target = await mcp.read_article(hsd_id)
+        if target and not target.get("error"):
+            reader_source = "MCP"
+        else:
+            target = None  # fall back to REST below
+    if target is None:
+        target = await client.get_article(hsd_id)
+    reader_enabled = mcp.enabled or client.enabled
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or ""
                              if target else "")
     if not platform:
@@ -155,11 +167,11 @@ async def analyze(hsd_id: str, symptoms: str,
     # Step 4 - REPORT
     if llm.enabled:
         report_md, kb_entry = await _llm_report(
-            hsd_id, symptoms, platform, recall, target, similar, client.enabled
+            hsd_id, symptoms, platform, recall, target, similar, reader_enabled
         )
     else:
         report_md, kb_entry = _offline_report(
-            hsd_id, symptoms, platform, recall, target, similar, client.enabled
+            hsd_id, symptoms, platform, recall, target, similar, reader_enabled
         )
 
     # Step 3 - WRITE-BACK
@@ -167,7 +179,8 @@ async def analyze(hsd_id: str, symptoms: str,
 
     return {
         "mode": "llm" if llm.enabled else "offline",
-        "hsdes_enabled": client.enabled,
+        "hsdes_enabled": reader_enabled,
+        "reader_source": reader_source,
         "family": platform,          # kept key name for UI compatibility
         "kb_recall": recall,
         "target": target,

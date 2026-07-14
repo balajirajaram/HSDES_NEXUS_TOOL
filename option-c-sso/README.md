@@ -38,6 +38,31 @@ READ (full HSD: header + description + comments, via the user's SSO token)
 
 ---
 
+## Reading via the internal MCP (HTTPS) — optional, MCP-first
+
+The tool can read HSDs from an **internal MCP server over HTTPS** (e.g. the Geni
+agent-gateway that exposes `HSDTool` / `HSDIndexTool`) using the **signed-in user's
+OAuth bearer token** — the same rich reads you get inside Copilot, but from the web app.
+
+- Set `MCP_SERVER_URL` in `.env`; the tool then uses **MCP first** and falls back to
+  HSDES REST if the MCP call fails.
+- Implemented in [app/mcp_reader.py](app/mcp_reader.py) as a minimal MCP **Streamable
+  HTTP** JSON-RPC client (`initialize` → `notifications/initialized` → `tools/call`).
+- Discovered endpoint (validate for your tenant):
+  `https://laas-aks-prod01.laas.icloud.intel.com/agentgateway/api/a2a/geni/genivalidationmcpserver/`
+
+```
+MCP_SERVER_URL=https://laas-aks-prod01.laas.icloud.intel.com/agentgateway/api/a2a/geni/genivalidationmcpserver/
+MCP_TOOL_NAME=HSDTool
+```
+
+> The exact tool name / argument schema varies per MCP server. `MCP_TOOL_NAME` and the
+> argument mapping in `app/mcp_reader.py` (`read_article`) may need a one-line tweak to
+> match the server's `tools/list` contract — validate against the live endpoint once a
+> real OAuth token is available. The user's SSO scope must be accepted by that MCP.
+
+---
+
 ## When to use this vs the other options
 - **Option C (this)** — you want to **host one shared web app** but keep per-user HSDES
   permissions and avoid distributing secrets. Requires an SSO app registration.

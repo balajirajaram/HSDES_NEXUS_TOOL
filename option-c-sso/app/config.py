@@ -21,6 +21,17 @@ class Config:
     # No static HSDES token here: the per-user access token comes from the login session.
     HSDES_API_TOKEN = ""
 
+    # ---- Internal MCP reader (HTTPS, e.g. Geni agent-gateway) ----
+    # When set, the tool reads HSDs via this MCP server (using the user's OAuth
+    # bearer token) instead of the raw HSDES REST API. REST remains the fallback.
+    MCP_SERVER_URL = os.getenv(
+        "MCP_SERVER_URL",
+        # Geni validation MCP (HSDTool / HSDIndexTool) over the LaaS agent gateway:
+        "",  # e.g. https://laas-aks-prod01.laas.icloud.intel.com/agentgateway/api/a2a/geni/genivalidationmcpserver/
+    )
+    MCP_TOOL_NAME = os.getenv("MCP_TOOL_NAME", "HSDTool")
+    MCP_PROTOCOL_VERSION = os.getenv("MCP_PROTOCOL_VERSION", "2025-06-18")
+
     # ---- LLM (OpenAI-compatible; a server-side service key is acceptable) ----
     LLM_BASE_URL = os.getenv("LLM_BASE_URL", "")
     LLM_API_KEY = os.getenv("LLM_API_KEY", "")
@@ -44,6 +55,10 @@ class Config:
     @property
     def oidc_enabled(self) -> bool:
         return bool(self.OIDC_ISSUER and self.OIDC_CLIENT_ID and self.OIDC_CLIENT_SECRET)
+
+    @property
+    def mcp_enabled(self) -> bool:
+        return bool(self.MCP_SERVER_URL)
 
 
 config = Config()
