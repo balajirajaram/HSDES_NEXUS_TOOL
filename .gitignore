@@ -1,0 +1,10 @@
+ignore_info/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+
+# Runtime output artifacts
+src/output/
+Axon_Records/
+HSD_Logs_Details/

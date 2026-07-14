@@ -25,6 +25,8 @@ Always invoke BugScout skills by their skill name:
 - `handbook-rag` for handbook retrieval against parsed symptoms
 - `handbook-kb-builder` for building or refreshing the local handbook KB
 - `hsd-log-fetcher` for downloading all file attachments from an HSD ticket into `HSD_Logs_Details/<hsd_id>/`
+- `axon-fetcher` for downloading content objects (crashdumps, serial logs, etc.) from an Axon failure record into `Axon_Records/<record_id>/`, and for searching Axon records by HSD ticket ID
+- `statusscope-parser` for parsing a StatusScope `*-intel-svtools-report-v1.json` (from a JSON file, directory, zip, or Axon record) into priority-sorted HW/FW insights, HSD links, and platform/error metadata
 
 Do not treat any of the above skills as separate agents.
 

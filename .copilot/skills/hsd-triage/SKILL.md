@@ -55,6 +55,28 @@ python hsd_log_fetcher.py <hsd_id>
 - If no attachments exist on the ticket, continue — do not block the workflow.
 - Collect any errors and surface them in the final report as "Logs not available via HSD API".
 
+### Step 0.6: Auto-Parse StatusScope Reports (statusscope-parser)
+
+**Purpose**: After attachments are fetched, check whether any StatusScope
+`*-intel-svtools-report-v1.json` was downloaded and, if so, extract its high-value insights
+to anchor the first-pass recommendation. Run for each HSD ID after Step 0.5.
+
+```bash
+cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\BugScout\src"
+python statusscope_ingest.py --dir "HSD_Logs_Details\HSD_<id>"
+```
+
+- The command auto-detects a `*-svtools-report*.json` in the fetched log directory. If none
+  is present it prints "No StatusScope report found" and exits non-zero — **treat this as
+  benign and continue** (StatusScope data is optional).
+- If a report is found, feed its output into the triage context:
+  - the **priority-sorted insights** (`HW.KNOWN_ISSUE` / `HW.CFG.ERR` first, then `SW.FW.ERR`),
+  - the **HSD links** each insight references (candidates for correlation to the ticket),
+  - any decoded **error / sideband / mca** and **known-sightings** tables.
+- If the HSD has a linked Axon record and no local report, use
+  `python statusscope_ingest.py --axon <record_id>` instead.
+- Surface the extracted insights and HSD links in the final report before MCP validation.
+
 ### Step 1: Run Phase 1 (CSV Parsing)
 
 Execute in terminal:

@@ -145,6 +145,26 @@ python hsd_log_fetcher.py <hsd_id>
   ```
 - If `HSD_Logs_Details/HSD_<hsd_id>/` already has files, skip this step entirely.
 
+**Step LD-0a.6**: Auto-parse StatusScope reports (statusscope-parser).
+
+After attachments are fetched, check whether a StatusScope `*-intel-svtools-report-v1.json`
+is present and, if so, extract its insights into the initial evidence:
+
+```bash
+cd "c:\Users\smeenak1\OneDrive - Intel Corporation\Documents\GitHub\BugScout\src"
+python statusscope_ingest.py --dir "HSD_Logs_Details\HSD_<hsd_id>"
+```
+
+- If no report is found the command exits non-zero with "No StatusScope report found" —
+  **treat this as benign and continue** (StatusScope data is optional).
+- If `initial_logs_path` points at a directory or zip, also scan it (`--dir`/`--zip`).
+- If a report is found:
+  - Add its **priority-sorted insights** (`HW.KNOWN_ISSUE` / `HW.CFG.ERR` first, then
+    `SW.FW.ERR`) and any decoded **error / sideband / mca** tables to the iteration-0 evidence.
+  - Mark the collector categories it already covers (namednodes, error, sideband, mca) as
+    **already collected** so the debug loop does not re-request them.
+  - Record its **HSD links** as correlation candidates.
+
 **Step LD-0b**: Load CLI `session_init.json` if it exists (optional baseline).
 
 Check if `output/live_debug_<hsd_id>_*/session_init.json` exists (created by CLI):
@@ -208,6 +228,7 @@ Store as `session.hsd_context`. If HSD is inaccessible, use title/symptom from `
 Merge logs from two sources (if present):
 - `initial_logs_collected` from `initial_logs_path` file (loaded in LD-0c)
 - `initial_logs_collected` from `session_init.json` (loaded in LD-0b)
+- StatusScope insights/tables from Step LD-0a.6 (if any)
 
 Record the merged set as:
 - `iteration_0_logs = <merged list>`
