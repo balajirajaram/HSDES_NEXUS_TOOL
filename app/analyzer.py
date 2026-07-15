@@ -24,6 +24,7 @@ from .config import config
 from .hsdes_client import HSDESClient
 from .kb_store import KBStore, normalize_terms
 from .llm_client import llm
+from .products import detect_product, master_queries, product_display
 
 kb = KBStore(config.KB_DB_PATH)
 
@@ -31,8 +32,15 @@ SYSTEM_PROMPT = """You are an expert Intel server-platform debug engineer. You t
 HSD-ES tickets across ANY domain — CPU/silicon RAS (MCA/MCE/IERR/CATERR), UPI/coherency,
 memory (DDR/DIMM/training), IO (PCIe/CXL), power and sleep states (S3/S4/S5/Sx, ACPI),
 BIOS/IFWI/BMC/CPLD and boot/hang/reset, OS/driver (Windows/Linux), and manageability.
-Adapt your analysis to whatever domain the ticket is actually about. You reason strictly
-from the evidence provided and NEVER fabricate HSD IDs, register names, or commands.
+You cover GNR, SRF and CWF today and the SAME method extends to future products (DMR, COR).
+
+You act as an AGENTIC end-to-end director. Ground every answer in evidence from:
+  1. the target HSD (title + description + comments),
+  2. the product's HSDES master-query corpus of similar/known issues (the KB + provided
+     similar HSDs) — use it to say whether this is a known issue and how it was resolved,
+  3. internal wikis/specs for architectural context, and
+  4. register/code sources for the EXACT PythonSV commands.
+You reason strictly from evidence and NEVER fabricate HSD IDs, register names, or commands.
 
 You are given: the target HSD data (title, description, comments — may be partial),
 matched cases from a learned Knowledge Base (KB), and similar HSDs. Produce a Markdown
@@ -117,10 +125,15 @@ _DOMAIN_HINTS: List[Tuple[str, str, List[str]]] = [
 
 
 def _detect_platform(text: str) -> Optional[str]:
+    # Product registry (products.json) drives detection — extensible to DMR/COR
+    # without code changes. Falls back to the inline platform list.
+    p = detect_product(text)
+    if p:
+        return product_display(p)
     t = (text or "").upper()
-    for p in _PLATFORMS:
-        if p.upper() in t:
-            return p
+    for name in _PLATFORMS:
+        if name.upper() in t:
+            return name
     return None
 
 

@@ -47,6 +47,7 @@ class LoginRequest(BaseModel):
 
 class BatchLearnRequest(BaseModel):
     query_id: Optional[str] = None
+    product: Optional[str] = None
     hsd_ids: Optional[list] = None
     limit: int = 100
 
@@ -131,13 +132,21 @@ async def api_batch_learn(request: Request, body: BatchLearnRequest):
     creds = _creds(request)
     if not creds and not _kerberos():
         return JSONResponse(status_code=401, content={"error": "Please sign in first."})
-    if not body.query_id and not body.hsd_ids:
+    if not body.query_id and not body.hsd_ids and not body.product:
         return JSONResponse(status_code=400,
-                            content={"error": "Provide 'query_id' or 'hsd_ids'."})
+                            content={"error": "Provide 'query_id', 'product', or 'hsd_ids'."})
     return await batch_learn(
-        hsd_ids=body.hsd_ids, query_id=body.query_id, limit=body.limit,
+        hsd_ids=body.hsd_ids, query_id=body.query_id, product=body.product, limit=body.limit,
         username=(creds or {}).get("username"), password=(creds or {}).get("password"),
     )
+
+
+@app.get("/api/products")
+async def api_products():
+    from .products import all_products
+    return {k: {"display": v.get("display", k),
+                "master_queries": v.get("master_queries", [])}
+            for k, v in all_products().items()}
 
 
 app.mount("/static", StaticFiles(directory=_STATIC), name="static")

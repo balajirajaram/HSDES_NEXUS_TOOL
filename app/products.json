@@ -1,0 +1,64 @@
+{
+  "GNR": {
+    "display": "Granite Rapids",
+    "aliases": ["GNR AP", "GNR-AP", "GNR", "Granite Rapids", "Birch Stream"],
+    "families": [
+      "Granite Rapids-AP", "Granite Rapids-SP", "Granite Rapids"
+    ],
+    "release_contains": ["GNR", "Birch Stream Platform GNR"],
+    "master_queries": [],
+    "register_namespace": "sv.socket0",
+    "wiki_scopes": [],
+    "notes": "Fill master_queries with the GNR saved HSDES query id(s)."
+  },
+  "SRF": {
+    "display": "Sierra Forest",
+    "aliases": ["SRF", "Sierra Forest"],
+    "families": ["Sierra Forest-AP", "Sierra Forest-SP", "Sierra Forest"],
+    "release_contains": ["SRF", "Birch Stream Platform SRF"],
+    "master_queries": [],
+    "register_namespace": "sv.socket0",
+    "wiki_scopes": [],
+    "notes": "Fill master_queries with the SRF saved HSDES query id(s)."
+  },
+  "CWF": {
+    "display": "Clearwater Forest",
+    "aliases": ["CWF AP", "CWF-AP", "CWF", "Clearwater Forest"],
+    "families": [
+      "Clearwater Forest-AP-XDCC", "Clearwater Forest Base Die",
+      "Clearwater Forest-D AI Media Accelerator Die",
+      "Clearwater Forest-D Compute Base Die",
+      "Clearwater Forest-D Converged Family",
+      "Clearwater Forest-D Ethernet IO Die", "Clearwater Forest-IO-DIE",
+      "Clearwater Forest-SP-HDCC", "Clearwater Forest Top Die",
+      "Clearwater Forest Top Die Refresh"
+    ],
+    "release_contains": ["CWF AP", "Clearwater Forest"],
+    "master_queries": [
+      "16027357901", "16028677277", "16031105232", "16031105233", "16029988003"
+    ],
+    "register_namespace": "sv.socket0",
+    "wiki_scopes": [],
+    "notes": "CWF AP platform sightings / presighting saved queries (community 1509078794 / 16025461878)."
+  },
+  "DMR": {
+    "display": "Diamond Rapids",
+    "aliases": ["DMR", "Diamond Rapids"],
+    "families": ["Diamond Rapids"],
+    "release_contains": ["DMR", "Diamond Rapids"],
+    "master_queries": [],
+    "register_namespace": "sv.socket0",
+    "wiki_scopes": [],
+    "notes": "Future product — add master_queries when available."
+  },
+  "COR": {
+    "display": "Coral Rapids",
+    "aliases": ["COR", "Coral Rapids"],
+    "families": ["Coral Rapids"],
+    "release_contains": ["COR", "Coral Rapids"],
+    "master_queries": [],
+    "register_namespace": "sv.socket0",
+    "wiki_scopes": [],
+    "notes": "Future product — add master_queries when available."
+  }
+}

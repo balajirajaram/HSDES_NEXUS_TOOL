@@ -13,18 +13,33 @@ from typing import Any, Dict, List, Optional
 
 from .analyzer import analyze
 from .hsdes_client import HSDESClient
+from .products import master_queries as product_master_queries
 
 
 async def batch_learn(hsd_ids: Optional[List[str]] = None,
                       query_id: Optional[str] = None,
+                      product: Optional[str] = None,
                       token: Optional[str] = None,
                       username: Optional[str] = None,
                       password: Optional[str] = None,
                       limit: int = 100) -> Dict[str, Any]:
     client = HSDESClient(token, username, password)
     ids: List[str] = [str(x) for x in (hsd_ids or [])]
-    if query_id and not ids:
-        ids = await client.get_query_results(query_id, limit)
+
+    # Gather saved-query ids from an explicit id and/or a product's master queries.
+    query_ids: List[str] = []
+    if query_id:
+        query_ids.append(query_id)
+    if product:
+        query_ids.extend(product_master_queries(product))
+    for qid in query_ids:
+        try:
+            ids.extend(await client.get_query_results(qid, limit))
+        except Exception:
+            continue
+    # de-dup, preserve order
+    seen = set()
+    ids = [x for x in ids if not (x in seen or seen.add(x))]
 
     results: List[Dict[str, Any]] = []
     for hid in ids[:limit]:
@@ -51,11 +66,13 @@ async def batch_learn(hsd_ids: Optional[List[str]] = None,
 
 def _main() -> None:
     ap = argparse.ArgumentParser(description="Batch-learn HSDs into the KB.")
-    ap.add_argument("--query-id", help="Saved HSDES query id (e.g. the GNR master query).")
+    ap.add_argument("--query-id", help="Saved HSDES query id.")
+    ap.add_argument("--product", help="Product key (GNR/SRF/CWF/DMR/COR) — learns all its master queries.")
     ap.add_argument("--ids", nargs="*", help="Explicit HSD IDs.")
     ap.add_argument("--limit", type=int, default=100)
     args = ap.parse_args()
-    out = asyncio.run(batch_learn(hsd_ids=args.ids, query_id=args.query_id, limit=args.limit))
+    out = asyncio.run(batch_learn(hsd_ids=args.ids, query_id=args.query_id,
+                                  product=args.product, limit=args.limit))
     print(f"requested={out['requested']} processed={out['processed']} learned={out['learned']}")
     for r in out["results"]:
         print(" ", r)
