@@ -21,6 +21,7 @@ from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
 from .analyzer import analyze, kb
+from .batch_learn import batch_learn
 from .config import config
 from .hsdes_client import HSDESClient
 from .llm_client import llm
@@ -42,6 +43,12 @@ class AnalyzeRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+
+class BatchLearnRequest(BaseModel):
+    query_id: Optional[str] = None
+    hsd_ids: Optional[list] = None
+    limit: int = 100
 
 
 def _creds(request: Request) -> Optional[Dict[str, str]]:
@@ -119,9 +126,18 @@ async def api_analyze(request: Request, req: AnalyzeRequest):
     )
 
 
-@app.get("/api/kb")
-async def api_kb():
-    return {"count": kb.count(), "entries": kb.all()}
+@app.post("/api/batch_learn")
+async def api_batch_learn(request: Request, body: BatchLearnRequest):
+    creds = _creds(request)
+    if not creds and not _kerberos():
+        return JSONResponse(status_code=401, content={"error": "Please sign in first."})
+    if not body.query_id and not body.hsd_ids:
+        return JSONResponse(status_code=400,
+                            content={"error": "Provide 'query_id' or 'hsd_ids'."})
+    return await batch_learn(
+        hsd_ids=body.hsd_ids, query_id=body.query_id, limit=body.limit,
+        username=(creds or {}).get("username"), password=(creds or {}).get("password"),
+    )
 
 
 app.mount("/static", StaticFiles(directory=_STATIC), name="static")

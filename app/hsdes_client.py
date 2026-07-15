@@ -1,19 +1,30 @@
-"""Best-effort HSDES REST client (reads the ticket FULLY: header + description + comments).
+"""HSDES REST client — unified auth (token / username+password / Kerberos-auto).
 
-NOTE: Intel's HSDES REST field names and endpoints vary by tenant. The
-normalizer below maps the most common fields; adjust `_normalize`,
-`_fetch_comments` and `search_similar` to match your environment's actual API
-contract. When no token is configured, the client is disabled and the analyzer
-falls back to OFFLINE mode instead of fabricating data.
+Auth modes:
+  - token:    Bearer token (HSDES_API_TOKEN or per-request).
+  - basic:    HTTP Basic with the user's Intel username + password.
+  - auto/kerberos: Negotiate/SSPI using the logged-in Intel user (no prompt).
+               Requires `requests-negotiate-sspi` on Windows.
+
+Reads the ticket FULLY (header + description + comments). Also resolves saved
+HSDES queries by id (for batch-learn). Field/endpoint names vary per tenant;
+adjust `_normalize` / `_fetch_comments` / `get_query_results` if needed.
 """
 
+import asyncio
 from typing import Any, Dict, List, Optional
 
 import httpx
 
 from .config import config
 
-# Fields we ask HSDES for so the analyzer has the full debug narrative.
+try:  # optional, Windows-only Kerberos/Negotiate
+    import requests
+    from requests_negotiate_sspi import HttpNegotiateAuth
+    _SSPI_AVAILABLE = True
+except Exception:
+    _SSPI_AVAILABLE = False
+
 _ARTICLE_FIELDS = ",".join([
     "id", "title", "status", "owner", "priority", "family", "release",
     "component", "subcomponent", "stepping", "silicon_stepping",
@@ -25,25 +36,14 @@ class HSDESClient:
     def __init__(self, token: Optional[str] = None,
                  username: Optional[str] = None,
                  password: Optional[str] = None):
-        # Auth precedence: explicit token (bearer) > username/password (Basic) >
-        # server-side fallback token > Kerberos 'auto' (uses the logged-in Intel
-        # user, no prompt). Credentials are used only for this request; the web
-        # layer keeps them in a server-side session, never on disk or in cookies.
         self.base = config.HSDES_BASE_URL.rstrip("/")
         self.token = (token or "").strip() or config.HSDES_API_TOKEN
         self.username = (username or "").strip()
         self.password = password or ""
-        self._auth = None
-        if self.username and self.password:
-            self._auth = httpx.BasicAuth(self.username, self.password)
+        self._auth = httpx.BasicAuth(self.username, self.password) if (
+            self.username and self.password) else None
         self.kerberos = config.HSDES_AUTH_MODE.lower() in ("auto", "kerberos")
         self.enabled = bool(self.token or self._auth or self.kerberos)
-
-    def _client(self, timeout: float = 45) -> httpx.AsyncClient:
-        # Use BasicAuth when username/password supplied; otherwise a plain client
-        # (bearer header added per-request, or Kerberos/Negotiate handled by the
-        # platform when configured).
-        return httpx.AsyncClient(timeout=timeout, auth=self._auth)
 
     def _headers(self) -> Dict[str, str]:
         h = {"Accept": "application/json"}
@@ -51,46 +51,69 @@ class HSDESClient:
             h["Authorization"] = f"Bearer {self.token}"
         return h
 
+    def _use_kerberos(self) -> bool:
+        return self.kerberos and not (self.token or self._auth)
+
+    # ---- transport ----
+    def _kerberos_request(self, method: str, url: str, **kw) -> Any:
+        if not _SSPI_AVAILABLE:
+            raise RuntimeError(
+                "Kerberos mode needs 'requests-negotiate-sspi' "
+                "(pip install requests-negotiate-sspi)")
+        resp = requests.request(method, url, auth=HttpNegotiateAuth(),
+                                headers={"Accept": "application/json"},
+                                timeout=45, **kw)
+        resp.raise_for_status()
+        return resp.json()
+
+    async def _get_json(self, url: str, params: Optional[Dict[str, Any]] = None) -> Any:
+        if self._use_kerberos():
+            return await asyncio.to_thread(self._kerberos_request, "GET", url, params=params)
+        async with httpx.AsyncClient(timeout=45, auth=self._auth) as cx:
+            r = await cx.get(url, headers=self._headers(), params=params)
+            r.raise_for_status()
+            return r.json()
+
+    async def _post_json(self, url: str, payload: Dict[str, Any]) -> Any:
+        if self._use_kerberos():
+            return await asyncio.to_thread(self._kerberos_request, "POST", url, json=payload)
+        async with httpx.AsyncClient(timeout=45, auth=self._auth) as cx:
+            r = await cx.post(url, headers=self._headers(), json=payload)
+            r.raise_for_status()
+            return r.json()
+
+    # ---- reads ----
     async def get_article(self, hsd_id: str) -> Optional[Dict[str, Any]]:
-        """Fetch the full ticket: header fields + description + comments."""
         if not self.enabled:
             return None
-        url = f"{self.base}/article/{hsd_id}"
         try:
-            async with self._client(45) as cx:
-                r = await cx.get(url, headers=self._headers(),
-                                 params={"fields": _ARTICLE_FIELDS})
-                r.raise_for_status()
-                data = r.json()
-                comments = await self._fetch_comments(cx, hsd_id)
-        except Exception as exc:  # network / auth / not found
+            data = await self._get_json(f"{self.base}/article/{hsd_id}",
+                                        {"fields": _ARTICLE_FIELDS})
+            comments = await self._fetch_comments(hsd_id)
+        except Exception as exc:
             return {"id": hsd_id, "error": str(exc)}
         return self._normalize(hsd_id, data, comments)
 
-    async def _fetch_comments(self, cx: httpx.AsyncClient, hsd_id: str) -> List[str]:
-        """Best-effort: pull the comment/update thread (the debug narrative)."""
+    async def _fetch_comments(self, hsd_id: str) -> List[str]:
         for path in (f"/article/{hsd_id}/comments", f"/article/{hsd_id}/history"):
             try:
-                r = await cx.get(f"{self.base}{path}", headers=self._headers())
-                if r.status_code != 200:
-                    continue
-                data = r.json()
-                rows = data.get("data") or data.get("comments") or []
-                out: List[str] = []
-                for row in rows:
-                    if isinstance(row, dict):
-                        txt = (row.get("comment") or row.get("text")
-                               or row.get("body") or row.get("value") or "")
-                        who = row.get("updated_by") or row.get("author") or ""
-                        when = row.get("updated_date") or row.get("date") or ""
-                        if txt:
-                            out.append(f"[{when} {who}] {txt}".strip())
-                    elif isinstance(row, str):
-                        out.append(row)
-                if out:
-                    return out
+                data = await self._get_json(f"{self.base}{path}")
             except Exception:
                 continue
+            rows = (data or {}).get("data") or (data or {}).get("comments") or []
+            out: List[str] = []
+            for row in rows:
+                if isinstance(row, dict):
+                    txt = (row.get("comment") or row.get("text")
+                           or row.get("body") or row.get("value") or "")
+                    who = row.get("updated_by") or row.get("author") or ""
+                    when = row.get("updated_date") or row.get("date") or ""
+                    if txt:
+                        out.append(f"[{when} {who}] {txt}".strip())
+                elif isinstance(row, str):
+                    out.append(row)
+            if out:
+                return out
         return []
 
     def _normalize(self, hsd_id: str, data: Any,
@@ -108,13 +131,11 @@ class HSDESClient:
 
         comments = comments or []
         description = g("description", "reason")
-        # A single blob the LLM can reason over (title + description + comments).
         full_text = "\n\n".join(filter(None, [
             f"TITLE: {g('title', 'subject')}",
             f"DESCRIPTION:\n{description}" if description else "",
             ("COMMENTS:\n" + "\n".join(comments)) if comments else "",
         ]))
-
         return {
             "id": hsd_id,
             "title": g("title", "subject"),
@@ -134,13 +155,9 @@ class HSDESClient:
     async def search_similar(self, symptoms: str, limit: int = 8) -> List[Dict[str, Any]]:
         if not self.enabled:
             return []
-        url = f"{self.base}/query"
-        payload = {"query": symptoms, "max": limit}
         try:
-            async with self._client(30) as cx:
-                r = await cx.post(url, headers=self._headers(), json=payload)
-                r.raise_for_status()
-                data = r.json()
+            data = await self._post_json(f"{self.base}/query",
+                                         {"query": symptoms, "max": limit})
         except Exception:
             return []
         out: List[Dict[str, Any]] = []
@@ -153,12 +170,33 @@ class HSDESClient:
             })
         return out
 
+    async def get_query_results(self, query_id: str, limit: int = 200) -> List[str]:
+        """Resolve a saved HSDES query id to a list of HSD IDs (best-effort)."""
+        if not self.enabled:
+            return []
+        for path in (f"/query/{query_id}", f"/appstore/query/{query_id}",
+                     f"/query/execution/{query_id}"):
+            try:
+                data = await self._get_json(f"{self.base}{path}", {"max": limit})
+            except Exception:
+                continue
+            rows = (data or {}).get("data") or (data or {}).get("results") or []
+            ids: List[str] = []
+            for r in rows:
+                if isinstance(r, dict):
+                    v = r.get("id") or r.get("ID") or r.get("article_id")
+                    if v:
+                        ids.append(str(v))
+                elif isinstance(r, (str, int)):
+                    ids.append(str(r))
+            if ids:
+                return ids[:limit]
+        return []
+
 
 def get_client(token: Optional[str] = None, username: Optional[str] = None,
                password: Optional[str] = None) -> "HSDESClient":
-    """Build a request-scoped client using the caller's own credentials."""
     return HSDESClient(token, username, password)
 
 
-# Default client using server-side config only (optional local/dev fallback).
 hsdes = HSDESClient()
