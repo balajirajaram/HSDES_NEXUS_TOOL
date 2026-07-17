@@ -12,6 +12,7 @@ adjust `_normalize` / `_fetch_comments` / `get_query_results` if needed.
 """
 
 import asyncio
+import re
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -110,68 +111,75 @@ class HSDESClient:
         if not self.enabled:
             return None
         try:
-            data = await self._get_json(f"{self.base}/article/{hsd_id}",
-                                        {"fields": _ARTICLE_FIELDS})
-            comments = await self._fetch_comments(hsd_id)
+            # Full record: title/description/comments come back unprefixed and
+            # structured fields are tenant-prefixed (e.g. bug.exposure). The
+            # comment thread lives in the 'comments' field (no separate endpoint).
+            data = await self._get_json(f"{self.base}/article/{hsd_id}")
         except Exception as exc:
             return {"id": hsd_id, "error": str(exc)}
-        return self._normalize(hsd_id, data, comments)
+        return self._normalize(hsd_id, data)
 
-    async def _fetch_comments(self, hsd_id: str) -> List[str]:
-        for path in (f"/article/{hsd_id}/comments", f"/article/{hsd_id}/history"):
-            try:
-                data = await self._get_json(f"{self.base}{path}")
-            except Exception:
-                continue
-            rows = (data or {}).get("data") or (data or {}).get("comments") or []
-            out: List[str] = []
-            for row in rows:
-                if isinstance(row, dict):
-                    txt = (row.get("comment") or row.get("text")
-                           or row.get("body") or row.get("value") or "")
-                    who = row.get("updated_by") or row.get("author") or ""
-                    when = row.get("updated_date") or row.get("date") or ""
-                    if txt:
-                        out.append(f"[{when} {who}] {txt}".strip())
-                elif isinstance(row, str):
-                    out.append(row)
-            if out:
-                return out
-        return []
+    @staticmethod
+    def _clean(text: Any) -> str:
+        if not isinstance(text, str):
+            return ""
+        text = text.replace("&nbsp;", " ").replace("&amp;", "&")
+        text = re.sub(r"<[^>]+>", " ", text)          # strip HTML tags
+        return re.sub(r"[ \t]+", " ", text).strip()
+
+    @classmethod
+    def _split_comments(cls, blob: Any) -> List[str]:
+        """HSDES stores the thread in one 'comments' string; entries begin with
+        '++++<epoch> <user>'. Split into individual, cleaned comments."""
+        if not isinstance(blob, str) or not blob.strip():
+            return []
+        parts = re.split(r"\++\d{6,}", blob)  # split on the ++++<timestamp> marker
+        out = [cls._clean(p) for p in parts]
+        return [p for p in out if p]
 
     def _normalize(self, hsd_id: str, data: Any,
-                   comments: Optional[List[str]] = None) -> Dict[str, Any]:
+                   _comments: Optional[List[str]] = None) -> Dict[str, Any]:
         try:
             rec = (data.get("data") or [{}])[0]
         except Exception:
             rec = data if isinstance(data, dict) else {}
 
-        def g(*keys: str) -> str:
-            for k in keys:
-                if isinstance(rec, dict) and rec.get(k):
-                    return rec[k]
+        def g(*names: str) -> str:
+            # exact key first, then tenant-prefixed suffix match (bug.exposure -> exposure)
+            for n in names:
+                if isinstance(rec, dict) and rec.get(n):
+                    return rec[n]
+            for n in names:
+                if isinstance(rec, dict):
+                    for k, v in rec.items():
+                        if v and (k == n or k.endswith("." + n)):
+                            return v
             return ""
 
-        comments = comments or []
-        description = g("description", "reason")
+        title = self._clean(g("title", "subject"))
+        description = self._clean(g("description", "reason"))
+        comments = self._split_comments(g("comments"))
         full_text = "\n\n".join(filter(None, [
-            f"TITLE: {g('title', 'subject')}",
+            f"TITLE: {title}",
             f"DESCRIPTION:\n{description}" if description else "",
             ("COMMENTS:\n" + "\n".join(comments)) if comments else "",
         ]))
         return {
             "id": hsd_id,
-            "title": g("title", "subject"),
-            "family": g("family", "family_affected"),
+            "title": title,
+            "family": g("family", "family_affected", "soc_family"),
             "release": g("release", "release_affected"),
             "priority": g("priority", "exposure"),
             "exposure": g("exposure"),
             "report_type": g("report_type"),
             "reason": g("reason"),
-            "component": g("component", "subcomponent", "family_affected"),
-            "stepping": g("stepping", "silicon_stepping", "release_affected"),
+            "component": g("component", "subcomponent"),
+            "stepping": g("stepping", "silicon_stepping"),
             "status": g("status"),
             "owner": g("owner", "assignee", "engineering_owner"),
+            "phase_found": g("phase_found"),
+            "team_found": g("team_found"),
+            "product_found": g("product_found"),
             "description": description,
             "comments": comments,
             "full_text": full_text,
