@@ -58,6 +58,15 @@
           <textarea id="symptoms" rows="4" required
             placeholder="e.g. system hung after UPI degradation; or: Windows 11 fails to enter S4 during DPMO"></textarea>
         </label>
+        <label>
+          Attached log (optional) — paste serial / PythonSV / BMC SEL / kernel / RPT
+          <textarea id="log_text" rows="5"
+            placeholder="Paste log text here, or choose a file below. The tool scans it for MCE/CATERR/UPI/DDR/PCIe/boot-hang signatures."></textarea>
+        </label>
+        <label class="file-row">
+          <input id="log_file" type="file" accept=".txt,.log,.rpt,.out,.csv" />
+          <span class="hint">Load a log file into the box above (kept in your browser).</span>
+        </label>
         <button type="submit" id="run-btn">Analyse</button>
       </form>
 

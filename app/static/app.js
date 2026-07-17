@@ -126,6 +126,7 @@ document.getElementById("analyse-form").addEventListener("submit", async (e) => 
       body: JSON.stringify({
         hsd_id: document.getElementById("hsd_id").value,
         symptoms: document.getElementById("symptoms").value,
+        log_text: (document.getElementById("log_text") || {}).value || null,
       }),
     });
     if (r.status === 401) {
@@ -168,6 +169,18 @@ async function loadKB() {
   });
 }
 document.getElementById("refresh-kb").addEventListener("click", loadKB);
+
+// ---- Load a log file into the textarea (client-side only) ----
+const logFileEl = document.getElementById("log_file");
+if (logFileEl) {
+  logFileEl.addEventListener("change", (e) => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = () => { document.getElementById("log_text").value = String(reader.result).slice(0, 2000000); };
+    reader.readAsText(f);
+  });
+}
 
 refreshSession();
 loadHealth();

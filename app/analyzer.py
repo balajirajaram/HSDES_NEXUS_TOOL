@@ -24,6 +24,7 @@ from .config import config
 from .hsdes_client import HSDESClient
 from .kb_store import KBStore, normalize_terms
 from .llm_client import llm
+from .log_analyzer import analyze_log
 from .products import detect_product, master_queries, product_display
 
 kb = KBStore(config.KB_DB_PATH)
@@ -211,10 +212,14 @@ def _extract_findings(target: Optional[Dict[str, Any]]) -> Dict[str, str]:
 async def analyze(hsd_id: str, symptoms: str,
                   hsdes_token: Optional[str] = None,
                   username: Optional[str] = None,
-                  password: Optional[str] = None) -> Dict[str, Any]:
+                  password: Optional[str] = None,
+                  log_text: Optional[str] = None) -> Dict[str, Any]:
     client = HSDESClient(hsdes_token, username, password)
     # Text we reason over = typed symptoms (target text is added after fetch).
     platform = _detect_platform(f"{symptoms} {hsd_id}")
+
+    # Optional: analyze attached logs (serial / PythonSV / BMC SEL / kernel / RPT).
+    log_findings = analyze_log(log_text) if log_text else None
 
     # Step 0 - RECALL (domain-agnostic: no family filter; exclude self-match)
     recall = kb.search(symptoms, exclude_id=hsd_id)
@@ -223,6 +228,8 @@ async def analyze(hsd_id: str, symptoms: str,
     target = await client.get_article(hsd_id)
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or ""
                              if target else "")
+    if log_findings:
+        blob += " " + " ".join(s["label"] for s in log_findings["signatures"])
     if not platform:
         platform = _detect_platform(blob)
     similar: List[Dict[str, Any]] = []
@@ -232,11 +239,13 @@ async def analyze(hsd_id: str, symptoms: str,
     # Step 4 - REPORT
     if llm.enabled:
         report_md, kb_entry = await _llm_report(
-            hsd_id, symptoms, platform, recall, target, similar, client.enabled
+            hsd_id, symptoms, platform, recall, target, similar, client.enabled,
+            log_findings
         )
     else:
         report_md, kb_entry = _offline_report(
-            hsd_id, symptoms, platform, recall, target, similar, client.enabled
+            hsd_id, symptoms, platform, recall, target, similar, client.enabled,
+            log_findings
         )
 
     # Step 3 - WRITE-BACK
@@ -249,18 +258,20 @@ async def analyze(hsd_id: str, symptoms: str,
         "kb_recall": recall,
         "target": target,
         "similar": similar,
+        "log_findings": log_findings,
         "kb_action": kb_action,
         "report_markdown": report_md,
     }
 
 
 async def _llm_report(hsd_id, symptoms, platform, recall, target, similar,
-                      hsdes_enabled) -> Tuple[str, Dict[str, Any]]:
+                      hsdes_enabled, log_findings=None) -> Tuple[str, Dict[str, Any]]:
     context = {
         "input": {"hsd_id": hsd_id, "symptoms": symptoms, "platform": platform},
         "kb_recall": recall,
         "target_hsd": target,
         "similar_hsds": similar,
+        "attached_log_findings": log_findings,
     }
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -322,10 +333,12 @@ def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled) -> Dict[s
 
 
 def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
-                    hsdes_enabled) -> Tuple[str, Dict[str, Any]]:
+                    hsdes_enabled, log_findings=None) -> Tuple[str, Dict[str, Any]]:
     target = target or {}
     plat = platform or "unknown platform"
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or "")
+    if log_findings:
+        blob += " " + " ".join(s["label"] for s in log_findings["signatures"])
     domains = _detect_domains(blob)[:3]  # focus on the dominant domain(s)
 
     def tval(k, default="_not available_"):
@@ -359,6 +372,24 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     L.append(f"- **Detected domain(s):** {', '.join(d for d, _ in domains) or 'general'}")
     L.append(f"- **Reported signature (input):** {symptoms}")
     L.append("")
+
+    # Attached-log analysis (only when logs were provided).
+    if log_findings:
+        L.append("## A2. Attached log analysis")
+        L.append(f"- **Lines scanned:** {log_findings['lines_scanned']}")
+        if log_findings.get("last_checkpoint"):
+            L.append(f"- **Last checkpoint before failure:** `{log_findings['last_checkpoint']}`")
+        if log_findings["signatures"]:
+            L.append("")
+            L.append("| Signature | Severity | Count | Domain | Example |")
+            L.append("|-----------|----------|-------|--------|---------|")
+            for s in log_findings["signatures"][:8]:
+                ex = _short((s.get("examples") or [""])[0], 80).replace("|", "\\|")
+                L.append(f"| {s['label']} | {s['severity']} | {s['count']} | "
+                         f"{s['domain']} | `{ex}` |")
+        else:
+            L.append("- No known failure signatures matched in the log.")
+        L.append("")
 
     L.append("## B. KB recall result")
     L.append(f"- **Confidence:** {recall['confidence']} (best score {recall['best_score']})")

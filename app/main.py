@@ -38,6 +38,7 @@ _SESSIONS: Dict[str, Dict[str, str]] = {}
 class AnalyzeRequest(BaseModel):
     hsd_id: str
     symptoms: str
+    log_text: Optional[str] = None
 
 
 class LoginRequest(BaseModel):
@@ -124,6 +125,7 @@ async def api_analyze(request: Request, req: AnalyzeRequest):
         req.hsd_id.strip(), req.symptoms.strip(),
         username=(creds or {}).get("username"),
         password=(creds or {}).get("password"),
+        log_text=req.log_text,
     )
 
 

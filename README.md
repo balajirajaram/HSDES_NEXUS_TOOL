@@ -99,8 +99,16 @@ python -m app.batch_learn --ids 16030948515 22022875184   # or specific IDs
 
 ### Command line (no browser)
 ```powershell
-python -c "import asyncio; from app.analyzer import analyze; print(asyncio.run(analyze('16030948515',''))['report_markdown'])"
+python -m app.summarize 16030948515                 # analyze + save report to output/
+python -m app.summarize 14028261445 --log serial.log  # also scan an attached log
 ```
+
+### Analyze attached logs
+Paste a log (serial / PythonSV / BMC SEL / OS kernel / RPT) into the **Attached log** box
+in the UI, or pass `--log <file>` on the CLI. The tool scans it for MCE/CATERR/IERR,
+UPI/DDR/PCIe, boot-hang, and OS-panic signatures and adds an **"A2. Attached log
+analysis"** section (severity-ranked, with the last POST checkpoint) that feeds the
+root-cause hypotheses and next steps.
 
 ### HTTP API (for automation)
 | Method | Route | Purpose |
