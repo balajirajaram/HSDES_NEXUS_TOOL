@@ -6,6 +6,7 @@ analyzer confirmed or hypothesized, tagged accordingly.
 """
 
 import json
+import math
 import os
 import re
 import sqlite3
@@ -69,21 +70,41 @@ class KBStore:
     def search(self, symptoms: str, family: Optional[str] = None,
                top_k: int = 5, exclude_id: Optional[str] = None) -> Dict[str, Any]:
         q_terms = set(normalize_terms(symptoms))
-        scored: List[tuple] = []
         with self._conn() as c:
             rows = c.execute("SELECT * FROM entries").fetchall()
+
+        # Build the eligible candidate set + their term sets.
+        docs: List[tuple] = []
         for r in rows:
             if family and r["family"] and family.upper() != r["family"].upper():
                 continue
             if exclude_id and str(r["source_hsd"]) == str(exclude_id):
-                continue  # don't compare a ticket against itself
-            hay = set(normalize_terms(f"{r['key_terms']} {r['signature_text']}"))
-            if not q_terms:
                 continue
+            hay = set(normalize_terms(f"{r['key_terms']} {r['signature_text']}"))
+            docs.append((r, hay))
+
+        # IDF weights: rare shared terms (e.g. 'kitportdisable', 'upi') count more
+        # than common ones (e.g. 'system', 'gnr', 'ap').
+        df: Dict[str, int] = {}
+        for _, hay in docs:
+            for t in hay:
+                df[t] = df.get(t, 0) + 1
+        n_docs = max(1, len(docs))
+
+        def idf(t: str) -> float:
+            return math.log((n_docs + 1) / (df.get(t, 0) + 1)) + 1.0
+
+        denom = sum(idf(t) for t in q_terms) or 1.0
+        scored: List[tuple] = []
+        for r, hay in docs:
             matched = q_terms & hay
-            score = len(matched) / max(1, len(q_terms))
-            if score > 0:
-                scored.append((score, sorted(matched), r))
+            if not matched:
+                continue
+            score = sum(idf(t) for t in matched) / denom
+            # rank shared terms by specificity for display
+            ordered = sorted(matched, key=lambda t: idf(t), reverse=True)
+            scored.append((score, ordered, r))
+
         scored.sort(key=lambda x: x[0], reverse=True)
         scored = scored[:top_k]
         best = scored[0][0] if scored else 0.0

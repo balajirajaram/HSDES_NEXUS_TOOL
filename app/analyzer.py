@@ -28,6 +28,12 @@ from .products import detect_product, master_queries, product_display
 
 kb = KBStore(config.KB_DB_PATH)
 
+
+def _short(text: Any, n: int = 140) -> str:
+    """Collapse whitespace/newlines and truncate for clean table display."""
+    s = re.sub(r"\s+", " ", str(text or "")).strip()
+    return (s[:n] + "…") if len(s) > n else s
+
 SYSTEM_PROMPT = """You are an expert Intel server-platform debug engineer. You triage
 HSD-ES tickets across ANY domain — CPU/silicon RAS (MCA/MCE/IERR/CATERR), UPI/coherency,
 memory (DDR/DIMM/training), IO (PCIe/CXL), power and sleep states (S3/S4/S5/Sx, ACPI),
@@ -150,6 +156,50 @@ def _detect_domains(text: str) -> List[Tuple[str, List[str]]]:
     return [(label, cmds) for _, label, cmds in scored]
 
 
+_RC_PAT = re.compile(
+    r"(root[\s_-]?cause|caused by|due to|because of|\brca\b|culprit|isolated to)", re.I)
+_FIX_PAT = re.compile(
+    r"(fixed in|fix\s*[:=]|resolution\s*[:=]|resolved by|work[\s-]?around|\bw/?a\b|"
+    r"mitigat|bkm|patched|corrected)", re.I)
+
+
+def _extract_findings(target: Optional[Dict[str, Any]]) -> Dict[str, str]:
+    """Deterministically pull root-cause / resolution text from ticket fields and
+    comment keywords — no LLM required."""
+    if not target:
+        return {"root_cause": "", "resolution": "", "confidence": "hypothesis"}
+    rec = target.get("raw", {}) or {}
+
+    def gf(*names: str) -> str:
+        for n in names:
+            for k, v in rec.items():
+                if v and (k == n or k.endswith("." + n)):
+                    return str(v)
+        return ""
+
+    text = target.get("full_text", "") or ""
+    rc_lines: List[str] = []
+    fix_lines: List[str] = []
+    for chunk in re.split(r"[\n.;]", text):
+        s = chunk.strip()
+        if len(s) < 8:
+            continue
+        if _RC_PAT.search(s) and len(rc_lines) < 3:
+            rc_lines.append(s)
+        if _FIX_PAT.search(s) and len(fix_lines) < 3:
+            fix_lines.append(s)
+
+    root_cause = " ".join(rc_lines) or gf("fix_description", "executive_summary")
+    resolution = " ".join(fix_lines) or gf("closed_reason", "status_reason")
+    status = (target.get("status") or "").lower()
+    confirmed = status in ("closed", "complete", "verified") and bool(root_cause or resolution)
+    return {
+        "root_cause": root_cause[:500],
+        "resolution": resolution[:500],
+        "confidence": "confirmed" if confirmed else "hypothesis",
+    }
+
+
 async def analyze(hsd_id: str, symptoms: str,
                   hsdes_token: Optional[str] = None,
                   username: Optional[str] = None,
@@ -239,20 +289,22 @@ def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled) -> Dict[s
     ticket_text = target.get("full_text") or target.get("description") or ""
     error_string = (symptoms + ("\n" + ticket_text if ticket_text else "")).strip()
     domains = [d for d, _ in _detect_domains(error_string)]
+    findings = _extract_findings(target)
     return {
         "signature": {
             "family": platform or target.get("family") or "",
             "platform": platform or target.get("family") or "",
             "stepping": target.get("stepping", ""),
-            "domain": ", ".join(domains),
+            "domain": ", ".join(domains[:3]),
             "component": target.get("component", ""),
             "error_string": error_string[:2000],
             "key_terms": normalize_terms(f"{symptoms} {target.get('title', '')}"),
         },
         "similar_hsds": [],
-        "root_cause": {"text": "", "confidence": "hypothesis"},
+        "root_cause": {"text": findings["root_cause"], "confidence": findings["confidence"]},
         "debug_steps": [],
-        "resolution": {"text": "", "source_hsd": hsd_id if target.get("title") else ""},
+        "resolution": {"text": findings["resolution"],
+                       "source_hsd": hsd_id if target.get("title") else ""},
         "provenance": {
             "source": "HSDES" if hsdes_enabled else "KB",
             "timestamp": strftime("%Y-%m-%dT%H:%M:%SZ", gmtime()),
@@ -305,7 +357,8 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     if recall["matches"]:
         for m in recall["matches"]:
             L.append(f"  - `{m.get('sig_key','')}` — root cause: "
-                     f"{m.get('root_cause') or '_none recorded_'} (score {m.get('match_score')})")
+                     f"{_short(m.get('root_cause')) or '_none recorded_'} "
+                     f"(score {m.get('match_score')})")
     else:
         L.append("- No matching learned cases yet — this will seed the KB.")
     L.append("")
@@ -315,7 +368,7 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     L.append("|----|--------|-------------------|------------|--------|")
     for m in recall["matches"]:
         L.append(f"| {m.get('source_hsd') or '—'} | KB | terms: "
-                 f"{', '.join(m.get('matched_terms', []))} | {m.get('root_cause') or '—'} "
+                 f"{', '.join(m.get('matched_terms', []))} | {_short(m.get('root_cause')) or '—'} "
                  f"| {m.get('confidence_tag','—')} |")
     for s in similar:
         L.append(f"| {s.get('id','')} | HSDES | keyword match | — | {s.get('status','')} |")
