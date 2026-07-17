@@ -94,7 +94,10 @@ class KBStore:
         def idf(t: str) -> float:
             return math.log((n_docs + 1) / (df.get(t, 0) + 1)) + 1.0
 
-        denom = sum(idf(t) for t in q_terms) or 1.0
+        # Only score against query terms that actually exist in the KB — a very
+        # specific term present in no prior case shouldn't dilute every score.
+        matchable = {t for t in q_terms if df.get(t, 0) > 0}
+        denom = sum(idf(t) for t in matchable) or 1.0
         scored: List[tuple] = []
         for r, hay in docs:
             matched = q_terms & hay

@@ -177,16 +177,24 @@ def _extract_findings(target: Optional[Dict[str, Any]]) -> Dict[str, str]:
                     return str(v)
         return ""
 
+    def is_prose(s: str) -> bool:
+        # Skip code / logs / URLs so we capture human explanation, not snippets.
+        if any(tok in s for tok in ("def ", "self.", "{", "}", "=>", "::", "http",
+                                    ".py", "</", "/>", "import ", "()")):
+            return False
+        alpha = sum(c.isalpha() or c.isspace() for c in s)
+        return len(s) >= 12 and alpha / max(1, len(s)) >= 0.65
+
     text = target.get("full_text", "") or ""
     rc_lines: List[str] = []
     fix_lines: List[str] = []
     for chunk in re.split(r"[\n.;]", text):
         s = chunk.strip()
-        if len(s) < 8:
+        if not is_prose(s):
             continue
-        if _RC_PAT.search(s) and len(rc_lines) < 3:
+        if _RC_PAT.search(s) and len(rc_lines) < 2:
             rc_lines.append(s)
-        if _FIX_PAT.search(s) and len(fix_lines) < 3:
+        if _FIX_PAT.search(s) and len(fix_lines) < 2:
             fix_lines.append(s)
 
     root_cause = " ".join(rc_lines) or gf("fix_description", "executive_summary")
@@ -194,8 +202,8 @@ def _extract_findings(target: Optional[Dict[str, Any]]) -> Dict[str, str]:
     status = (target.get("status") or "").lower()
     confirmed = status in ("closed", "complete", "verified") and bool(root_cause or resolution)
     return {
-        "root_cause": root_cause[:500],
-        "resolution": resolution[:500],
+        "root_cause": root_cause[:400],
+        "resolution": resolution[:400],
         "confidence": "confirmed" if confirmed else "hypothesis",
     }
 
@@ -374,6 +382,19 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
         L.append(f"| {s.get('id','')} | HSDES | keyword match | — | {s.get('status','')} |")
     if not recall["matches"] and not similar:
         L.append("| — | — | no matches | — | — |")
+    L.append("")
+
+    # How the most similar prior issues were resolved (root cause / fix).
+    L.append("### How similar issues were resolved")
+    any_res = False
+    for m in recall["matches"]:
+        res = _short(m.get("resolution") or m.get("root_cause"), 180)
+        if res and res != "—":
+            src = m.get("source_hsd") or m.get("sig_key", "")
+            L.append(f"- **{src}:** {res}")
+            any_res = True
+    if not any_res:
+        L.append("- _No recorded root cause / resolution among the similar cases yet._")
     L.append("")
 
     L.append("## D. Ranked root-cause hypotheses")
