@@ -6,10 +6,10 @@
       "Granite Rapids-AP", "Granite Rapids-SP", "Granite Rapids"
     ],
     "release_contains": ["GNR", "Birch Stream Platform GNR"],
-    "master_queries": [],
+    "master_queries": ["16026853717"],
     "register_namespace": "sv.socket0",
     "wiki_scopes": [],
-    "notes": "Fill master_queries with the GNR saved HSDES query id(s)."
+    "notes": "GNR AP/SP overall query (community 1509078794, queryId 16026853717)."
   },
   "SRF": {
     "display": "Sierra Forest",
