@@ -67,7 +67,7 @@ class KBStore:
 
     # ---- RECALL ----
     def search(self, symptoms: str, family: Optional[str] = None,
-               top_k: int = 5) -> Dict[str, Any]:
+               top_k: int = 5, exclude_id: Optional[str] = None) -> Dict[str, Any]:
         q_terms = set(normalize_terms(symptoms))
         scored: List[tuple] = []
         with self._conn() as c:
@@ -75,6 +75,8 @@ class KBStore:
         for r in rows:
             if family and r["family"] and family.upper() != r["family"].upper():
                 continue
+            if exclude_id and str(r["source_hsd"]) == str(exclude_id):
+                continue  # don't compare a ticket against itself
             hay = set(normalize_terms(f"{r['key_terms']} {r['signature_text']}"))
             if not q_terms:
                 continue

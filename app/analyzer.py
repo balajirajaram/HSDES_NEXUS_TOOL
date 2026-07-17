@@ -138,12 +138,16 @@ def _detect_platform(text: str) -> Optional[str]:
 
 
 def _detect_domains(text: str) -> List[Tuple[str, List[str]]]:
+    """Return domains ranked by how strongly they appear (match frequency),
+    strongest first, so the report focuses on the dominant domain(s)."""
     t = (text or "").lower()
-    hits: List[Tuple[str, List[str]]] = []
+    scored: List[Tuple[int, str, List[str]]] = []
     for pattern, label, cmds in _DOMAIN_HINTS:
-        if re.search(pattern, t):
-            hits.append((label, cmds))
-    return hits
+        n = len(re.findall(pattern, t))
+        if n:
+            scored.append((n, label, cmds))
+    scored.sort(key=lambda x: x[0], reverse=True)
+    return [(label, cmds) for _, label, cmds in scored]
 
 
 async def analyze(hsd_id: str, symptoms: str,
@@ -154,8 +158,8 @@ async def analyze(hsd_id: str, symptoms: str,
     # Text we reason over = typed symptoms (target text is added after fetch).
     platform = _detect_platform(f"{symptoms} {hsd_id}")
 
-    # Step 0 - RECALL (domain-agnostic: no family filter)
-    recall = kb.search(symptoms)
+    # Step 0 - RECALL (domain-agnostic: no family filter; exclude self-match)
+    recall = kb.search(symptoms, exclude_id=hsd_id)
 
     # Step 2 - INVESTIGATE
     target = await client.get_article(hsd_id)
@@ -262,7 +266,7 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     target = target or {}
     plat = platform or "unknown platform"
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or "")
-    domains = _detect_domains(blob)
+    domains = _detect_domains(blob)[:3]  # focus on the dominant domain(s)
 
     def tval(k, default="_not available_"):
         return target[k] if target.get(k) else default

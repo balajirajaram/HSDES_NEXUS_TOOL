@@ -44,7 +44,9 @@ async def batch_learn(hsd_ids: Optional[List[str]] = None,
     results: List[Dict[str, Any]] = []
     for hid in ids[:limit]:
         try:
-            res = await analyze(str(hid), f"batch-learn HSD {hid}",
+            # Empty symptoms -> the KB signature is derived from the ticket's own
+            # title/description/comments (no placeholder-term pollution).
+            res = await analyze(str(hid), "",
                                 hsdes_token=token, username=username, password=password)
             results.append({
                 "id": hid,
