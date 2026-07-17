@@ -18,17 +18,27 @@ import httpx
 
 from .config import config
 
-try:  # optional, Windows-only Kerberos/Negotiate
+try:  # Kerberos/Negotiate (proven method: requests + requests-kerberos + verify=False)
     import requests
-    from requests_negotiate_sspi import HttpNegotiateAuth
-    _SSPI_AVAILABLE = True
+    _REQUESTS_AVAILABLE = True
 except Exception:
-    _SSPI_AVAILABLE = False
+    _REQUESTS_AVAILABLE = False
+try:
+    from requests_kerberos import HTTPKerberosAuth
+    _KERBEROS_KIND = "kerberos"
+except Exception:
+    try:
+        from requests_negotiate_sspi import HttpNegotiateAuth
+        _KERBEROS_KIND = "sspi"
+    except Exception:
+        _KERBEROS_KIND = None
 
 _ARTICLE_FIELDS = ",".join([
-    "id", "title", "status", "owner", "priority", "family", "release",
-    "component", "subcomponent", "stepping", "silicon_stepping",
-    "release_affected", "family_affected", "description", "reason",
+    "id", "title", "status", "owner", "priority", "exposure", "reason",
+    "report_type", "family", "soc_family", "soc_version", "release",
+    "release_affected", "family_affected", "component", "subcomponent",
+    "stepping", "silicon_stepping", "suspect_area", "days_open",
+    "description", "executive_summary",
 ])
 
 
@@ -55,13 +65,26 @@ class HSDESClient:
         return self.kerberos and not (self.token or self._auth)
 
     # ---- transport ----
+    def _kerberos_auth(self):
+        if _KERBEROS_KIND == "kerberos":
+            return HTTPKerberosAuth()
+        if _KERBEROS_KIND == "sspi":
+            return HttpNegotiateAuth()
+        return None
+
     def _kerberos_request(self, method: str, url: str, **kw) -> Any:
-        if not _SSPI_AVAILABLE:
+        if not (_REQUESTS_AVAILABLE and _KERBEROS_KIND):
             raise RuntimeError(
-                "Kerberos mode needs 'requests-negotiate-sspi' "
-                "(pip install requests-negotiate-sspi)")
-        resp = requests.request(method, url, auth=HttpNegotiateAuth(),
-                                headers={"Accept": "application/json"},
+                "Kerberos mode needs 'requests-kerberos' "
+                "(pip install requests-kerberos)")
+        try:
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        except Exception:
+            pass
+        resp = requests.request(method, url, auth=self._kerberos_auth(),
+                                verify=False,
+                                headers={"Content-type": "application/json"},
                                 timeout=45, **kw)
         resp.raise_for_status()
         return resp.json()
@@ -141,7 +164,10 @@ class HSDESClient:
             "title": g("title", "subject"),
             "family": g("family", "family_affected"),
             "release": g("release", "release_affected"),
-            "priority": g("priority"),
+            "priority": g("priority", "exposure"),
+            "exposure": g("exposure"),
+            "report_type": g("report_type"),
+            "reason": g("reason"),
             "component": g("component", "subcomponent", "family_affected"),
             "stepping": g("stepping", "silicon_stepping", "release_affected"),
             "status": g("status"),
@@ -171,27 +197,30 @@ class HSDESClient:
         return out
 
     async def get_query_results(self, query_id: str, limit: int = 200) -> List[str]:
-        """Resolve a saved HSDES query id to a list of HSD IDs (best-effort)."""
+        """Resolve a saved HSDES query id to a list of HSD IDs via the REST
+        /query/{id} endpoint with pagination (start_at / max_results)."""
         if not self.enabled:
             return []
-        for path in (f"/query/{query_id}", f"/appstore/query/{query_id}",
-                     f"/query/execution/{query_id}"):
+        url = f"{self.base}/query/{query_id}"
+        ids: List[str] = []
+        start_at, page = 0, 100
+        while len(ids) < limit:
             try:
-                data = await self._get_json(f"{self.base}{path}", {"max": limit})
+                data = await self._get_json(
+                    url, {"start_at": start_at, "max_results": page})
             except Exception:
-                continue
-            rows = (data or {}).get("data") or (data or {}).get("results") or []
-            ids: List[str] = []
+                break
+            rows = (data or {}).get("data") or []
+            if not rows:
+                break
             for r in rows:
-                if isinstance(r, dict):
-                    v = r.get("id") or r.get("ID") or r.get("article_id")
-                    if v:
-                        ids.append(str(v))
-                elif isinstance(r, (str, int)):
-                    ids.append(str(r))
-            if ids:
-                return ids[:limit]
-        return []
+                v = r.get("id") if isinstance(r, dict) else r
+                if v:
+                    ids.append(str(v))
+            if len(rows) < page:
+                break
+            start_at += page
+        return ids[:limit]
 
 
 def get_client(token: Optional[str] = None, username: Optional[str] = None,

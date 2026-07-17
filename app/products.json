@@ -10,20 +10,20 @@
       "Granite Rapids WS Platforms", "GNRSP", "GNRD", "Board.GNR.RVP"
     ],
     "release_contains": ["GNR", "Birch Stream Platform GNR"],
-    "master_queries": ["16026853717"],
+    "master_queries": ["16026853717", "16028718286"],
     "register_namespace": "sv.socket0",
     "wiki_scopes": [],
-    "notes": "GNR AP/SP overall query (community 1509078794, queryId 16026853717)."
+    "notes": "GNR AP/SP overall query (16026853717) + GNR-Metrics (16028718286)."
   },
   "SRF": {
     "display": "Sierra Forest",
     "aliases": ["SRF", "Sierra Forest"],
     "families": ["Sierra Forest-AP", "Sierra Forest-SP", "Sierra Forest"],
-    "release_contains": ["SRF", "Birch Stream Platform SRF"],
-    "master_queries": [],
+    "release_contains": ["SRF", "Birch Stream Platform SRF SP", "Birch Stream Platform SRF AP"],
+    "master_queries": ["16029764311", "16027276721"],
     "register_namespace": "sv.socket0",
     "wiki_scopes": [],
-    "notes": "Fill master_queries with the SRF saved HSDES query id(s)."
+    "notes": "SRF-SP (16029764311) and SRF-AP (16027276721) saved queries."
   },
   "CWF": {
     "display": "Clearwater Forest",
