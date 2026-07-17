@@ -1,137 +1,161 @@
 # Auto HSD Analyser (Server Platforms)
 
-A self-learning **HSD-ES triage tool** for Intel **server platforms** — works across **any
-domain**: CPU/silicon RAS (MCA/MCE/IERR/CATERR), UPI/coherency, memory (DDR/DIMM/training),
-IO (PCIe/CXL), power & sleep states (S3/S4/S5/Sx, ACPI), BIOS/IFWI/BMC/CPLD and boot/hang,
-OS/driver (Windows/Linux), and manageability. It is **not** tied to any single unit like
-RDT or UPI. It ships in **two forms**:
+An **agentic HSD-ES triage assistant** for Intel server platforms. Give it an **HSD ID**
+and it will:
 
-1. **Web app** (this repo's `app/`) — a browser UI + Python backend that runs the
-   triage itself: recalls from a local learning KB, reads the HSD, calls an LLM to
-   reason, and writes findings back to the KB.
-2. **VS Code Copilot prompt** ([prompts/auto-hsd-analyser.prompt.md](prompts/auto-hsd-analyser.prompt.md)) —
-   the same agent spec, runnable inside Copilot Chat with the Intel MCP tools.
+1. **Read** the ticket fully from HSDES (title, description, and the whole comment thread),
+2. **Compare** it against a self-learning Knowledge Base seeded from your product master
+   queries (GNR / SRF / CWF today; DMR / COR ready to add),
+3. **Report** a structured triage: summary, similar past issues **with their root cause and
+   how they were resolved**, ranked hypotheses, and **domain-specific next steps + PythonSV
+   commands**,
+4. **Learn** — every ticket it sees is written back into the KB, so it gets smarter over time.
 
-> Scope: **any Intel server-platform HSD**, across all domains and platforms
-> (GNR, SRF, CWF, SPR, EMR, Eagle Stream, Birch Stream, and beyond).
+> Status: **validated live against real HSDES** using Intel Kerberos SSO (no password, no
+> token). Works for any teammate on the Intel network/domain.
 
----
-
-## What it does
-
-For a given **HSD ID** + **symptoms**, it produces a structured report (sections A–H):
-target-HSD summary, KB recall confidence, similar cases, ranked root-cause hypotheses,
-an ordered PythonSV debug plan, data-to-collect, a learning summary, and a
-known-issue verdict. Every run **grows the Knowledge Base** so future queries with the
-same signature are answered faster.
-
-```
-Step 0 RECALL      -> search local KB, score confidence (High/Medium/Low/None)
-Step 1 DECIDE      -> High = KB-first; else HSDES fallback
-Step 2 INVESTIGATE -> fetch target HSD + similar HSDs
-Step 3 WRITE-BACK  -> upsert KB entry (confirmed vs hypothesis)
-Step 4 REPORT      -> A-H markdown report
-```
+Scope: **any server-platform domain** — RAS/MCA, UPI/coherency, memory, PCIe/CXL,
+power/S-states, BIOS/IFWI/BMC/boot-hang, OS/driver. Not tied to any single unit.
 
 ---
 
-## Run the web tool (UI)
+## Prerequisites (each user, one-time)
 
-### Prerequisites
-- Python 3.10+
-- (Optional but recommended) an HSDES REST API token and an OpenAI-compatible LLM
-  endpoint. Without them the tool runs in **OFFLINE mode** (deterministic report,
-  KB still learns the signature).
+- **Windows on the Intel domain** (so Kerberos SSO to HSDES works with your existing login)
+- **Python 3.10+** (`python --version`)
+- Network access to `https://hsdes-api.intel.com`
+- (Optional) an OpenAI-compatible LLM endpoint for full prose reasoning — the tool works
+  fully without it in deterministic "offline" mode.
 
-### Start it (Windows PowerShell)
+No HSDES token or password is needed — it authenticates as **you** via Kerberos.
+
+---
+
+## How to share this with your team
+
+The whole tool is this folder. Share it any of these ways:
+
+### Option 1 — Zip and send (simplest)
+From the project's parent folder:
 ```powershell
-# from the repo root
+# Exclude local/regenerated files so the zip stays small and clean
+$exclude = @('.venv','kb\*.sqlite','.env','__pycache__')
+Compress-Archive -Path '.\Auto_HSD_analyser_RDT and UPI\*' -DestinationPath '.\AutoHSDAnalyser.zip' -Force
+```
+Send `AutoHSDAnalyser.zip`. The recipient unzips it anywhere and follows **Setup & run** below.
+(The `.venv`, `.env`, and `kb/*.sqlite` are per-machine and are recreated automatically.)
+
+### Option 2 — Internal Git (best for updates)
+Push to Intel Innersource / any internal Git, then teammates clone:
+```powershell
+git clone <internal-repo-url> auto-hsd-analyser
+```
+(See `docs/SHARING.md` for the exact publish steps.)
+
+### Option 3 — Shared drive
+Copy the folder to a shared location. Each user copies it **locally** before running
+(don't run from the share, so each person gets their own `.venv`/`.env`/KB).
+
+> Never commit or share `.env` or `kb/*.sqlite` — they're per-user and already git-ignored.
+
+---
+
+## Setup & run (Windows PowerShell)
+
+```powershell
+cd "auto-hsd-analyser"        # the folder you copied/cloned
 ./run.ps1
 ```
-This creates a venv, installs dependencies, copies `.env.example` -> `.env` on first
-run, and serves the UI at **http://127.0.0.1:8000**.
+`run.ps1` will, on first run:
+- create a virtual environment (`.venv`),
+- install dependencies (incl. `requests-kerberos` for SSO),
+- create `.env` from the template (defaults to `HSDES_AUTH_MODE=auto` — Kerberos),
+- start the web app at **http://127.0.0.1:8000**.
 
-### Manual start (any OS)
-```bash
-python -m venv .venv
-. .venv/bin/activate          # Windows: .\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-cp .env.example .env          # then edit .env
-uvicorn app.main:app --reload
+If PowerShell blocks the script the first time:
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
 ```
 
-### Configure full mode
-Edit `.env`:
+Then open **http://127.0.0.1:8000**, type an **HSD ID** + a short **symptom** line, and
+click **Analyse**.
+
+---
+
+## Using it
+
+### Web UI
+- **Analyse tab** — enter HSD ID + symptoms → full A–H report.
+- **Knowledge Base tab** — browse everything the tool has learned.
+
+### Seed the Knowledge Base from your master queries (recommended)
+The more it has learned, the better the "similar issues" comparison. Seed per product:
+```powershell
+python -m app.batch_learn --product GNR      # learns all GNR master-query tickets
+python -m app.batch_learn --product SRF
+python -m app.batch_learn --product CWF
+python -m app.batch_learn --ids 16030948515 22022875184   # or specific IDs
 ```
-HSDES_API_TOKEN=<your token>          # enables live HSDES lookups
-LLM_BASE_URL=<openai-compatible url>  # e.g. Azure OpenAI / internal gateway
+
+### Command line (no browser)
+```powershell
+python -c "import asyncio; from app.analyzer import analyze; print(asyncio.run(analyze('16030948515',''))['report_markdown'])"
+```
+
+### HTTP API (for automation)
+| Method | Route | Purpose |
+|--------|-------|---------|
+| `POST` | `/api/analyze` | `{ "hsd_id": "...", "symptoms": "..." }` → full result |
+| `POST` | `/api/batch_learn` | `{ "product": "GNR" }` or `{ "query_id": "..." }` or `{ "hsd_ids": [...] }` |
+| `GET`  | `/api/kb` | list learned cases |
+| `GET`  | `/api/products` | list products + their master queries |
+| `GET`  | `/api/health` | auth mode / KB size |
+
+---
+
+## Adding a product (e.g. DMR, COR)
+
+Edit [app/products.json](app/products.json) — add the product's aliases, families, and the
+saved **HSDES query id(s)**. No code change needed:
+```jsonc
+"DMR": {
+  "display": "Diamond Rapids",
+  "aliases": ["DMR", "Diamond Rapids"],
+  "master_queries": ["<saved-query-id>"]
+}
+```
+
+Current registry: **GNR** (2 queries), **SRF** (2), **CWF** (5), **DMR/COR** (placeholders).
+
+---
+
+## Optional: full LLM reasoning
+
+Set these in `.env` to turn the deterministic report into full prose root-cause analysis:
+```
+LLM_BASE_URL=<openai-compatible endpoint>
 LLM_API_KEY=<key>
 LLM_MODEL=gpt-4o
 ```
-The status badges at the top of the UI show whether HSDES / LLM are active.
-
-> The HSDES field mapping in [app/hsdes_client.py](app/hsdes_client.py) is best-effort;
-> adjust `_normalize` / `search_similar` to match your tenant's actual REST contract.
+Without them, the tool runs in **offline mode** (deterministic, still fully useful).
 
 ---
 
-## Use the VS Code Copilot prompt (alternative)
+## Troubleshooting
 
-1. Open this folder in VS Code with GitHub Copilot Chat enabled (Agent mode).
-2. Run `/auto-hsd-analyser` in chat, or open
-   [prompts/auto-hsd-analyser.prompt.md](prompts/auto-hsd-analyser.prompt.md) and press ▶.
-3. Enter the **HSD ID** and **Symptoms** when prompted.
-
-This path uses the Intel MCP tools (`codesign-debug-*`, `codesign-ask-hsd-agent` /
-`HSDIndexTool`) instead of the built-in HSDES/LLM clients.
-
----
-
-## Repository layout
-
-| Path | Purpose |
-|------|---------|
-| [app/](app/) | FastAPI backend + browser UI (the runnable tool). |
-| [app/analyzer.py](app/analyzer.py) | The self-learning loop orchestration. |
-| [app/kb_store.py](app/kb_store.py) | SQLite learning Knowledge Base (recall + write-back). |
-| [app/hsdes_client.py](app/hsdes_client.py) | HSDES REST client (best-effort). |
-| [app/llm_client.py](app/llm_client.py) | OpenAI-compatible chat client. |
-| [app/static/](app/static/) | HTML / CSS / JS single-page UI. |
-| [prompts/auto-hsd-analyser.prompt.md](prompts/auto-hsd-analyser.prompt.md) | VS Code Copilot prompt version. |
-| [docs/AGENT_SPEC.md](docs/AGENT_SPEC.md) | Full human-readable agent spec. |
-| [docs/KB_SCHEMA.md](docs/KB_SCHEMA.md) | KB entry schema. |
-| [docs/SHARING.md](docs/SHARING.md) | How to publish and share this repo. |
-| [run.ps1](run.ps1) | One-command launcher. |
+| Symptom | Fix |
+|---------|-----|
+| `run.ps1` blocked | `Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned` |
+| Auth/401 to HSDES | Ensure you're on the Intel domain and logged in; confirm `HSDES_AUTH_MODE=auto` in `.env` |
+| `requests-kerberos` install fails | `pip install requests-kerberos` inside `.venv`; ensure Windows/Intel domain |
+| Empty analysis / no ticket data | Check network to `hsdes-api.intel.com`; try the ID in a browser first |
+| Query returns 0 tickets | The saved query may be in a scope your account can't read; try `--ids` directly |
 
 ---
 
-## API (for automation)
-
-| Method | Route | Purpose |
-|--------|-------|---------|
-| `GET` | `/api/health` | Mode + HSDES/LLM/KB status. |
-| `POST` | `/api/analyze` | Body `{ "hsd_id": "...", "symptoms": "..." }` -> full result JSON. |
-| `GET` | `/api/kb` | List all learned KB entries. |
-
-Example:
-```bash
-curl -X POST http://127.0.0.1:8000/api/analyze \
-  -H "Content-Type: application/json" \
-  -d '{"hsd_id":"1234567890","symptoms":"UPI CRC error, MCE bank 5, GNR B0"}'
-```
-
----
-
-## Guardrails
-
-- Never invents HSD IDs, register names, root causes, or commands.
-- HSDES is the source of truth; conflicting KB entries are corrected and re-tagged.
-- Every KB entry is tagged **confirmed** vs **hypothesis**, with provenance + timestamp.
-- Raw silicon data (RPT, waveforms, dumps) is `.gitignore`d and must never be committed.
-
----
-
-## Sharing
-
-See [docs/SHARING.md](docs/SHARING.md). This is **Intel Internal** — host on Intel
-Innersource or another approved internal Git server.
+## Notes
+- **Intel Internal Use Only.** Do not commit `.env`, `kb/*.sqlite`, or raw silicon logs.
+- An **SSO-hosted variant** (one shared web app, per-user Intel SSO) lives in `option-c-sso/`
+  and will be finished later.
+- A **VS Code Copilot prompt** version is in `option-d-copilot/` for those who prefer to run
+  it inside GitHub Copilot chat.
