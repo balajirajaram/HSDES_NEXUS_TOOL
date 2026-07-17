@@ -3,7 +3,11 @@
     "display": "Granite Rapids",
     "aliases": ["GNR AP", "GNR-AP", "GNR", "Granite Rapids", "Birch Stream"],
     "families": [
-      "Granite Rapids-AP", "Granite Rapids-SP", "Granite Rapids"
+      "Granite Rapids-AP-UCC-X1", "Granite Rapids-AP-UCC-X3",
+      "Granite Rapids-SP-HCC", "Granite Rapids-SP-LCC", "Granite Rapids-SP-XCC",
+      "Granite Rapids-D-XCC", "Granite Rapids-D-MCC", "Granite Rapids-D HCC",
+      "Granite Rapids-1SWS-HCC", "Granite Rapids-1SWS-LCC", "Granite Rapids-1SWS-XCC",
+      "Granite Rapids WS Platforms", "GNRSP", "GNRD", "Board.GNR.RVP"
     ],
     "release_contains": ["GNR", "Birch Stream Platform GNR"],
     "master_queries": ["16026853717"],
