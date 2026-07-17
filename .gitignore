@@ -37,6 +37,9 @@ kb_cache/
 kb/*.sqlite
 kb/*.sqlite-*
 
+# Saved analysis reports (contain HSD data — keep local)
+output/
+
 # Secrets / credentials
 .env
 *.pem
