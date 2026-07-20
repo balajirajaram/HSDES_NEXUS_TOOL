@@ -127,6 +127,7 @@ document.getElementById("analyse-form").addEventListener("submit", async (e) => 
         hsd_id: document.getElementById("hsd_id").value,
         symptoms: document.getElementById("symptoms").value,
         log_text: (document.getElementById("log_text") || {}).value || null,
+        fetch_attachments: (document.getElementById("fetch_attachments") || {}).checked || false,
       }),
     });
     if (r.status === 401) {

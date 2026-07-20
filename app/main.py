@@ -39,6 +39,7 @@ class AnalyzeRequest(BaseModel):
     hsd_id: str
     symptoms: str
     log_text: Optional[str] = None
+    fetch_attachments: bool = False
 
 
 class LoginRequest(BaseModel):
@@ -126,6 +127,7 @@ async def api_analyze(request: Request, req: AnalyzeRequest):
         username=(creds or {}).get("username"),
         password=(creds or {}).get("password"),
         log_text=req.log_text,
+        fetch_attachments=req.fetch_attachments,
     )
 
 

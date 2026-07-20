@@ -11,13 +11,13 @@ from typing import Any, Dict, List, Optional
 # (label, severity, domain, compiled pattern)
 _SIGNATURES: List[tuple] = [
     ("MCE / Machine Check (MCA)", "fatal", "RAS / MCA",
-     re.compile(r"machine[\s_-]?check|\bMCE\b|MC[i0-9]?_STATUS|IA32_MC|mcelog|hardware error", re.I)),
+     re.compile(r"machine[\s_-]?check|MC[i0-9]_STATUS|IA32_MC[0-9]|mcelog|hardware error", re.I)),
     ("CATERR / IERR / MCERR", "fatal", "RAS / MCA",
      re.compile(r"\bCATERR\b|\bIERR\b|\bMCERR\b|\bMSMI\b|THERMTRIP", re.I)),
     ("Kernel panic / call trace / hung task", "fatal", "OS / driver",
-     re.compile(r"kernel panic|call trace|\bBUG:\b|soft lockup|hung task|\bRIP:\b|oops", re.I)),
+     re.compile(r"kernel panic|call trace|kernel BUG:|\bBUG:\s|soft lockup|hung task|\bOops:", re.I)),
     ("NMI / watchdog", "high", "BIOS / firmware / boot-hang",
-     re.compile(r"\bNMI\b|watchdog|WDT expired|hang", re.I)),
+     re.compile(r"\bNMI\b|watchdog|WDT expired|\bhang\b|hung", re.I)),
     ("BMC / SEL / IPMI event", "high", "BIOS / firmware / boot-hang",
      re.compile(r"\bSEL\b|\bBMC\b|IPMI|sensor.*assert|BMC down", re.I)),
     ("WHEA (Windows hardware error)", "fatal", "RAS / MCA",
@@ -39,6 +39,43 @@ _SIGNATURES: List[tuple] = [
 # POST / progress checkpoint like "POST 0xB4" or "Progress Code: 0x..."
 _POST_RE = re.compile(r"(post|checkpoint|progress code)[^\n]{0,40}(0x[0-9A-Fa-f]{2,4})", re.I)
 _SEV_RANK = {"fatal": 3, "high": 2, "medium": 1}
+
+# ---- MCA (Machine Check) status decode ----
+# Matches MCi_STATUS / MC status / MCACOD hex values in logs.
+_MCI_RE = re.compile(
+    r"(?:MCi?_?STATUS|MC[ _]?status|MCA?_?STATUS)\W{0,8}(0x[0-9A-Fa-f]{8,16})", re.I)
+# MCi_STATUS architectural status bits (Intel SDM Vol.3).
+_MCI_BITS = [
+    (63, "VAL", "valid"), (62, "OVER", "overflow"), (61, "UC", "uncorrected"),
+    (60, "EN", "enabled"), (59, "MISCV", "misc-valid"), (58, "ADDRV", "addr-valid"),
+    (57, "PCC", "processor-context-corrupt"), (56, "S", "signalled"),
+    (55, "AR", "action-required"),
+]
+
+
+def decode_mca(text: str) -> List[Dict[str, Any]]:
+    """Decode MCi_STATUS values found in the log into human-readable fields:
+    the architectural status bits, MCACOD (bits 15:0) and MSCOD (bits 31:16)."""
+    seen = set()
+    out: List[Dict[str, Any]] = []
+    for m in _MCI_RE.finditer(text):
+        raw = m.group(1)
+        try:
+            val = int(raw, 16)
+        except ValueError:
+            continue
+        if val in seen:
+            continue
+        seen.add(val)
+        flags = [name for bit, name, _desc in _MCI_BITS if (val >> bit) & 1]
+        out.append({
+            "status": hex(val),
+            "flags": flags,
+            "mcacod": hex(val & 0xFFFF),
+            "mscod": hex((val >> 16) & 0xFFFF),
+            "severity": "fatal" if "UC" in flags or "PCC" in flags else "corrected",
+        })
+    return out[:5]
 
 
 def analyze_log(text: str, max_examples: int = 1) -> Dict[str, Any]:
@@ -85,6 +122,7 @@ def analyze_log(text: str, max_examples: int = 1) -> Dict[str, Any]:
         "signatures": signatures,
         "domains": domains,
         "last_checkpoint": last_ckpt,
+        "mca_decode": decode_mca(text),
         "summary": summary,
     }
 

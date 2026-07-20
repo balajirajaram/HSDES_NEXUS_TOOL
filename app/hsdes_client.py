@@ -12,7 +12,9 @@ adjust `_normalize` / `_fetch_comments` / `get_query_results` if needed.
 """
 
 import asyncio
+import io
 import re
+import zipfile
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -229,6 +231,77 @@ class HSDESClient:
                 break
             start_at += page
         return ids[:limit]
+
+
+    # ---- attachments (logs already on the ticket) ----
+    def attachment_ids(self, target: Optional[Dict[str, Any]]) -> List[str]:
+        """Resource IDs of files attached to the ticket, parsed from its text
+        (HSDES references them as https://hsdes.intel.com/resource/<id>)."""
+        text = (target or {}).get("full_text", "") or ""
+        ids = re.findall(r"hsdes\.intel\.com/resource/(\d+)", text, re.I)
+        return list(dict.fromkeys(ids))
+
+    def _kerberos_bytes(self, url: str) -> bytes:
+        if not (_REQUESTS_AVAILABLE and _KERBEROS_KIND):
+            raise RuntimeError("Kerberos mode needs 'requests-kerberos'")
+        try:
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        except Exception:
+            pass
+        resp = requests.get(url, auth=self._kerberos_auth(), verify=False, timeout=90)
+        resp.raise_for_status()
+        return resp.content
+
+    async def download_binary(self, resource_id: str) -> bytes:
+        url = f"{self.base}/binary/{resource_id}"
+        if self._use_kerberos():
+            return await asyncio.to_thread(self._kerberos_bytes, url)
+        async with httpx.AsyncClient(timeout=90, auth=self._auth) as cx:
+            r = await cx.get(url, headers=self._headers())
+            r.raise_for_status()
+            return r.content
+
+    @staticmethod
+    def _bytes_to_text(rid: str, data: bytes, max_bytes: int) -> str:
+        """Extract text from an attachment (zip members, gzip, or plain)."""
+        try:
+            if data[:2] == b"PK":  # zip
+                parts: List[str] = []
+                with zipfile.ZipFile(io.BytesIO(data)) as z:
+                    for name in z.namelist():
+                        if name.endswith("/"):
+                            continue
+                        try:
+                            with z.open(name) as f:
+                                raw = f.read(max_bytes)
+                            parts.append(f"### attachment {rid}:{name}\n"
+                                         + raw.decode("utf-8", "replace"))
+                        except Exception:
+                            continue
+                return "\n".join(parts)
+            if data[:2] == b"\x1f\x8b":  # gzip
+                import gzip
+                return (f"### attachment {rid}\n"
+                        + gzip.decompress(data)[:max_bytes].decode("utf-8", "replace"))
+            return f"### attachment {rid}\n" + data[:max_bytes].decode("utf-8", "replace")
+        except Exception:
+            return ""
+
+    async def fetch_attachment_text(self, target: Optional[Dict[str, Any]],
+                                    max_files: int = 8,
+                                    max_bytes: int = 4_000_000) -> str:
+        """Download and extract text from the ticket's attached log resources."""
+        out: List[str] = []
+        for rid in self.attachment_ids(target)[:max_files]:
+            try:
+                data = await self.download_binary(rid)
+            except Exception:
+                continue
+            txt = self._bytes_to_text(rid, data, max_bytes)
+            if txt:
+                out.append(txt)
+        return "\n".join(out)
 
 
 def get_client(token: Optional[str] = None, username: Optional[str] = None,

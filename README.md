@@ -107,8 +107,16 @@ python -m app.summarize 14028261445 --log serial.log  # also scan an attached lo
 Paste a log (serial / PythonSV / BMC SEL / OS kernel / RPT) into the **Attached log** box
 in the UI, or pass `--log <file>` on the CLI. The tool scans it for MCE/CATERR/IERR,
 UPI/DDR/PCIe, boot-hang, and OS-panic signatures and adds an **"A2. Attached log
-analysis"** section (severity-ranked, with the last POST checkpoint) that feeds the
-root-cause hypotheses and next steps.
+analysis"** section (severity-ranked, with the last POST checkpoint and **MCA decode** —
+MCi_STATUS → flags/MCACOD/MSCOD) that feeds the root-cause hypotheses and next steps.
+
+### Auto-fetch the logs already on the ticket
+Tick **"Auto-fetch attachments"** in the UI, or pass `--fetch-attachments` on the CLI:
+```powershell
+python -m app.summarize 16030948515 --fetch-attachments
+```
+The tool downloads the ticket's attached resources (zip/gz/text) from HSDES, extracts the
+logs, and analyzes them automatically — no manual download needed.
 
 ### HTTP API (for automation)
 | Method | Route | Purpose |

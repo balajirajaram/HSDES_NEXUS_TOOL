@@ -213,19 +213,29 @@ async def analyze(hsd_id: str, symptoms: str,
                   hsdes_token: Optional[str] = None,
                   username: Optional[str] = None,
                   password: Optional[str] = None,
-                  log_text: Optional[str] = None) -> Dict[str, Any]:
+                  log_text: Optional[str] = None,
+                  fetch_attachments: bool = False) -> Dict[str, Any]:
     client = HSDESClient(hsdes_token, username, password)
     # Text we reason over = typed symptoms (target text is added after fetch).
     platform = _detect_platform(f"{symptoms} {hsd_id}")
-
-    # Optional: analyze attached logs (serial / PythonSV / BMC SEL / kernel / RPT).
-    log_findings = analyze_log(log_text) if log_text else None
 
     # Step 0 - RECALL (domain-agnostic: no family filter; exclude self-match)
     recall = kb.search(symptoms, exclude_id=hsd_id)
 
     # Step 2 - INVESTIGATE
     target = await client.get_article(hsd_id)
+    attachments = client.attachment_ids(target) if target else []
+
+    # Logs: any pasted log + (optionally) the logs already attached to the ticket.
+    combined_log = log_text or ""
+    fetched = 0
+    if fetch_attachments and attachments:
+        atext = await client.fetch_attachment_text(target)
+        if atext:
+            combined_log = (combined_log + "\n" + atext).strip()
+            fetched = len(attachments)
+    log_findings = analyze_log(combined_log) if combined_log.strip() else None
+
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or ""
                              if target else "")
     if log_findings:
@@ -245,7 +255,7 @@ async def analyze(hsd_id: str, symptoms: str,
     else:
         report_md, kb_entry = _offline_report(
             hsd_id, symptoms, platform, recall, target, similar, client.enabled,
-            log_findings
+            log_findings, attachments, fetched
         )
 
     # Step 3 - WRITE-BACK
@@ -258,6 +268,8 @@ async def analyze(hsd_id: str, symptoms: str,
         "kb_recall": recall,
         "target": target,
         "similar": similar,
+        "attachments": attachments,
+        "attachments_fetched": fetched,
         "log_findings": log_findings,
         "kb_action": kb_action,
         "report_markdown": report_md,
@@ -333,8 +345,10 @@ def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled) -> Dict[s
 
 
 def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
-                    hsdes_enabled, log_findings=None) -> Tuple[str, Dict[str, Any]]:
+                    hsdes_enabled, log_findings=None, attachments=None,
+                    attachments_fetched=0) -> Tuple[str, Dict[str, Any]]:
     target = target or {}
+    attachments = attachments or []
     plat = platform or "unknown platform"
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or "")
     if log_findings:
@@ -364,6 +378,10 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
             L.append(f"- **Description:** {desc if len(desc) <= 600 else desc[:600] + '…'}")
         if target.get("comments") is not None:
             L.append(f"- **Comments read:** {len(target.get('comments') or [])}")
+        if attachments:
+            fetched_note = (f" ({attachments_fetched} fetched & scanned)"
+                            if attachments_fetched else " (not fetched — pass fetch_attachments)")
+            L.append(f"- **Attachments on ticket:** {len(attachments)}{fetched_note}")
     else:
         reason = (target.get("error") if target
                   else "no reader token/credential supplied for this request")
@@ -389,6 +407,11 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
                          f"{s['domain']} | `{ex}` |")
         else:
             L.append("- No known failure signatures matched in the log.")
+        # MCA decode (MCi_STATUS -> flags, MCACOD, MSCOD)
+        for d in (log_findings.get("mca_decode") or []):
+            L.append(f"- **MCA decode:** status `{d['status']}` "
+                     f"flags [{', '.join(d['flags']) or 'none'}] "
+                     f"MCACOD `{d['mcacod']}` MSCOD `{d['mscod']}` ({d['severity']})")
         L.append("")
 
     L.append("## B. KB recall result")
