@@ -68,14 +68,45 @@ def decode_mca(text: str) -> List[Dict[str, Any]]:
             continue
         seen.add(val)
         flags = [name for bit, name, _desc in _MCI_BITS if (val >> bit) & 1]
+        mcacod = val & 0xFFFF
         out.append({
             "status": hex(val),
             "flags": flags,
-            "mcacod": hex(val & 0xFFFF),
+            "mcacod": hex(mcacod),
+            "mcacod_text": decode_mcacod(mcacod),
             "mscod": hex((val >> 16) & 0xFFFF),
             "severity": "fatal" if "UC" in flags or "PCC" in flags else "corrected",
         })
     return out[:5]
+
+
+def decode_mcacod(v: int) -> str:
+    """Best-effort MCACOD (bits 15:0) classification per Intel SDM Vol.3B §16.9.
+    Model-specific (MSCOD) details still require the IP's MCA spec."""
+    v &= 0xFFFF
+    simple = {
+        0x0000: "No error", 0x0001: "Unclassified",
+        0x0002: "Microcode ROM parity error", 0x0003: "External error",
+        0x0004: "FRC error", 0x0005: "Internal parity error",
+        0x0006: "SMM handler code access violation", 0x0400: "Internal timer error",
+    }
+    if v in simple:
+        return simple[v]
+    if 0x0401 <= v <= 0x04FF:
+        return "Internal unclassified error"
+    _LL = ["L0", "L1", "L2", "LG"]
+    _TT = ["Instruction", "Data", "Generic", "?"]
+    if (v & 0xFFFC) == 0x000C:
+        return f"Generic cache hierarchy error (level {_LL[v & 0x3]})"
+    if (v & 0xFFF0) == 0x0010:
+        return f"TLB error ({_TT[(v >> 2) & 0x3]}, level {_LL[v & 0x3]})"
+    if (v & 0xFF00) == 0x0100:
+        return f"Cache/memory hierarchy error ({_TT[(v >> 2) & 0x3]}, level {_LL[v & 0x3]})"
+    if (v & 0xF800) == 0x0800:
+        return "Bus / interconnect error (e.g. UPI/QPI, IIO) — see MSCOD/IP MCA spec"
+    if (v & 0xFF80) == 0x0080:
+        return "Memory controller error (channel/rank in low bits)"
+    return "compound/vendor-specific code — see SDM / IP MCA spec"
 
 
 def analyze_log(text: str, max_examples: int = 1) -> Dict[str, Any]:

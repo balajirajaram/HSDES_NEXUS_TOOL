@@ -411,7 +411,8 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
         for d in (log_findings.get("mca_decode") or []):
             L.append(f"- **MCA decode:** status `{d['status']}` "
                      f"flags [{', '.join(d['flags']) or 'none'}] "
-                     f"MCACOD `{d['mcacod']}` MSCOD `{d['mscod']}` ({d['severity']})")
+                     f"MCACOD `{d['mcacod']}` = {d.get('mcacod_text','?')}; "
+                     f"MSCOD `{d['mscod']}` (model-specific) — {d['severity']}")
         L.append("")
 
     L.append("## B. KB recall result")
@@ -461,6 +462,23 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
 
     L.append("## E. Detailed next debug steps")
     step = 1
+    # Log-driven step first when attached logs revealed something concrete.
+    if log_findings and log_findings.get("signatures"):
+        top = log_findings["signatures"][0]
+        L.append(f"{step}. **From attached logs — {top['label']}** ({top['severity']}, "
+                 f"x{top['count']}). Start here; it's the strongest evidence.")
+        mca = (log_findings.get("mca_decode") or [])
+        if mca:
+            d = mca[0]
+            L.append(f"   - Decode the flagged MCA bank: read `MCi_STATUS`/`MCi_ADDR`; "
+                     f"status `{d['status']}` = {d.get('mcacod_text','?')} "
+                     f"(flags {', '.join(d['flags']) or 'none'}).")
+            L.append("   - `sv.socket<N>.uncore.mca_bank<B>.status.read()` "
+                     "# confirm bank B from the log line")
+        if log_findings.get("last_checkpoint"):
+            L.append(f"   - Last checkpoint before failure: `{log_findings['last_checkpoint']}` "
+                     "— inspect the code path right after it.")
+        step += 1
     if domains:
         for label, cmds in domains:
             L.append(f"{step}. **{label}** — check the domain-specific state first.")
