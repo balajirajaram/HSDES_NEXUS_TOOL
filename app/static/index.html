@@ -11,8 +11,7 @@
     <div class="header-row">
       <h1>Auto HSD Analyser <span class="scope">Intel Server Platforms — any domain</span></h1>
       <div id="account" class="account">
-        <span id="account-name" class="hint">not signed in</span>
-        <button id="logout-btn" class="btn-link hidden">Sign out</button>
+        <span id="account-name" class="hint">Kerberos SSO</span>
       </div>
     </div>
     <div id="status" class="status-bar">
@@ -22,24 +21,6 @@
       <span class="badge" id="badge-kb">KB: … entries</span>
     </div>
   </header>
-
-  <!-- Login overlay shown at launch when not signed in -->
-  <div id="login-overlay" class="overlay hidden">
-    <form id="login-form" class="login-card">
-      <h2>Sign in with your Intel account</h2>
-      <p class="hint">Your credentials authenticate to HSDES and are held only for this
-        session on the server — never saved to disk, never shared. Prefer Kerberos SSO
-        (<code>HSDES_AUTH_MODE=auto</code>) to skip this prompt entirely.</p>
-      <label>Intel username (IDSID)
-        <input id="login-user" type="text" autocomplete="username" placeholder="e.g. jdoe" required />
-      </label>
-      <label>Password
-        <input id="login-pass" type="password" autocomplete="current-password" required />
-      </label>
-      <button type="submit" id="login-submit">Sign in</button>
-      <div id="login-error" class="error"></div>
-    </form>
-  </div>
 
   <nav class="tabs">
     <button class="tab active" data-tab="analyse">Analyse</button>

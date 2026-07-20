@@ -29,6 +29,15 @@ from .llm_client import llm
 
 app = FastAPI(title="Auto HSD Analyser")
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_SECRET)
+
+
+@app.middleware("http")
+async def _no_cache(request: Request, call_next):
+    resp = await call_next(request)
+    if request.url.path == "/" or request.url.path.startswith("/static"):
+        resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    return resp
+
 _STATIC = os.path.join(os.path.dirname(__file__), "static")
 _OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
 
@@ -76,7 +85,10 @@ def _kerberos() -> bool:
 
 @app.get("/")
 async def index():
-    return FileResponse(os.path.join(_STATIC, "index.html"))
+    return FileResponse(
+        os.path.join(_STATIC, "index.html"),
+        headers={"Cache-Control": "no-store, no-cache, must-revalidate"},
+    )
 
 
 @app.get("/api/health")

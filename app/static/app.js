@@ -63,17 +63,14 @@ function setBadge(id, text, on) {
   el.classList.toggle("off", !on);
 }
 
-// ---- Session / auth ----
-let signedIn = false;
+// ---- Session / auth (Kerberos SSO — no login needed) ----
 async function refreshSession() {
   try {
     const me = await (await fetch("/api/me")).json();
-    signedIn = !!me.authenticated;
-    document.getElementById("account-name").textContent =
-      signedIn ? (me.username || "signed in") : "not signed in";
-    document.getElementById("logout-btn").classList.toggle("hidden", !signedIn);
-    document.getElementById("login-overlay").classList.toggle("hidden", signedIn);
-    setBadge("badge-auth", "auth: " + (signedIn ? "signed in" : "sign in"), signedIn);
+    const name = me.authenticated ? (me.username || "signed in") : "not authenticated";
+    const el = document.getElementById("account-name");
+    if (el) el.textContent = name;
+    setBadge("badge-auth", "auth: " + (me.authenticated ? "Kerberos" : "off"), !!me.authenticated);
   } catch (e) { /* ignore */ }
 }
 
@@ -85,33 +82,6 @@ async function loadHealth() {
     setBadge("badge-kb", "KB: " + h.kb_entries + " entries", true);
   } catch (e) { /* ignore */ }
 }
-
-// ---- Login ----
-document.getElementById("login-form").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const btn = document.getElementById("login-submit");
-  const err = document.getElementById("login-error");
-  err.textContent = ""; btn.disabled = true; btn.textContent = "Signing in…";
-  try {
-    const r = await fetch("/api/login", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        username: document.getElementById("login-user").value,
-        password: document.getElementById("login-pass").value,
-      }),
-    });
-    const d = await r.json();
-    if (!r.ok) { err.textContent = d.error || "Sign-in failed"; return; }
-    document.getElementById("login-pass").value = "";
-    await refreshSession();
-  } catch (ex) { err.textContent = String(ex); }
-  finally { btn.disabled = false; btn.textContent = "Sign in"; }
-});
-
-document.getElementById("logout-btn").addEventListener("click", async () => {
-  await fetch("/api/logout", { method: "POST" });
-  await refreshSession();
-});
 
 // ---- Analyse ----
 document.getElementById("analyse-form").addEventListener("submit", async (e) => {
@@ -131,8 +101,7 @@ document.getElementById("analyse-form").addEventListener("submit", async (e) => 
       }),
     });
     if (r.status === 401) {
-      document.getElementById("login-overlay").classList.remove("hidden");
-      report.innerHTML = `<p class="error">Please sign in first.</p>`; return;
+      report.innerHTML = `<p class="error">Not authenticated to HSDES. Ensure you are on the Intel domain (Kerberos) or set HSDES_AUTH_MODE in .env.</p>`; return;
     }
     const data = await r.json();
     if (!r.ok) { report.innerHTML = `<p class="error">${data.error || "Request failed"}</p>`; return; }
