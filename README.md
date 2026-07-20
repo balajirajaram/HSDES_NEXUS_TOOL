@@ -82,6 +82,29 @@ click **Analyse**.
 
 ---
 
+## Where your analysis is saved
+
+**Every** analysis — whether run from the web UI or the command line — is saved as a
+Markdown file in the **`output\`** folder inside the project:
+
+```
+<project>\output\hsd_<HSD_ID>_<YYYYMMDD_HHMMSS>.md
+```
+
+Example: `output\hsd_16030948515_20260720_143512.md`
+
+- The web UI shows the saved path in the result header after each run.
+- The CLI (`python -m app.summarize`) prints the saved path at the end.
+- Files are timestamped, so re-analysing the same HSD keeps every version.
+- `output\` is git-ignored (reports may contain HSD data) — it stays on your machine.
+
+To open the folder quickly:
+```powershell
+explorer .\output          # or:  Get-ChildItem .\output\*.md
+```
+
+---
+
 ## Using it
 
 ### Web UI

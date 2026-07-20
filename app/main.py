@@ -12,6 +12,7 @@ typing your domain password. Always serve over HTTPS in any shared deployment.
 
 import os
 import secrets
+import time
 from typing import Dict, Optional
 
 from fastapi import FastAPI, Request
@@ -29,6 +30,16 @@ from .llm_client import llm
 app = FastAPI(title="Auto HSD Analyser")
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_SECRET)
 _STATIC = os.path.join(os.path.dirname(__file__), "static")
+_OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
+
+
+def _save_report(hsd_id: str, markdown: str) -> str:
+    """Persist every analysis to output/hsd_<id>_<timestamp>.md."""
+    os.makedirs(_OUTPUT_DIR, exist_ok=True)
+    path = os.path.join(_OUTPUT_DIR, f"hsd_{hsd_id}_{time.strftime('%Y%m%d_%H%M%S')}.md")
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(markdown)
+    return path
 
 # Server-side credential store: session_id -> {"username","password"}.
 # In-memory only; cleared on logout and on process restart.
@@ -122,13 +133,16 @@ async def api_analyze(request: Request, req: AnalyzeRequest):
     creds = _creds(request)
     if not creds and not _kerberos():
         return JSONResponse(status_code=401, content={"error": "Please sign in first."})
-    return await analyze(
+    result = await analyze(
         req.hsd_id.strip(), req.symptoms.strip(),
         username=(creds or {}).get("username"),
         password=(creds or {}).get("password"),
         log_text=req.log_text,
         fetch_attachments=req.fetch_attachments,
     )
+    if result.get("report_markdown"):
+        result["saved_path"] = _save_report(req.hsd_id.strip(), result["report_markdown"])
+    return result
 
 
 @app.post("/api/batch_learn")

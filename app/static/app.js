@@ -141,7 +141,8 @@ document.getElementById("analyse-form").addEventListener("submit", async (e) => 
       `<span><span class="k">Mode:</span> ${data.mode}</span>` +
       `<span><span class="k">KB recall:</span> ${data.kb_recall.confidence} (${data.kb_recall.best_score})</span>` +
       `<span><span class="k">KB write-back:</span> ${data.kb_action.action}</span>` +
-      `<span><span class="k">Platform:</span> ${data.family || "n/a"}</span>`;
+      `<span><span class="k">Platform:</span> ${data.family || "n/a"}</span>` +
+      (data.saved_path ? `<span><span class="k">Saved:</span> ${data.saved_path}</span>` : "");
     report.innerHTML = renderMarkdown(data.report_markdown || "*No report returned.*");
     loadHealth();
   } catch (err) { report.innerHTML = `<p class="error">${err}</p>`; }
