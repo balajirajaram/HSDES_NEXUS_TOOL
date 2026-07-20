@@ -229,11 +229,14 @@ async def analyze(hsd_id: str, symptoms: str,
     # Logs: any pasted log + (optionally) the logs already attached to the ticket.
     combined_log = log_text or ""
     fetched = 0
+    attach_files: List[str] = []
     if fetch_attachments and attachments:
         atext = await client.fetch_attachment_text(target)
         if atext:
             combined_log = (combined_log + "\n" + atext).strip()
             fetched = len(attachments)
+            attach_files = list(dict.fromkeys(
+                re.findall(r"### attachment ([^\n]+)", atext)))
     log_findings = analyze_log(combined_log) if combined_log.strip() else None
 
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or ""
@@ -255,7 +258,7 @@ async def analyze(hsd_id: str, symptoms: str,
     else:
         report_md, kb_entry = _offline_report(
             hsd_id, symptoms, platform, recall, target, similar, client.enabled,
-            log_findings, attachments, fetched
+            log_findings, attachments, fetched, attach_files
         )
 
     # Step 3 - WRITE-BACK
@@ -270,6 +273,7 @@ async def analyze(hsd_id: str, symptoms: str,
         "similar": similar,
         "attachments": attachments,
         "attachments_fetched": fetched,
+        "attachment_files": attach_files,
         "log_findings": log_findings,
         "kb_action": kb_action,
         "report_markdown": report_md,
@@ -346,9 +350,10 @@ def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled) -> Dict[s
 
 def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
                     hsdes_enabled, log_findings=None, attachments=None,
-                    attachments_fetched=0) -> Tuple[str, Dict[str, Any]]:
+                    attachments_fetched=0, attach_files=None) -> Tuple[str, Dict[str, Any]]:
     target = target or {}
     attachments = attachments or []
+    attach_files = attach_files or []
     plat = platform or "unknown platform"
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or "")
     if log_findings:
@@ -394,10 +399,30 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     # Attached-log analysis (only when logs were provided).
     if log_findings:
         L.append("## A2. Attached log analysis")
+        if attachments:
+            L.append(f"- **Attachments on ticket:** {len(attachments)} — "
+                     f"**{attachments_fetched} downloaded & scanned**")
+            if attach_files:
+                L.append(f"- **Files extracted:** {', '.join(_short(f, 60) for f in attach_files[:8])}")
         L.append(f"- **Lines scanned:** {log_findings['lines_scanned']}")
         if log_findings.get("last_checkpoint"):
-            L.append(f"- **Last checkpoint before failure:** `{log_findings['last_checkpoint']}`")
+            L.append(f"- **Last good checkpoint:** `{log_findings['last_checkpoint']}`")
+        # Sequence of events (timeline)
+        timeline = log_findings.get("timeline") or []
+        if timeline:
+            L.append("")
+            L.append("**Sequence of events (from logs, in order):**")
+            L.append("")
+            L.append("| # | Timestamp | Event | Detail |")
+            L.append("|---|-----------|-------|--------|")
+            for i, ev in enumerate(timeline, 1):
+                mark = " ⟵ **failure point**" if ev.get("failure_point") else ""
+                cnt = f" (x{ev['count']})" if ev.get("count", 1) > 1 else ""
+                detail = _short(ev["text"], 90).replace("|", "\\|")
+                L.append(f"| {i} | {ev['ts'] or '—'} | {ev['label']}{cnt}{mark} | `{detail}` |")
         if log_findings["signatures"]:
+            L.append("")
+            L.append("**Failure signatures detected:**")
             L.append("")
             L.append("| Signature | Severity | Count | Domain | Example |")
             L.append("|-----------|----------|-------|--------|---------|")
@@ -413,6 +438,13 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
                      f"flags [{', '.join(d['flags']) or 'none'}] "
                      f"MCACOD `{d['mcacod']}` = {d.get('mcacod_text','?')}; "
                      f"MSCOD `{d['mscod']}` (model-specific) — {d['severity']}")
+        L.append("")
+    elif attachments:
+        # Logs exist on the ticket but weren't fetched — make that explicit.
+        L.append("## A2. Attached log analysis")
+        L.append(f"- **{len(attachments)} attachment(s) on the ticket were NOT downloaded.** "
+                 "Enable **Auto-fetch attachments** (UI) or `--fetch-attachments` (CLI) to "
+                 "extract and analyze them.")
         L.append("")
 
     L.append("## B. KB recall result")

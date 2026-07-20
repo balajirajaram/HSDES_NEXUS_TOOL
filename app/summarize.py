@@ -19,7 +19,7 @@ _OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
 
 
 async def summarize(hsd_id: str, symptoms: str = "",
-                    log_path: str = "", fetch_attachments: bool = False) -> str:
+                    log_path: str = "", fetch_attachments: bool = True) -> str:
     log_text = read_log(log_path) if log_path else None
     result = await analyze(hsd_id, symptoms, log_text=log_text,
                            fetch_attachments=fetch_attachments)
@@ -37,11 +37,11 @@ def _main() -> None:
     ap.add_argument("hsd_id")
     ap.add_argument("symptoms", nargs="?", default="")
     ap.add_argument("--log", default="", help="Path to a log file (.txt/.log/.gz) to analyze.")
-    ap.add_argument("--fetch-attachments", action="store_true",
-                    help="Download and analyze logs already attached to the ticket.")
+    ap.add_argument("--no-attachments", action="store_true",
+                    help="Do NOT download the ticket's attached logs (they are fetched by default).")
     args = ap.parse_args()
     path = asyncio.run(summarize(args.hsd_id, args.symptoms, args.log,
-                                 fetch_attachments=args.fetch_attachments))
+                                 fetch_attachments=not args.no_attachments))
     with open(path, "r", encoding="utf-8") as f:
         print(f.read())
     print("\n" + "=" * 80)

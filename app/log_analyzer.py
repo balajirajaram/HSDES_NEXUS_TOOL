@@ -154,8 +154,68 @@ def analyze_log(text: str, max_examples: int = 1) -> Dict[str, Any]:
         "domains": domains,
         "last_checkpoint": last_ckpt,
         "mca_decode": decode_mca(text),
+        "timeline": build_timeline(text),
         "summary": summary,
     }
+
+
+# ---- Sequence-of-events timeline ----
+_TS_RE = re.compile(
+    r"(\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?"   # 2026-06-30 12:21:31
+    r"|\d{2}:\d{2}:\d{2}(?:\.\d+)?"                          # 12:21:31
+    r"|\[\s*\d+\.\d{3,6}\s*\])")                             # [ 12.345678]
+
+# ordered by how "late" in a failure they usually occur
+_EVENT_PATS: List[tuple] = [
+    ("POST / checkpoint", "progress",
+     re.compile(r"(checkpoint|progress code|\bPOST\b)\D{0,20}0x[0-9A-Fa-f]{2,4}", re.I)),
+    ("UPI / link error", "error",
+     re.compile(r"IpWrError|\bUPI\b.*(error|crc|retrain|degrad)|\bKTI\b.*error", re.I)),
+    ("Memory CE/UE / poison", "error",
+     re.compile(r"poison|uncorrectable|correctable error|\bEDAC\b|MLC|DCU", re.I)),
+    ("MCE / Machine Check", "fatal",
+     re.compile(r"machine check|MCi?_?STATUS\s*[:=]|mcelog|hardware error", re.I)),
+    ("CATERR / IERR", "fatal",
+     re.compile(r"\bCATERR\b|\bIERR\b|\bMCERR\b", re.I)),
+    ("Kernel panic", "fatal",
+     re.compile(r"kernel panic|not syncing|Fatal .*machine check|call trace|soft lockup", re.I)),
+    ("Hang / reset / BMC-down", "fatal",
+     re.compile(r"\bhung\b|\bhang\b|unexpected reset|surprise reset|BMC down", re.I)),
+]
+
+
+def build_timeline(text: str, max_events: int = 15) -> List[Dict[str, Any]]:
+    """Extract significant events in file order (= chronological) so the report
+    can show the SEQUENCE of what happened and where the failure occurred."""
+    events: List[Dict[str, Any]] = []
+    for idx, line in enumerate(text.splitlines()):
+        s = line.strip()
+        # skip our own attachment markers and build-artifact/debug-path noise
+        if s.startswith("###") or "PDB =" in s or ".pdb" in s.lower() or "\\Build\\" in s:
+            continue
+        for label, sev, pat in _EVENT_PATS:
+            if pat.search(line):
+                ts = _TS_RE.search(line)
+                events.append({
+                    "idx": idx, "ts": ts.group(0).strip() if ts else "",
+                    "label": label, "severity": sev,
+                    "text": s[:160],
+                })
+                break
+    # compress runs of the same event type into one row with a count
+    compressed: List[Dict[str, Any]] = []
+    for e in events:
+        if compressed and compressed[-1]["label"] == e["label"]:
+            compressed[-1]["count"] += 1
+            continue
+        e["count"] = 1
+        compressed.append(e)
+    # mark the failure point = first fatal-severity event
+    for e in compressed:
+        if e["severity"] == "fatal":
+            e["failure_point"] = True
+            break
+    return compressed[:max_events]
 
 
 def read_log(path: str, max_bytes: int = 5_000_000) -> Optional[str]:

@@ -59,7 +59,7 @@ class AnalyzeRequest(BaseModel):
     hsd_id: str
     symptoms: str
     log_text: Optional[str] = None
-    fetch_attachments: bool = False
+    fetch_attachments: bool = True
 
 
 class LoginRequest(BaseModel):

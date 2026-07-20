@@ -109,7 +109,16 @@ class KBStore:
             scored.append((score, ordered, r))
 
         scored.sort(key=lambda x: x[0], reverse=True)
-        scored = scored[:top_k]
+        # De-duplicate by source ticket so the same HSD isn't shown repeatedly.
+        seen_src = set()
+        deduped: List[tuple] = []
+        for s in scored:
+            src = str(s[2]["source_hsd"] or s[2]["sig_key"])
+            if src in seen_src:
+                continue
+            seen_src.add(src)
+            deduped.append(s)
+        scored = deduped[:top_k]
         best = scored[0][0] if scored else 0.0
         if best >= 0.6:
             confidence = "High"
