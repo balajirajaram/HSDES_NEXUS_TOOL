@@ -66,6 +66,30 @@ _STRONG_RC = re.compile(
     r"isolated (?:the )?issue to|root[\s-]?caused?|\bNACK\b|stuck (?:state|indefinitely)|"
     r"never (?:reaches?|recover)|not received|hang.*(?:because|due to|before)", re.I)
 
+# closure / resolution / disposition statements (final verdict of the thread)
+_RESOLUTION = re.compile(
+    r"no repro|cannot reproduce|not able to reproduce|issue (?:is )?not seen|"
+    r"after (?:set|setting|applying|flashing).*(?:not seen|resolved|fixed|no repro)|"
+    r"closing as|closed as|marking .* (?:closed|rejected)|fixed (?:in|by)|"
+    r"resolved (?:by|in|after)|root[\s-]?caused to|will be fixed in|"
+    r"work[\s-]?around", re.I)
+
+
+def _is_prose(s: str) -> bool:
+    """True for human explanation; False for tables / log dumps / timestamp grids
+    so we don't mistake a pasted test-indicator table for a root-cause statement."""
+    if s.count("|") >= 3 or s.count("@") >= 2:
+        return False
+    if re.search(r"\d{4} @ \d|kubernetes\.host|metadata\.test|test-(?:start|end)-indicator",
+                 s, re.I):
+        return False
+    if any(tok in s for tok in ("0x", "::", "=>", ".show()", ".read()", "sv.socket")):
+        # allow short mentions but reject dump-like lines
+        if len(re.findall(r"0x[0-9A-Fa-f]+", s)) >= 2:
+            return False
+    alpha = sum(c.isalpha() or c.isspace() for c in s)
+    return len(s) >= 12 and alpha / max(1, len(s)) >= 0.6
+
 
 def _split_sentences(text: str) -> List[str]:
     parts = re.split(r"(?<=[.;!?])\s+|\n+", text)
@@ -80,11 +104,13 @@ def _classify(sentence: str) -> Optional[str]:
 
 
 def _salient(text: str) -> Dict[str, str]:
-    """Pick the most salient sentence + kind from one comment (root_cause >
-    workaround > finding > action > next_step)."""
+    """Pick the most salient PROSE sentence + kind from one comment (root_cause >
+    workaround > finding > action > next_step). Non-prose (tables/log dumps) is
+    skipped so noise never becomes the headline."""
     order = {k: i for i, (k, _) in enumerate(_KIND_CUES)}
     best_kind, best_sent = None, ""
-    for s in _split_sentences(text):
+    prose = [s for s in _split_sentences(text) if _is_prose(s)]
+    for s in prose:
         k = _classify(s)
         if k is None:
             continue
@@ -93,8 +119,8 @@ def _salient(text: str) -> Dict[str, str]:
         if best_kind == "root_cause":
             break
     if best_kind is None:
-        first = _split_sentences(text)
-        return {"kind": "note", "text": (first[0] if first else text)[:240]}
+        return {"kind": "note", "text": (prose[0] if prose else
+                                         (_split_sentences(text)[:1] or [text])[0])[:240]}
     return {"kind": best_kind, "text": best_sent[:240]}
 
 
@@ -118,6 +144,7 @@ def analyze_comments(structured: List[Dict[str, str]]) -> Optional[Dict[str, Any
     crumbs: Dict[str, List[str]] = {}
     rc_candidates: List[tuple] = []      # (index, strength, author, text)
     wa_candidates: List[tuple] = []
+    res_candidates: List[tuple] = []     # (index, author, text) — closure/disposition
 
     for idx, c in enumerate(structured):
         author = c.get("author", "") or "unknown"
@@ -135,11 +162,15 @@ def analyze_comments(structured: List[Dict[str, str]]) -> Optional[Dict[str, Any
                 if item not in crumbs[k]:
                     crumbs[k].append(item)
 
-        # root-cause candidates: later comments + strong markers score higher
+        # root-cause candidates: PROSE only; later comments + strong markers win
         for s in _split_sentences(text):
+            if not _is_prose(s):
+                continue
             if _classify(s) == "root_cause":
                 strength = idx + (5 if _STRONG_RC.search(s) else 0)
                 rc_candidates.append((idx, strength, author, s[:300]))
+            if _RESOLUTION.search(s):
+                res_candidates.append((idx, author, s[:300]))
             if _classify(s) == "workaround":
                 wa_candidates.append((idx, author, s[:240]))
         if sal["kind"] == "action":
@@ -153,16 +184,35 @@ def analyze_comments(structured: List[Dict[str, str]]) -> Optional[Dict[str, Any
         rc_candidates.sort(key=lambda x: x[1], reverse=True)
         _, _, rc_author, root_cause = rc_candidates[0]
 
+    # Resolution / closure statement (final disposition) — latest wins.
+    resolution = ""
+    res_author = ""
+    if res_candidates:
+        res_candidates.sort(key=lambda x: x[0], reverse=True)
+        _, res_author, resolution = res_candidates[0]
+
     workaround = ""
     wa_author = ""
     if wa_candidates:
         # prefer the latest workaround mention
         wa_candidates.sort(key=lambda x: x[0], reverse=True)
         _, wa_author, workaround = wa_candidates[0]
+    # A closure/resolution statement is also a valid "workaround/fix" headline.
+    if not workaround and resolution:
+        workaround, wa_author = resolution, res_author
+
+    # If we have a closure but no prose root cause, use the resolution as the
+    # converged conclusion (e.g. "after setting CPU straps, no repro").
+    if not root_cause and resolution:
+        root_cause, rc_author = resolution, res_author
 
     # status hint from the convergence of the thread
     joined = " ".join(c.get("text", "") for c in structured).lower()
-    if workaround and root_cause:
+    closed = any(w in joined for w in ("no repro", "cannot reproduce", "closing as",
+                                       "closed as", "rejected", "not seen"))
+    if closed and resolution:
+        status_hint = "closed / resolved (see disposition)"
+    elif workaround and root_cause:
         status_hint = "root-caused; workaround validated; real fix in progress"
     elif root_cause:
         status_hint = "root cause identified (unverified/fix pending)"
@@ -178,6 +228,8 @@ def analyze_comments(structured: List[Dict[str, str]]) -> Optional[Dict[str, Any
         "root_cause_author": rc_author,
         "workaround": workaround,
         "workaround_author": wa_author,
+        "resolution": resolution,
+        "resolution_author": res_author,
         "tried": tried[:10],
         "next_steps": next_steps[:6],
         "breadcrumbs": crumbs,
