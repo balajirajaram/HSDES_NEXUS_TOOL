@@ -124,6 +124,54 @@
         "Compare against the known-good strap configuration for the SKU/QDF; correct and re-test.",
         "If setting straps resolves it -> strap/provisioning issue, not silicon (often closed as no-repro)."
       ]
+    },
+    {
+      "id": "nic_ice_e810_tx_timeout",
+      "domain": "OS / driver",
+      "match": ["ice_tx_timeout", "tx_timeout", "tx timeout", "ice_report_tx_hang",
+                "tx_hang", "tx hang", "e810", "ice driver", "ice 0000", "txqueue",
+                "netdev watchdog", "soft lockup", "lan queue config", "ens", "np0",
+                "ice]", "smp_call_function"],
+      "title": "E810 / ice NIC TX-timeout / soft lockup (host IP lost)",
+      "summary": "The Intel E810 NIC 'ice' driver reports a TX queue hang (ice_tx_timeout -> tx_timeout recovery), often surfacing as a soft lockup with lost host IP. Common causes: physical card seating / PCIe contact (resolved by clean+reseat), driver/NVM/firmware mismatch, or PCIe link degradation. Also a known probe/queue-config class (VSI failed lan queue config, error -5).",
+      "wiki_links": [
+        "RASP — Troubleshooting Linux ICE Driver (VSI lan queue config / firmware / PCIe bifurcation): https://wiki.ith.intel.com/spaces/RASP/pages/4014028734/Troubleshooting+Linux+ICE+Driver+fails+to+probe+device+with+error+VSI+3+failed+lan+queue+config+error+-5",
+        "DebugEncyclopedia — CPU Hang / soft lockup: https://wiki.ith.intel.com/display/DebugEncyclopedia/CPU+Hang"
+      ],
+      "code_paths": [
+        "ice driver (Linux) — ice_tx_timeout / ice_report_tx_hang in ice_main.c",
+        "E810 NVM / DDP firmware package",
+        "PCIe link + AER (lspci LnkSta, AER capability), retimer/riser"
+      ],
+      "debug_steps": [
+        "Capture the signature: `dmesg -T | egrep -i 'ice|e810|tx_timeout|tx hang|soft lockup|aer|pcie'` and the full soft-lockup call trace.",
+        "Identify NIC + versions: `lspci -nn | egrep -i ethernet`, `lspci -s <BDF> -vvv`, `ethtool -i <iface>`, `devlink dev info pci/<BDF>` — note driver/firmware/NVM vs BKC.",
+        "Check PCIe link: `lspci -s <BDF> -vvv` LnkSta (negotiated width/speed vs capable) and AER (Correctable/Uncorrected). Degraded width or AER errors => physical/link.",
+        "Queue stats: `ethtool -S <iface>` for tx queue stalls; note which txqueue/port hung.",
+        "If link degraded or errors present -> clean & reseat the E810 card / riser, check connector; rerun. If reseat resolves it and no repro across reruns => physical seating/contact issue (close as no-repro).",
+        "If probe/queue-config errors (VSI ... failed lan queue config, error -5) -> update ice driver + E810 NVM and verify PCIe bifurcation (e.g. x8x8)."
+      ]
+    },
+    {
+      "id": "pcie_device_reseat",
+      "domain": "IO / PCIe / CXL",
+      "match": ["reseat", "reseated", "reseat the", "cleanup and reseat", "riser",
+                "connector", "contact issue", "no repro after reseat", "reseat the card"],
+      "title": "PCIe add-in card seating / contact issue",
+      "summary": "Intermittent device errors that disappear after cleaning/reseating the card indicate a physical PCIe connector/riser contact issue rather than silicon or firmware. Capture link evidence BEFORE reseating so the physical cause is documented.",
+      "wiki_links": [
+        "DebugEncyclopedia: https://wiki.ith.intel.com/display/DebugEncyclopedia"
+      ],
+      "code_paths": [
+        "PCIe link status (LnkSta width/speed), AER capability",
+        "Slot / riser / retimer path"
+      ],
+      "debug_steps": [
+        "Before reseating, capture evidence: `lspci -s <BDF> -vvv` (LnkSta vs LnkCap) and AER counters; check for degraded width/speed or correctable errors.",
+        "Clean contacts and reseat the card / riser; re-run the failing test.",
+        "If the issue no longer reproduces -> physical seating/contact issue; document the before/after link state and close as no-repro.",
+        "If it recurs on the same slot -> suspect the slot/riser/retimer or the card itself; try a different slot to isolate."
+      ]
     }
   ]
 }
