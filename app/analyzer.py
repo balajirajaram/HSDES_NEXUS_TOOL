@@ -27,6 +27,7 @@ from .llm_client import llm
 from .log_analyzer import analyze_log
 from .comment_analyzer import analyze_comments
 from .knowledge_base import match_knowledge, lookup_bios_code
+from .axon_client import axon_cross_reference
 from .products import detect_product, master_queries, product_display
 
 kb = KBStore(config.KB_DB_PATH)
@@ -848,6 +849,25 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
             L.append(f"> ℹ️ Code sites seen in logs ({', '.join(code_sites[:4])}) — set "
                      "`BIOS_REPO_PATH` to a local BIOS checkout to auto-pull the source here.")
             L.append("")
+
+    # J. Axon validation-failure cross-reference (review everything).
+    sig_labels = [s["label"] for s in (log_findings or {}).get("signatures", [])] if log_findings else []
+    axon = axon_cross_reference(
+        platform, sig_labels,
+        suspected_area=(log_findings or {}).get("suspected_area", "") if log_findings else "",
+        extra_terms=[t for t in [
+            (cf.get("breadcrumbs") or {}).get("upi_signal", [None])[0]
+        ] if t],
+    )
+    if axon:
+        L.append("## J. Axon validation-failure cross-reference")
+        L.append("*(searches Intel's Axon validation database for related field failures "
+                 "with the same signature — opens in your browser, already SSO'd)*")
+        L.append("")
+        L.append(f"- **Platform (Axon TLA):** {axon['tla']}  |  **Window:** last {axon['days']} days")
+        L.append(f"- **Matched signature terms:** {', '.join(axon['terms'])}")
+        L.append(f"- **🔎 Open in Axon Explore:** {axon['url']}")
+        L.append("")
 
     return "\n".join(L), _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled,
                                          comment_findings)
