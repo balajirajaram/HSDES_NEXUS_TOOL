@@ -460,58 +460,97 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     L: List[str] = []
     L.append(f"# Auto HSD Analyser report — {hsd_id}")
     L.append("")
-    L.append("> **OFFLINE mode** — no LLM configured. Deterministic report from KB + "
-             "ticket data. Configure `LLM_BASE_URL` / `LLM_API_KEY` for full reasoning.")
+
+    # ---------- Clean 4-part DEBUG SUMMARY (top of report) ----------
+    sigs = (log_findings or {}).get("signatures", []) if log_findings else []
+    # Axon cross-reference (computed here so it can appear in the summary).
+    axon = axon_cross_reference(
+        platform, [s["label"] for s in sigs],
+        suspected_area=suspected_area,
+        extra_terms=[t for t in [
+            (cf.get("breadcrumbs") or {}).get("upi_signal", [None])[0]] if t],
+    )
+
+    L.append("## 🔎 Debug Summary")
+    ttitle = _short(tval("title", ""), 130)
+    L.append(f"**Ticket:** {ttitle}")
+    L.append(f"**Platform:** {plat} · **Status:** {tval('status','?')} · "
+             f"**Priority:** {tval('priority','?')} · **Owner:** {tval('owner','?')}")
     L.append("")
 
-    # Model A: compact executive card (for fast triage decisions).
-    L.append("## Model A. Executive triage card")
-    L.append(f"- **Verdict:** {_known_verdict()}")
-    L.append(f"- **Overall confidence:** {_exec_confidence()} / 100")
-    L.append(f"- **Primary domain cluster:** {(domains[0][0] if domains else 'General / unclassified')}")
-    L.append(f"- **Failure point (best signal):** {failure_point}")
+    # 1. Failure signature (attached logs & analysis)
+    L.append("**1. Failure signature — from attached logs & analysis**")
+    if sigs:
+        L.append(f"- **Key signatures:** " + " · ".join(
+            f"{s['label']} ({s['severity']}, x{s['count']})" for s in sigs[:4]))
+        for d in (log_findings.get("mca_decode") or [])[:1]:
+            L.append(f"- **MCA decode:** `{d['status']}` → {d.get('mcacod_text','?')} "
+                     f"(flags {', '.join(d['flags']) or 'none'})")
+        if log_findings.get("last_checkpoint"):
+            L.append(f"- **Last good checkpoint:** `{log_findings['last_checkpoint']}`")
+        if suspected_area:
+            L.append(f"- **Suspected area:** {suspected_area}")
+    elif attachments:
+        L.append(f"- {len(attachments)} attachment(s) on ticket — not fetched "
+                 "(enable auto-fetch to scan logs).")
+    else:
+        L.append("- No logs attached to this ticket; analysis based on the "
+                 "ticket description + comment thread.")
+    L.append("")
+
+    # 2. Key findings from Axon
+    L.append("**2. Key findings from Axon (validation-failure database)**")
+    if axon:
+        L.append(f"- Related **{axon['tla']}** field failures (last {axon['days']}d) matching: "
+                 f"{', '.join(axon['terms'])}.")
+        L.append(f"- **Review in Axon Explore:** {axon['url']}")
+    else:
+        L.append("- No Axon cross-reference available for this platform/signature.")
+    L.append("")
+
+    # 3. Proposed root cause
+    L.append("**3. Proposed root cause**")
     if cf.get("root_cause"):
         who = cf.get("root_cause_author") or "ticket"
-        L.append(f"- **Root cause ({who}):** {_short(cf['root_cause'], 240)}")
-    if suspected_area:
-        L.append(f"- **Suspected area (from attachment):** {suspected_area}")
+        tag = "confirmed in ticket" if cf.get("workaround") else "leading hypothesis"
+        L.append(f"- ({tag}, per **{who}**) {_short(cf['root_cause'], 300)}")
+        if suspected_area:
+            L.append(f"- Mechanism/area: {suspected_area}")
+    elif suspected_area:
+        L.append(f"- (from logs) {suspected_area}")
+    elif sigs:
+        L.append(f"- (hypothesis) {sigs[0]['label']} on {plat} — see evidence below.")
+    else:
+        L.append("- Not yet determined from available data — see next steps.")
     if cf.get("workaround"):
         L.append(f"- **Workaround / fix:** {_short(cf['workaround'], 200)}")
-    # Key failure signatures read from the attached logs (top few by severity).
-    sigs = (log_findings or {}).get("signatures", []) if log_findings else []
+    L.append("")
+
+    # 4. Next steps
+    L.append("**4. Proposed next steps**")
+    ns: List[str] = []
+    if cf.get("root_cause"):
+        ns.append("Confirm the identified root cause on hardware "
+                  + (f"(check {', '.join((cf.get('breadcrumbs') or {}).get('register', [])[:2])})"
+                     if (cf.get('breadcrumbs') or {}).get('register') else ""))
+    if cf.get("next_steps"):
+        ns.append(_short(cf["next_steps"][-1], 150))
     if sigs:
-        key = " · ".join(f"{s['label']} ({s['severity']}, x{s['count']})"
-                         for s in sigs[:4])
-        L.append(f"- **Key failure signatures (from attached logs):** {key}")
-    elif top_sig:
-        L.append(f"- **Top failure signature:** {top_sig['label']} ({top_sig['severity']}, x{top_sig['count']})")
-    L.append(f"- **Immediate next action:** {next_action}")
-    if cf.get("status_hint"):
-        L.append(f"- **Investigation status:** {cf['status_hint']}")
+        ns.append(f"Corroborate the top log signature ({sigs[0]['label']}) and decode the MCA bank.")
+    ns.append(f"Cross-check related field failures in Axon (section 2 link).")
+    if cf.get("workaround"):
+        ns.append("Validate the workaround and track the permanent fix.")
+    if not cf.get("root_cause") and not sigs:
+        ns.append("Collect serial/BIOS/OS logs + revisions (ucode/BIOS/IFWI/OS) and re-run.")
+    for i, s in enumerate(dict.fromkeys([x for x in ns if x and x.strip()]), 1):
+        L.append(f"{i}. {s}")
     L.append("")
-
-    L.append("### Model A evidence ledger")
-    L.append(f"- **Target ticket narrative available:** {'yes' if target and not target.get('error') else 'no'}")
-    L.append(f"- **Comments analysed:** {cf.get('count', 0)}")
-    L.append(f"- **KB matches:** {len(recall.get('matches', []))} ({recall.get('confidence', 'None')})")
-    L.append(f"- **Similar HSDs from source:** {len(similar)}")
-    L.append(f"- **Log signatures detected:** {len((log_findings or {}).get('signatures', []))}")
+    L.append("---")
     L.append("")
-
-    L.append("### Domain cluster snapshot")
-    L.append("| Cluster | Relative confidence | Why selected |")
-    L.append("|---------|---------------------|--------------|")
-    if domains:
-        for i, (label, _) in enumerate(domains):
-            rel = ("High" if i == 0 else ("Medium" if i == 1 else "Low"))
-            why = "keyword + signature dominance" if i == 0 else "secondary indicators"
-            L.append(f"| {label} | {rel} | {why} |")
-    else:
-        L.append("| General / unclassified | Low | no strong domain tokens in current data |")
+    L.append("<details><summary>Detailed analysis (evidence, narrative, KB, knowledge, Axon)</summary>")
     L.append("")
-
-    # Model B: detailed investigation report with sections A-H.
-    L.append("## Model B. Full investigation")
+    L.append("> **OFFLINE mode** — deterministic report from KB + ticket data. "
+             "Configure `LLM_BASE_URL` / `LLM_API_KEY` for full LLM reasoning.")
     L.append("")
 
     L.append("## A. Target HSD summary")
@@ -850,24 +889,15 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
                      "`BIOS_REPO_PATH` to a local BIOS checkout to auto-pull the source here.")
             L.append("")
 
-    # J. Axon validation-failure cross-reference (review everything).
-    sig_labels = [s["label"] for s in (log_findings or {}).get("signatures", [])] if log_findings else []
-    axon = axon_cross_reference(
-        platform, sig_labels,
-        suspected_area=(log_findings or {}).get("suspected_area", "") if log_findings else "",
-        extra_terms=[t for t in [
-            (cf.get("breadcrumbs") or {}).get("upi_signal", [None])[0]
-        ] if t],
-    )
+    # J. Axon validation-failure cross-reference (detail — link already in summary).
     if axon:
         L.append("## J. Axon validation-failure cross-reference")
-        L.append("*(searches Intel's Axon validation database for related field failures "
-                 "with the same signature — opens in your browser, already SSO'd)*")
-        L.append("")
         L.append(f"- **Platform (Axon TLA):** {axon['tla']}  |  **Window:** last {axon['days']} days")
         L.append(f"- **Matched signature terms:** {', '.join(axon['terms'])}")
         L.append(f"- **🔎 Open in Axon Explore:** {axon['url']}")
         L.append("")
+
+    L.append("</details>")
 
     return "\n".join(L), _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled,
                                          comment_findings)

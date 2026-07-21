@@ -18,6 +18,23 @@ _STOPWORDS = {
     "is", "at", "by", "this", "that", "from", "was", "were",
 }
 
+# Generic/platform words that must NOT alone constitute a "match" — a similar
+# case has to share a DISTINCTIVE term (e.g. 'kitportdisable', 's3m', 'upi'),
+# not just boilerplate like 'system/hung/node/gnr/2s'. This kills the noise
+# where unrelated 'PythonSV extraction timeout' tickets matched on 'system after'.
+_GENERIC = {
+    "system", "systems", "hung", "hang", "hangs", "hanging", "node", "nodes",
+    "issue", "issues", "observed", "observing", "observe", "during", "after",
+    "before", "test", "tests", "testing", "error", "errors", "failed", "failure",
+    "failures", "fail", "seen", "boot", "booting", "reboot", "reset", "cold",
+    "warm", "cluster", "flex", "main", "log", "logs", "not", "with", "and",
+    "gnr", "srf", "cwf", "ap", "sp", "b3", "a0", "2s", "1s", "4s", "ww", "run",
+    "rerun", "attempt", "status", "result", "pysv", "pythonsv", "extraction",
+    "extracted", "unknown", "reason", "due", "some", "have", "been", "this",
+    "that", "platform", "birch", "stream", "granite", "rapids", "sierra",
+    "forest", "clearwater", "server", "check", "post", "state", "value",
+}
+
 
 def normalize_terms(text: str) -> List[str]:
     tokens = re.findall(r"[A-Za-z0-9_]+", (text or "").lower())
@@ -103,6 +120,11 @@ class KBStore:
             matched = q_terms & hay
             if not matched:
                 continue
+            # Require at least one DISTINCTIVE shared term — generic/platform
+            # words alone (system/hung/gnr/2s...) are not a real match.
+            distinctive = matched - _GENERIC
+            if not distinctive:
+                continue
             score = sum(idf(t) for t in matched) / denom
             # rank shared terms by specificity for display
             ordered = sorted(matched, key=lambda t: idf(t), reverse=True)
@@ -122,9 +144,9 @@ class KBStore:
         best = scored[0][0] if scored else 0.0
         if best >= 0.6:
             confidence = "High"
-        elif best >= 0.35:
+        elif best >= 0.45:
             confidence = "Medium"
-        elif best > 0:
+        elif best >= 0.3:
             confidence = "Low"
         else:
             confidence = "None"
