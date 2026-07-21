@@ -20,6 +20,11 @@ class Config:
 
     KB_DB_PATH = os.getenv("KB_DB_PATH", "kb/hsd_kb.sqlite")
 
+    # Optional live enrichment: a local BIOS/IFWI source checkout. When set, the
+    # analyzer greps it for the exact code sites found in logs (e.g.
+    # MultiSocketLib.c:1241) and includes the surrounding source in the report.
+    BIOS_REPO_PATH = os.getenv("BIOS_REPO_PATH", "")
+
     HOST = os.getenv("HOST", "127.0.0.1")
     PORT = int(os.getenv("PORT", "8000"))
 

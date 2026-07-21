@@ -26,6 +26,7 @@ from .kb_store import KBStore, normalize_terms
 from .llm_client import llm
 from .log_analyzer import analyze_log
 from .comment_analyzer import analyze_comments
+from .knowledge_base import match_knowledge, lookup_bios_code
 from .products import detect_product, master_queries, product_display
 
 kb = KBStore(config.KB_DB_PATH)
@@ -788,6 +789,59 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
         L.append("- **Likely known** — see KB matches in section C. Verify before closing.")
     else:
         L.append("- **Likely new sighting** — no confident KB match found.")
+    L.append("")
+
+    # I. Reference knowledge — auto-linked debug wiki pages + BIOS code areas.
+    kb_blob = " ".join(filter(None, [
+        symptoms,
+        (log_findings or {}).get("suspected_area", "") if log_findings else "",
+        " ".join(s["label"] for s in (log_findings or {}).get("signatures", [])),
+        cf.get("root_cause", ""),
+        " ".join(" ".join(v) for v in (cf.get("breadcrumbs") or {}).values()),
+        target.get("full_text", "")[:2000],
+    ]))
+    knowledge = match_knowledge(kb_blob, domains=[d for d, _ in domains])
+    if knowledge:
+        L.append("## I. Reference knowledge & auto-suggested next steps")
+        L.append("*(from the built-in Debug Knowledge Pack — real Intel debug wikis + "
+                 "BIOS/firmware code areas, matched to this failure)*")
+        L.append("")
+        for k in knowledge:
+            L.append(f"### {k['title']}")
+            if k.get("summary"):
+                L.append(f"{k['summary']}")
+            if k.get("wiki_links"):
+                L.append("- **Debug wiki pages:**")
+                for w in k["wiki_links"]:
+                    L.append(f"  - {w}")
+            if k.get("code_paths"):
+                L.append("- **BIOS / firmware code areas:**")
+                for c in k["code_paths"]:
+                    L.append(f"  - {c}")
+            if k.get("debug_steps"):
+                L.append("- **Suggested next steps:**")
+                for i, s in enumerate(k["debug_steps"], 1):
+                    L.append(f"  {i}. {s}")
+            L.append("")
+
+        # Optional: live BIOS-source snippets for the exact code sites in the logs.
+        code_sites = ((cf.get("breadcrumbs") or {}).get("code_site") or [])
+        bios = lookup_bios_code(code_sites) if code_sites else []
+        if bios:
+            L.append("### BIOS source at the exact code sites (from local checkout)")
+            for b in bios:
+                if b.get("found"):
+                    L.append(f"- **{b['site']}** ({b.get('path','')}):")
+                    L.append("```c")
+                    L.append(b["snippet"])
+                    L.append("```")
+                else:
+                    L.append(f"- **{b['site']}** — file not found in BIOS_REPO_PATH.")
+            L.append("")
+        elif code_sites and not config.BIOS_REPO_PATH:
+            L.append(f"> ℹ️ Code sites seen in logs ({', '.join(code_sites[:4])}) — set "
+                     "`BIOS_REPO_PATH` to a local BIOS checkout to auto-pull the source here.")
+            L.append("")
 
     return "\n".join(L), _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled,
                                          comment_findings)

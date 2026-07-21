@@ -1,0 +1,129 @@
+{
+  "_about": "Debug Knowledge Pack — curated, offline mapping of failure MECHANISMS to real Intel debug wiki pages, BIOS/firmware code areas, and concrete next steps. Grounded in BIOSBKM Debug CookBook, DebugEncyclopedia, and BIOS FAS/HAS spec content. Extensible: add entries freely. Each entry: match[] keywords (any hit triggers it), title, summary, wiki_links[], code_paths[], debug_steps[].",
+  "entries": [
+    {
+      "id": "upi_topology_failover_hang",
+      "domain": "UPI / coherency",
+      "match": ["topology failover", "kitportdisable", "port disable", "port-disable",
+                "upi degrad", "kti degrad", "s3m", "socket removed", "check-in bit",
+                "checkin", "multisocketlib", "sbsp", "minimum path", "min-path",
+                "1s topology", "degraded to topology", "nack", "ack not received",
+                "biosscratchpad"],
+      "title": "UPI/KTI topology-failover / port-disable system hang (socket removed, S3M, check-in)",
+      "summary": "After a degraded/disabled UPI link, BIOS (UPIRC) forces the platform into a supported topology (2S-6L -> 2S-4L -> 1S), removing the remote socket. Hang occurs if BIOS still waits for the removed socket to set its check-in bit, or if S3M socket-removal updated one bitmap but not all consumers, so the SBSP waits indefinitely.",
+      "wiki_links": [
+        "BIOSBKM Debug CookBook (soft vs hard hang, itp.halt/go, MCA/Pcode capture): https://wiki.ith.intel.com/display/BIOSBKM/Debug+CookBook",
+        "DebugEncyclopedia — CPU Hang: https://wiki.ith.intel.com/display/DebugEncyclopedia/CPU+Hang"
+      ],
+      "code_paths": [
+        "MultiSocketLib.c — SBSP/AP minimum-path topology calculation & disabled-link handling",
+        "UPI Reference Code (UPIRC) — topology discovery, degraded-topology forcing, deadlock-free routing",
+        "S3M socket-removal — socket-present / active-socket / adjacency / AP-startup / routing bitmaps",
+        "SBSP check-in handshake — BOOT_GO via remote Scratchpad1; wait for check-in via remote Scratchpad2"
+      ],
+      "debug_steps": [
+        "Classify the hang: run itp.halt() — if IA halts it's a SOFT hang (itp.go() to resume); check keyboard LEDs (NumLock/CapsLock toggle => alive). No response/power button dead => HARD hang: connect ITP, unlock, capture PMC/MCA/Pcode/core-live.",
+        "Capture topology before vs after failover: expected topology, detected-before-degrade, after port-disable, socket-present bitmap, socket-removed bitmap (esp. S3M-driven), SBSP chosen socket, AP enumeration, MultiSocketLib path result.",
+        "Validate S3M socket-removal is CONSISTENT across ALL structures: socket-present map, active-socket map, UPI/KTI adjacency matrix, AP startup list, SBSP routing table, MultiSocketLib path DB, and the check-in/rendezvous bitmap. A stale entry in any one causes the hang.",
+        "Check the SBSP<->AP check-in handshake: SBSP issues BOOT_GO on the remote socket's non-sticky Scratchpad1 and waits for the check-in bit on Scratchpad2. If the socket was removed but BIOS still waits, the SBSP hangs until timeout -> appears as a 2S boot hang.",
+        "Read BIOSSCRATCHPAD7 progress/check-in state when hung and correlate with which socket/AP failed to check in."
+      ]
+    },
+    {
+      "id": "mca_bus_interconnect",
+      "domain": "RAS / MCA",
+      "match": ["mca", "machine check", "mci_status", "mcacod", "mscod", "ierr",
+                "caterr", "mcerr", "0xe0f", "bank 5", "whea"],
+      "title": "Machine Check (MCA) decode — bus/interconnect (UPI/IIO) class",
+      "summary": "MCi_STATUS with MCACOD 0x0800-class indicates a bus/interconnect error (UPI/QPI/IIO). Decode the architectural bits (VAL/OVER/UC/PCC), MCACOD (15:0) and MSCOD (31:16), then map the bank to the failing IP.",
+      "wiki_links": [
+        "DebugEncyclopedia — MCA / Machine Check decode: https://wiki.ith.intel.com/display/DebugEncyclopedia",
+        "BIOSBKM Debug CookBook — MCA capture on hang: https://wiki.ith.intel.com/display/BIOSBKM/Debug+CookBook"
+      ],
+      "code_paths": [
+        "MCA bank status registers (MCi_STATUS / MCi_ADDR / MCi_MISC) per socket/uncore",
+        "IP-specific MSCOD decode — see the failing IP's MCA spec"
+      ],
+      "debug_steps": [
+        "Decode MCi_STATUS: bits 63..55 = VAL/OVER/UC/EN/MISCV/ADDRV/PCC/S/AR; MCACOD = bits 15:0; MSCOD = bits 31:16.",
+        "MCACOD 0x0800-class => bus/interconnect (UPI/QPI/IIO). Identify the bank number to locate the failing unit.",
+        "sv.socket<N>.uncore.mca_bank<B>.status.read() then decode; read MCi_ADDR/MCi_MISC for the address/context.",
+        "Correlate RIP + bank to the IP; use MSCOD against that IP's MCA spec for the model-specific cause."
+      ]
+    },
+    {
+      "id": "upi_link_train",
+      "domain": "UPI / coherency",
+      "match": ["upi", "kti", "ktilk", "link retrain", "crc", "ipwrerror",
+                "link training", "l0c", "rxl0c"],
+      "title": "UPI/KTI link error / retrain / CRC",
+      "summary": "UPI link CRC errors, retrains, or failed training. Distinguish physical link-integrity issues from protocol/transaction issues.",
+      "wiki_links": [
+        "DebugEncyclopedia — UPI/KTI link debug: https://wiki.ith.intel.com/display/DebugEncyclopedia"
+      ],
+      "code_paths": [
+        "UPIRC link training / PHY (c_init_begin, L1 forcing)",
+        "KTI PHY status registers (ktilk_ph_ctr_status, KTICRCERRCNT_REG, KTIPH_RXL0C_ERR_STS_REG)"
+      ],
+      "debug_steps": [
+        "Read UPI link status per port: sv.socket<N>.upi.upi<port>.ktilk_ph_ctr_status.read() (confirm exact reg via tab-complete).",
+        "If CRC/retry counters are set -> link-integrity path (marginal PHY / training params). Else -> protocol/transaction path.",
+        "Compare training params/timing across passing vs failing FW/ucode releases (e.g. UPLR regression)."
+      ]
+    },
+    {
+      "id": "boot_hang_post",
+      "domain": "BIOS / firmware / boot-hang",
+      "match": ["hang", "hung", "post", "checkpoint", "progress code", "entering_ssp",
+                "boot_progress", "assert", "efi_error", "no boot"],
+      "title": "Boot hang / POST checkpoint stall",
+      "summary": "System stalls at a POST checkpoint. The last good checkpoint localizes the failing BIOS phase; inspect the code path immediately after it.",
+      "wiki_links": [
+        "BIOSBKM Debug CookBook: https://wiki.ith.intel.com/display/BIOSBKM/Debug+CookBook",
+        "DebugEncyclopedia — CPU Hang: https://wiki.ith.intel.com/display/DebugEncyclopedia/CPU+Hang"
+      ],
+      "code_paths": [
+        "BIOS scratchpad progress: sv.socket<N>.uncore.ubox.ncdecs.biosscratchpad<N>_cfg...read()",
+        "PEI/DXE phase modules around the last checkpoint"
+      ],
+      "debug_steps": [
+        "Find the last successful POST/major checkpoint before the hang in the serial/BIOS log.",
+        "Read BIOSSCRATCHPAD progress registers to confirm the phase; inspect the module executed right after.",
+        "Classify soft vs hard hang (itp.halt) and capture MCA/Pcode/PMC state."
+      ]
+    },
+    {
+      "id": "memory_training_ecc",
+      "domain": "Memory",
+      "match": ["ddr", "dimm", "mrc", "training", "ecc", "correctable", "uncorrectable",
+                "patrol scrub", "rank", "channel"],
+      "title": "Memory training / ECC (DDR/DIMM)",
+      "summary": "Memory training failure or ECC (CE/UE) errors. Localize to channel/rank/DIMM and correlate the address.",
+      "wiki_links": [
+        "DebugEncyclopedia — Memory / MRC: https://wiki.ith.intel.com/display/DebugEncyclopedia"
+      ],
+      "code_paths": ["MRC (Memory Reference Code) training steps", "iMC ECC / patrol scrub logic"],
+      "debug_steps": [
+        "Grep the MRC/BIOS log for the failing training step + channel/rank; capture DIMM SPD/config.",
+        "Correlate CE/UE address to channel/rank/bank; check DfxPoisonEn and mcelog thresholds."
+      ]
+    },
+    {
+      "id": "cpu_straps",
+      "domain": "BIOS / firmware / boot-hang",
+      "match": ["cpu strap", "poc_straps", "straps", "gpsb", "soft strap", "softstrap"],
+      "title": "CPU straps / soft-strap misconfiguration",
+      "summary": "Incorrect CPU straps (soft-straps) can cause boot hangs that vanish once the straps are corrected (a common no-repro closure cause).",
+      "wiki_links": [
+        "BIOSBKM Debug CookBook: https://wiki.ith.intel.com/display/BIOSBKM/Debug+CookBook"
+      ],
+      "code_paths": ["GPSB / PoC straps: sv.socket<N>.io<N>.uncore.hwrs.gpsb.poc_straps",
+                     "S3M CPU strapping"],
+      "debug_steps": [
+        "Dump straps: sv.socket<N>.io<N>.uncore.hwrs.gpsb.poc_straps.show().",
+        "Compare against the known-good strap configuration for the SKU/QDF; correct and re-test.",
+        "If setting straps resolves it -> strap/provisioning issue, not silicon (often closed as no-repro)."
+      ]
+    }
+  ]
+}
