@@ -10,7 +10,14 @@ Writes the report to  output/hsd_<id>_<timestamp>.md  and prints the path.
 import argparse
 import asyncio
 import os
+import sys
 import time
+
+# Console may be cp1252 on Windows; force UTF-8 so report glyphs (e.g. ⟵) print.
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
 from .analyzer import analyze
 from .log_analyzer import read_log

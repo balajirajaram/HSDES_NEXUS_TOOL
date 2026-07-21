@@ -235,8 +235,17 @@ async def analyze(hsd_id: str, symptoms: str,
         if atext:
             combined_log = (combined_log + "\n" + atext).strip()
             fetched = len(attachments)
-            attach_files = list(dict.fromkeys(
-                re.findall(r"### attachment ([^\n]+)", atext)))
+            # Reduce each marker to "<resource_id>:<basename>" then de-duplicate,
+            # so multi-member zips / long paths don't show repeated entries.
+            clean_files: List[str] = []
+            for f in re.findall(r"### attachment ([^\n]+)", atext):
+                f = f.strip()
+                if ":" in f:
+                    rid, name = f.split(":", 1)
+                    name = re.split(r"[\\/]", name.strip())[-1]
+                    f = f"{rid.strip()}:{name}"
+                clean_files.append(f)
+            attach_files = list(dict.fromkeys(clean_files))
     log_findings = analyze_log(combined_log) if combined_log.strip() else None
 
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or ""
@@ -393,7 +402,8 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     failure_point = "Not found from current evidence"
     for ev in (log_findings or {}).get("timeline", []):
         if ev.get("failure_point"):
-            failure_point = _short(ev.get("text", ""), 160)
+            detail = _short(ev.get("text", ""), 140)
+            failure_point = f"{ev.get('label', 'failure')} — {detail}" if detail else ev.get("label", "failure")
             break
 
     L: List[str] = []
