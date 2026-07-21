@@ -363,11 +363,78 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     def tval(k, default="_not available_"):
         return target[k] if target.get(k) else default
 
+    findings = _extract_findings(target)
+
+    def _known_verdict() -> str:
+        if recall["confidence"] in ("High", "Medium"):
+            return "Likely known issue"
+        if findings.get("confidence") == "confirmed":
+            return "Likely known (confirmed in ticket history)"
+        return "Likely new sighting"
+
+    def _exec_confidence() -> int:
+        score = 20
+        if target and not target.get("error"):
+            score += 20
+        score += {"High": 30, "Medium": 20, "Low": 10, "None": 0}.get(
+            recall.get("confidence", "None"), 0)
+        if findings.get("root_cause"):
+            score += 15
+        if findings.get("resolution"):
+            score += 10
+        if log_findings and log_findings.get("signatures"):
+            score += 15
+        return min(95, score)
+
+    top_sig = None
+    if log_findings and log_findings.get("signatures"):
+        top_sig = log_findings["signatures"][0]
+
+    failure_point = "Not found from current evidence"
+    for ev in (log_findings or {}).get("timeline", []):
+        if ev.get("failure_point"):
+            failure_point = _short(ev.get("text", ""), 160)
+            break
+
     L: List[str] = []
     L.append(f"# Auto HSD Analyser report — {hsd_id}")
     L.append("")
     L.append("> **OFFLINE mode** — no LLM configured. Deterministic report from KB + "
              "ticket data. Configure `LLM_BASE_URL` / `LLM_API_KEY` for full reasoning.")
+    L.append("")
+
+    # Model A: compact executive card (for fast triage decisions).
+    L.append("## Model A. Executive triage card")
+    L.append(f"- **Verdict:** {_known_verdict()}")
+    L.append(f"- **Overall confidence:** {_exec_confidence()} / 100")
+    L.append(f"- **Primary domain cluster:** {(domains[0][0] if domains else 'General / unclassified')}")
+    L.append(f"- **Failure point (best signal):** {failure_point}")
+    if top_sig:
+        L.append(f"- **Top failure signature:** {top_sig['label']} ({top_sig['severity']}, x{top_sig['count']})")
+    L.append(f"- **Immediate next action:** {'Start with attached-log failure signature and MCA/trace decode.' if top_sig else 'Start with dominant domain checks and collect stronger runtime evidence.'}")
+    L.append("")
+
+    L.append("### Model A evidence ledger")
+    L.append(f"- **Target ticket narrative available:** {'yes' if target and not target.get('error') else 'no'}")
+    L.append(f"- **KB matches:** {len(recall.get('matches', []))} ({recall.get('confidence', 'None')})")
+    L.append(f"- **Similar HSDs from source:** {len(similar)}")
+    L.append(f"- **Log signatures detected:** {len((log_findings or {}).get('signatures', []))}")
+    L.append("")
+
+    L.append("### Domain cluster snapshot")
+    L.append("| Cluster | Relative confidence | Why selected |")
+    L.append("|---------|---------------------|--------------|")
+    if domains:
+        for i, (label, _) in enumerate(domains):
+            rel = ("High" if i == 0 else ("Medium" if i == 1 else "Low"))
+            why = "keyword + signature dominance" if i == 0 else "secondary indicators"
+            L.append(f"| {label} | {rel} | {why} |")
+    else:
+        L.append("| General / unclassified | Low | no strong domain tokens in current data |")
+    L.append("")
+
+    # Model B: detailed investigation report with sections A-H.
+    L.append("## Model B. Full investigation")
     L.append("")
 
     L.append("## A. Target HSD summary")
