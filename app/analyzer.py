@@ -423,6 +423,15 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     if log_findings and log_findings.get("signatures"):
         top_sig = log_findings["signatures"][0]
 
+    # Suspected area: prefer the attachment-derived mechanism, else ticket field.
+    suspected_area = (log_findings or {}).get("suspected_area", "") if log_findings else ""
+    if not suspected_area:
+        rec = target.get("raw", {}) or {}
+        for k, v in rec.items():
+            if k.endswith("suspect_area") and v and str(v).lower() != "unknown":
+                suspected_area = str(v)
+                break
+
     # Failure point: prefer the comment-derived root cause (human conclusion),
     # then the log timeline's first fatal event, then nothing.
     if cf.get("root_cause"):
@@ -462,6 +471,8 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     if cf.get("root_cause"):
         who = cf.get("root_cause_author") or "ticket"
         L.append(f"- **Root cause ({who}):** {_short(cf['root_cause'], 240)}")
+    if suspected_area:
+        L.append(f"- **Suspected area (from attachment):** {suspected_area}")
     if cf.get("workaround"):
         L.append(f"- **Workaround / fix:** {_short(cf['workaround'], 200)}")
     if top_sig:
@@ -577,6 +588,25 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
         L.append(f"- **Lines scanned:** {log_findings['lines_scanned']}")
         if log_findings.get("last_checkpoint"):
             L.append(f"- **Last good checkpoint:** `{log_findings['last_checkpoint']}`")
+        # Suspected area + smoking-gun evidence pulled straight from the attachment.
+        if log_findings.get("suspected_area"):
+            L.append(f"- **🎯 Suspected area (derived from attachment):** "
+                     f"{log_findings['suspected_area']}")
+        evid = log_findings.get("evidence") or []
+        if evid:
+            L.append("")
+            L.append("**Root-cause evidence extracted from the attachment "
+                     "(smoking-gun lines):**")
+            L.append("")
+            L.append("| Category | Hits | Representative log line |")
+            L.append("|----------|------|-------------------------|")
+            for e in evid:
+                for i, ln in enumerate(e["lines"]):
+                    cat = e["category"] if i == 0 else ""
+                    cnt = str(e["count"]) if i == 0 else ""
+                    line = _short(ln, 120).replace("|", "\\|")
+                    L.append(f"| {cat} | {cnt} | `{line}` |")
+            L.append("")
         # Sequence of events (timeline)
         timeline = log_findings.get("timeline") or []
         if timeline:

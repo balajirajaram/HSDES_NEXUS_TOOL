@@ -109,6 +109,82 @@ def decode_mcacod(v: int) -> str:
     return "compound/vendor-specific code — see SDM / IP MCA spec"
 
 
+# ---- Root-cause evidence extraction from attachments ----
+# High-value mechanism lines that engineers add / that pinpoint the failure.
+# Curated so we surface the SMOKING-GUN lines from a huge log rather than
+# generic signature counts.
+_EVIDENCE_CATS: List[tuple] = [
+    ("Explicit root-cause / suspect note", re.compile(
+        r"root[\s_-]?cause|suspect(?:ed)?\s*area|\bRCA\b|culprit|isolated to", re.I)),
+    ("Custom hang-trace instrumentation", re.compile(
+        r"\[[A-Z0-9_]*HANG[A-Z0-9_]*TRACE\]|\[[A-Z0-9_]*DEBUG_TRACE\]|_HANG_TRACE", re.I)),
+    ("Topology failover / degradation", re.compile(
+        r"port-disable caused topology failover|Degraded to Topology type|"
+        r"Topology failover happened|KTI Topology Change Logged|TopologyFailover\s*:\s*1",
+        re.I)),
+    ("Socket removed / S3M sequencing", re.compile(
+        r"Socket removed during topology|keep socket \d+ SSC2|Dump S3M Configuration|"
+        r"S3M SVN|S3mSoftStrap|s3m data for socket", re.I)),
+    ("Check-in / ACK handshake failure", re.compile(
+        r"check-?in bit|Ack not received|\bNACK\b|never reaches|not recovered", re.I)),
+    ("Fatal MCA / hang", re.compile(
+        r"Machine Check Bank|CATERR|IERR|#during hung|unexpected reset", re.I)),
+]
+
+# Which fired categories -> suspected-area phrase (first full match wins).
+_AREA_RULES: List[tuple] = [
+    (("Topology failover / degradation", "Socket removed / S3M sequencing"),
+     "BIOS KTI/UPI topology-failover & Socket-removal / S3M sequencing "
+     "(SBSP/AP minimum-path bring-up after port-disable)"),
+    (("Custom hang-trace instrumentation",),
+     "UPI link bring-up / peer-query hang path (see UPI_HANG_TRACE breadcrumbs)"),
+    (("Check-in / ACK handshake failure",),
+     "Multi-socket check-in / ACK handshake (remaining socket never checks in)"),
+]
+
+
+def extract_evidence(text: str, per_cat: int = 3) -> Dict[str, Any]:
+    """Pull the SMOKING-GUN mechanism lines out of a large attachment log and
+    derive a suspected-area statement — this is what the attachment 'carries'
+    that generic signature counting misses."""
+    if not text or not text.strip():
+        return {"suspected_area": "", "evidence": []}
+
+    def _is_noise(s: str) -> bool:
+        # Skip register-dump table rows / hex grids (many pipes or mostly non-prose).
+        if s.count("|") >= 4:
+            return True
+        alpha = sum(c.isalpha() or c.isspace() for c in s)
+        return alpha / max(1, len(s)) < 0.45
+
+    evidence: List[Dict[str, Any]] = []
+    fired: set = set()
+    for cat, pat in _EVIDENCE_CATS:
+        lines: List[str] = []
+        seen: set = set()
+        count = 0
+        for ln in text.splitlines():
+            s = ln.strip()
+            if not s or not pat.search(s):
+                continue
+            count += 1
+            key = s[:120]
+            if key in seen or _is_noise(s):
+                continue
+            seen.add(key)
+            if len(lines) < per_cat:
+                lines.append(s[:240])
+        if lines:
+            fired.add(cat)
+            evidence.append({"category": cat, "count": count, "lines": lines})
+    suspected = ""
+    for needed, phrase in _AREA_RULES:
+        if all(n in fired for n in needed):
+            suspected = phrase
+            break
+    return {"suspected_area": suspected, "evidence": evidence}
+
+
 def analyze_log(text: str, max_examples: int = 1) -> Dict[str, Any]:
     if not text or not text.strip():
         return {"lines_scanned": 0, "signatures": [], "domains": [],
@@ -148,6 +224,7 @@ def analyze_log(text: str, max_examples: int = 1) -> Dict[str, Any]:
     else:
         summary = "No known failure signatures matched."
 
+    ev = extract_evidence(text)
     return {
         "lines_scanned": len(lines),
         "signatures": signatures,
@@ -155,6 +232,8 @@ def analyze_log(text: str, max_examples: int = 1) -> Dict[str, Any]:
         "last_checkpoint": last_ckpt,
         "mca_decode": decode_mca(text),
         "timeline": build_timeline(text),
+        "evidence": ev["evidence"],
+        "suspected_area": ev["suspected_area"],
         "summary": summary,
     }
 
