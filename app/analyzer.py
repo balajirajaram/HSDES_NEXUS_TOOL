@@ -25,6 +25,7 @@ from .hsdes_client import HSDESClient
 from .kb_store import KBStore, normalize_terms
 from .llm_client import llm
 from .log_analyzer import analyze_log
+from .comment_analyzer import analyze_comments
 from .products import detect_product, master_queries, product_display
 
 kb = KBStore(config.KB_DB_PATH)
@@ -164,9 +165,11 @@ _FIX_PAT = re.compile(
     r"mitigat|bkm|patched|corrected)", re.I)
 
 
-def _extract_findings(target: Optional[Dict[str, Any]]) -> Dict[str, str]:
-    """Deterministically pull root-cause / resolution text from ticket fields and
-    comment keywords — no LLM required."""
+def _extract_findings(target: Optional[Dict[str, Any]],
+                      comment_findings: Optional[Dict[str, Any]] = None) -> Dict[str, str]:
+    """Deterministically pull root-cause / resolution text. The ticket's COMMENT
+    THREAD is the primary source (that's where debug converges); ticket fields
+    and phrase-matching are fallbacks."""
     if not target:
         return {"root_cause": "", "resolution": "", "confidence": "hypothesis"}
     rec = target.get("raw", {}) or {}
@@ -198,10 +201,16 @@ def _extract_findings(target: Optional[Dict[str, Any]]) -> Dict[str, str]:
         if _FIX_PAT.search(s) and len(fix_lines) < 2:
             fix_lines.append(s)
 
-    root_cause = " ".join(rc_lines) or gf("fix_description", "executive_summary")
-    resolution = " ".join(fix_lines) or gf("closed_reason", "status_reason")
+    # Comment-mined findings take precedence — they reflect where debug converged.
+    cf = comment_findings or {}
+    root_cause = cf.get("root_cause") or " ".join(rc_lines) or gf(
+        "fix_description", "executive_summary")
+    resolution = cf.get("workaround") or " ".join(fix_lines) or gf(
+        "closed_reason", "status_reason")
     status = (target.get("status") or "").lower()
-    confirmed = status in ("closed", "complete", "verified") and bool(root_cause or resolution)
+    strong_comment_rc = bool(cf.get("root_cause") and cf.get("workaround"))
+    confirmed = (status in ("closed", "complete", "verified")
+                 and bool(root_cause or resolution)) or strong_comment_rc
     return {
         "root_cause": root_cause[:400],
         "resolution": resolution[:400],
@@ -225,6 +234,10 @@ async def analyze(hsd_id: str, symptoms: str,
     # Step 2 - INVESTIGATE
     target = await client.get_article(hsd_id)
     attachments = client.attachment_ids(target) if target else []
+
+    # Read the comment thread like a human analyst — this is where debug converges.
+    comment_findings = analyze_comments(
+        (target or {}).get("comments_structured", [])) if target else None
 
     # Logs: any pasted log + (optionally) the logs already attached to the ticket.
     combined_log = log_text or ""
@@ -262,12 +275,12 @@ async def analyze(hsd_id: str, symptoms: str,
     if llm.enabled:
         report_md, kb_entry = await _llm_report(
             hsd_id, symptoms, platform, recall, target, similar, client.enabled,
-            log_findings
+            log_findings, comment_findings
         )
     else:
         report_md, kb_entry = _offline_report(
             hsd_id, symptoms, platform, recall, target, similar, client.enabled,
-            log_findings, attachments, fetched, attach_files
+            log_findings, attachments, fetched, attach_files, comment_findings
         )
 
     # Step 3 - WRITE-BACK
@@ -284,19 +297,22 @@ async def analyze(hsd_id: str, symptoms: str,
         "attachments_fetched": fetched,
         "attachment_files": attach_files,
         "log_findings": log_findings,
+        "comment_findings": comment_findings,
         "kb_action": kb_action,
         "report_markdown": report_md,
     }
 
 
 async def _llm_report(hsd_id, symptoms, platform, recall, target, similar,
-                      hsdes_enabled, log_findings=None) -> Tuple[str, Dict[str, Any]]:
+                      hsdes_enabled, log_findings=None,
+                      comment_findings=None) -> Tuple[str, Dict[str, Any]]:
     context = {
         "input": {"hsd_id": hsd_id, "symptoms": symptoms, "platform": platform},
         "kb_recall": recall,
         "target_hsd": target,
         "similar_hsds": similar,
         "attached_log_findings": log_findings,
+        "comment_investigation": comment_findings,
     }
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -306,9 +322,10 @@ async def _llm_report(hsd_id, symptoms, platform, recall, target, similar,
     parsed = _extract_json(raw)
     if parsed and "report_markdown" in parsed:
         return parsed["report_markdown"], parsed.get("kb_entry") or _fallback_entry(
-            hsd_id, symptoms, platform, target, hsdes_enabled
+            hsd_id, symptoms, platform, target, hsdes_enabled, comment_findings
         )
-    return raw, _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled)
+    return raw, _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled,
+                                comment_findings)
 
 
 def _extract_json(text: str) -> Optional[Dict[str, Any]]:
@@ -327,13 +344,14 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled) -> Dict[str, Any]:
+def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled,
+                    comment_findings=None) -> Dict[str, Any]:
     from time import gmtime, strftime
     target = target or {}
     ticket_text = target.get("full_text") or target.get("description") or ""
     error_string = (symptoms + ("\n" + ticket_text if ticket_text else "")).strip()
     domains = [d for d, _ in _detect_domains(error_string)]
-    findings = _extract_findings(target)
+    findings = _extract_findings(target, comment_findings)
     return {
         "signature": {
             "family": platform or target.get("family") or "",
@@ -359,10 +377,12 @@ def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled) -> Dict[s
 
 def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
                     hsdes_enabled, log_findings=None, attachments=None,
-                    attachments_fetched=0, attach_files=None) -> Tuple[str, Dict[str, Any]]:
+                    attachments_fetched=0, attach_files=None,
+                    comment_findings=None) -> Tuple[str, Dict[str, Any]]:
     target = target or {}
     attachments = attachments or []
     attach_files = attach_files or []
+    cf = comment_findings or {}
     plat = platform or "unknown platform"
     blob = f"{symptoms} " + (target.get("full_text") or target.get("description") or "")
     if log_findings:
@@ -372,9 +392,11 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     def tval(k, default="_not available_"):
         return target[k] if target.get(k) else default
 
-    findings = _extract_findings(target)
+    findings = _extract_findings(target, comment_findings)
 
     def _known_verdict() -> str:
+        if cf.get("root_cause"):
+            return "Root cause identified in ticket comments"
         if recall["confidence"] in ("High", "Medium"):
             return "Likely known issue"
         if findings.get("confidence") == "confirmed":
@@ -387,24 +409,42 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
             score += 20
         score += {"High": 30, "Medium": 20, "Low": 10, "None": 0}.get(
             recall.get("confidence", "None"), 0)
-        if findings.get("root_cause"):
-            score += 15
-        if findings.get("resolution"):
+        if cf.get("root_cause"):
+            score += 20
+        if cf.get("workaround"):
             score += 10
+        elif findings.get("resolution"):
+            score += 5
         if log_findings and log_findings.get("signatures"):
-            score += 15
-        return min(95, score)
+            score += 10
+        return min(97, score)
 
     top_sig = None
     if log_findings and log_findings.get("signatures"):
         top_sig = log_findings["signatures"][0]
 
-    failure_point = "Not found from current evidence"
-    for ev in (log_findings or {}).get("timeline", []):
-        if ev.get("failure_point"):
-            detail = _short(ev.get("text", ""), 140)
-            failure_point = f"{ev.get('label', 'failure')} — {detail}" if detail else ev.get("label", "failure")
-            break
+    # Failure point: prefer the comment-derived root cause (human conclusion),
+    # then the log timeline's first fatal event, then nothing.
+    if cf.get("root_cause"):
+        failure_point = _short(cf["root_cause"], 200)
+    else:
+        failure_point = "Not found from current evidence"
+        for ev in (log_findings or {}).get("timeline", []):
+            if ev.get("failure_point"):
+                detail = _short(ev.get("text", ""), 140)
+                failure_point = (f"{ev.get('label', 'failure')} — {detail}"
+                                 if detail else ev.get("label", "failure"))
+                break
+
+    # Next action: continue from the LAST recorded next-step, else evidence-led.
+    if cf.get("next_steps"):
+        next_action = f"Continue: {_short(cf['next_steps'][-1], 160)}"
+    elif cf.get("root_cause"):
+        next_action = "Confirm the comment-identified root cause on hardware, then verify the workaround."
+    elif top_sig:
+        next_action = "Start with attached-log failure signature and MCA/trace decode."
+    else:
+        next_action = "Start with dominant domain checks and collect stronger runtime evidence."
 
     L: List[str] = []
     L.append(f"# Auto HSD Analyser report — {hsd_id}")
@@ -419,13 +459,21 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     L.append(f"- **Overall confidence:** {_exec_confidence()} / 100")
     L.append(f"- **Primary domain cluster:** {(domains[0][0] if domains else 'General / unclassified')}")
     L.append(f"- **Failure point (best signal):** {failure_point}")
+    if cf.get("root_cause"):
+        who = cf.get("root_cause_author") or "ticket"
+        L.append(f"- **Root cause ({who}):** {_short(cf['root_cause'], 240)}")
+    if cf.get("workaround"):
+        L.append(f"- **Workaround / fix:** {_short(cf['workaround'], 200)}")
     if top_sig:
         L.append(f"- **Top failure signature:** {top_sig['label']} ({top_sig['severity']}, x{top_sig['count']})")
-    L.append(f"- **Immediate next action:** {'Start with attached-log failure signature and MCA/trace decode.' if top_sig else 'Start with dominant domain checks and collect stronger runtime evidence.'}")
+    L.append(f"- **Immediate next action:** {next_action}")
+    if cf.get("status_hint"):
+        L.append(f"- **Investigation status:** {cf['status_hint']}")
     L.append("")
 
     L.append("### Model A evidence ledger")
     L.append(f"- **Target ticket narrative available:** {'yes' if target and not target.get('error') else 'no'}")
+    L.append(f"- **Comments analysed:** {cf.get('count', 0)}")
     L.append(f"- **KB matches:** {len(recall.get('matches', []))} ({recall.get('confidence', 'None')})")
     L.append(f"- **Similar HSDs from source:** {len(similar)}")
     L.append(f"- **Log signatures detected:** {len((log_findings or {}).get('signatures', []))}")
@@ -472,6 +520,51 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     L.append(f"- **Detected domain(s):** {', '.join(d for d, _ in domains) or 'general'}")
     L.append(f"- **Reported signature (input):** {symptoms}")
     L.append("")
+
+    # Investigation narrative reconstructed from the comment thread — this is the
+    # crystal-clear "what happened, in order" that a human analyst reads first.
+    if cf and cf.get("narrative"):
+        _KIND_ICON = {
+            "ROOT CAUSE": "🎯", "WORKAROUND / FIX": "🛠️", "OBSERVED": "🔎",
+            "TRIED": "🔧", "NEXT STEP": "➡️", "NOTE": "•",
+        }
+        from .comment_analyzer import _LABELS
+        L.append(f"## A1. Investigation narrative (from {cf.get('count', 0)} comments)")
+        L.append("")
+        L.append("| # | Who | Kind | What they reported |")
+        L.append("|---|-----|------|--------------------|")
+        for ev in cf["narrative"]:
+            label = _LABELS.get(ev["kind"], "NOTE")
+            icon = _KIND_ICON.get(label, "•")
+            who = _short(ev["author"], 18)
+            what = _short(ev["text"], 150).replace("|", "\\|")
+            L.append(f"| {ev['seq']} | {who} | {icon} {label} | {what} |")
+        L.append("")
+        if cf.get("root_cause"):
+            who = cf.get("root_cause_author") or "ticket"
+            L.append(f"- **🎯 Converged root cause ({who}):** {_short(cf['root_cause'], 320)}")
+        if cf.get("workaround"):
+            L.append(f"- **🛠️ Workaround / fix:** {_short(cf['workaround'], 240)}")
+        if cf.get("tried"):
+            L.append(f"- **Already tried (do not repeat):**")
+            for t in cf["tried"][:6]:
+                L.append(f"  - {_short(t, 150)}")
+        if cf.get("next_steps"):
+            L.append(f"- **Recorded next steps:**")
+            for n in cf["next_steps"][:5]:
+                L.append(f"  - {_short(n, 150)}")
+        # Technical breadcrumbs pulled from the thread
+        crumbs = cf.get("breadcrumbs") or {}
+        if crumbs:
+            _CRUMB_LABEL = {"register": "Registers", "code_site": "Code sites",
+                            "socket_port": "Socket/Port", "bios_build": "BIOS builds",
+                            "upi_signal": "UPI/UPLR"}
+            L.append(f"- **Technical breadcrumbs:**")
+            for k, items in crumbs.items():
+                L.append(f"  - *{_CRUMB_LABEL.get(k, k)}:* "
+                         f"{', '.join('`' + _short(i, 40) + '`' for i in items[:8])}")
+        L.append(f"- **Investigation status:** {cf.get('status_hint', 'unknown')}")
+        L.append("")
 
     # Attached-log analysis (only when logs were provided).
     if log_findings:
@@ -563,19 +656,50 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
 
     L.append("## D. Ranked root-cause hypotheses")
     dom_label = ", ".join(d for d, _ in domains) or "unclassified"
-    L.append(f"1. *(hypothesis)* {dom_label} issue on {plat} consistent with the reported "
+    rank = 1
+    if cf.get("root_cause"):
+        who = cf.get("root_cause_author") or "ticket"
+        tag = "confirmed-in-ticket" if cf.get("workaround") else "leading, from comments"
+        L.append(f"{rank}. *({tag})* {_short(cf['root_cause'], 320)} "
+                 f"— stated by **{who}** in the comment thread.")
+        rank += 1
+    L.append(f"{rank}. *(hypothesis)* {dom_label} issue on {plat} consistent with the reported "
              f"signature. Evidence: ticket text; {'KB match' if recall['matches'] else 'no prior KB match'}.")
-    L.append("2. *(hypothesis)* Config / firmware / OS-build specific behavior — A/B the "
+    rank += 1
+    L.append(f"{rank}. *(hypothesis)* Config / firmware / OS-build specific behavior — A/B the "
              "relevant revision (ucode/BIOS/IFWI/OS) before deeper isolation.")
     L.append("")
 
     L.append("## E. Detailed next debug steps")
     step = 1
-    # Log-driven step first when attached logs revealed something concrete.
+    # If the ticket comments already recorded a converged root cause + next step,
+    # continue from there instead of restarting the investigation.
+    if cf.get("root_cause"):
+        L.append(f"{step}. **Confirm the comment-identified root cause on hardware.** "
+                 f"{_short(cf['root_cause'], 200)}")
+        crumbs = cf.get("breadcrumbs") or {}
+        if crumbs.get("register"):
+            L.append(f"   - Read the cited register(s): "
+                     f"{', '.join('`' + r + '`' for r in crumbs['register'][:4])}.")
+        if crumbs.get("socket_port"):
+            L.append(f"   - Focus on: {', '.join(crumbs['socket_port'][:4])}.")
+        if crumbs.get("code_site"):
+            L.append(f"   - Inspect code path near: "
+                     f"{', '.join('`' + c + '`' for c in crumbs['code_site'][:3])}.")
+        step += 1
+        if cf.get("next_steps"):
+            L.append(f"{step}. **Continue the recorded plan:** "
+                     f"{_short(cf['next_steps'][-1], 180)}")
+            step += 1
+        if cf.get("workaround"):
+            L.append(f"{step}. **Validate the workaround** and track the real fix: "
+                     f"{_short(cf['workaround'], 180)}")
+            step += 1
+    # Log-driven step when attached logs revealed something concrete.
     if log_findings and log_findings.get("signatures"):
         top = log_findings["signatures"][0]
         L.append(f"{step}. **From attached logs — {top['label']}** ({top['severity']}, "
-                 f"x{top['count']}). Start here; it's the strongest evidence.")
+                 f"x{top['count']}). Corroborate against the root cause above.")
         mca = (log_findings.get("mca_decode") or [])
         if mca:
             d = mca[0]
@@ -588,20 +712,24 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
             L.append(f"   - Last checkpoint before failure: `{log_findings['last_checkpoint']}` "
                      "— inspect the code path right after it.")
         step += 1
-    if domains:
-        for label, cmds in domains:
-            L.append(f"{step}. **{label}** — check the domain-specific state first.")
-            for c in cmds:
-                L.append(f"   - {c}")
+    # Domain checks only when we DON'T already have a converged root cause.
+    if not cf.get("root_cause"):
+        if domains:
+            for label, cmds in domains:
+                L.append(f"{step}. **{label}** — check the domain-specific state first.")
+                for c in cmds:
+                    L.append(f"   - {c}")
+                step += 1
+        else:
+            L.append(f"{step}. **Identify the failing domain** from the ticket signature, then "
+                     "read that subsystem's status/log.")
             step += 1
-    else:
-        L.append(f"{step}. **Identify the failing domain** from the ticket signature, then "
-                 "read that subsystem's status/log.")
+        L.append(f"{step}. **Isolate by revision** — A/B ucode / BIOS / IFWI / BMC / OS build "
+                 "between passing and failing runs.")
         step += 1
-    L.append(f"{step}. **Isolate by revision** — A/B ucode / BIOS / IFWI / BMC / OS build "
-             "between passing and failing runs.")
-    L.append(f"{step + 1}. **Collect logs** — grep serial/BIOS/OS logs for the error string; "
-             "capture full config and revisions.")
+    if cf.get("tried"):
+        L.append(f"{step}. **Skip already-tried paths** (recorded in comments): "
+                 + "; ".join(_short(t, 60) for t in cf["tried"][:4]) + ".")
     L.append("")
 
     L.append("## F. Data to request/collect")
@@ -611,15 +739,25 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     L.append("")
 
     L.append("## G. Learning summary")
-    conf = "Medium" if target.get("full_text") else "Low"
-    L.append(f"- KB entry created/updated for this signature, tagged **{conf} / hypothesis** "
-             "(full reasoning requires the LLM; offline captures the signature).")
+    if cf.get("root_cause"):
+        conf = "High" if cf.get("workaround") else "Medium"
+    else:
+        conf = "Medium" if target.get("full_text") else "Low"
+    tag = "root-cause captured from comments" if cf.get("root_cause") else "signature captured"
+    L.append(f"- KB entry created/updated for this signature, tagged **{conf}** ({tag}).")
     L.append("")
 
     L.append("## H. Known-issue verdict")
-    if recall["confidence"] in ("High", "Medium"):
+    if cf.get("root_cause") and cf.get("workaround"):
+        L.append("- **Root-caused in ticket** — root cause + workaround recorded in comments "
+                 "(section A1). Verify the fix lands before closing.")
+    elif cf.get("root_cause"):
+        L.append("- **Root cause identified** in ticket comments (section A1) — not yet "
+                 "verified/fixed. Confirm on hardware.")
+    elif recall["confidence"] in ("High", "Medium"):
         L.append("- **Likely known** — see KB matches in section C. Verify before closing.")
     else:
         L.append("- **Likely new sighting** — no confident KB match found.")
 
-    return "\n".join(L), _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled)
+    return "\n".join(L), _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled,
+                                         comment_findings)

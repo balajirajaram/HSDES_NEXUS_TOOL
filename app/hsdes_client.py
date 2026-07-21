@@ -129,15 +129,34 @@ class HSDESClient:
         text = re.sub(r"<[^>]+>", " ", text)          # strip HTML tags
         return re.sub(r"[ \t]+", " ", text).strip()
 
+    # Comment entry marker: '++++<id> <author>' (id is 6+ digits, author follows).
+    _COMMENT_MARKER = re.compile(r"\+{2,}(\d{6,})\s+([A-Za-z0-9._-]+)")
+
     @classmethod
-    def _split_comments(cls, blob: Any) -> List[str]:
+    def _parse_comments(cls, blob: Any) -> List[Dict[str, str]]:
         """HSDES stores the thread in one 'comments' string; entries begin with
-        '++++<epoch> <user>'. Split into individual, cleaned comments."""
+        '++++<id> <author>'. Return structured entries preserving author + order
+        so the investigation narrative (who observed / tried / concluded what)
+        can be reconstructed — this is what a human analyst reads first."""
         if not isinstance(blob, str) or not blob.strip():
             return []
-        parts = re.split(r"\++\d{6,}", blob)  # split on the ++++<timestamp> marker
-        out = [cls._clean(p) for p in parts]
-        return [p for p in out if p]
+        markers = list(cls._COMMENT_MARKER.finditer(blob))
+        if not markers:
+            body = cls._clean(blob)
+            return [{"author": "", "ts": "", "text": body}] if body else []
+        out: List[Dict[str, str]] = []
+        for i, m in enumerate(markers):
+            start = m.end()
+            end = markers[i + 1].start() if i + 1 < len(markers) else len(blob)
+            body = cls._clean(blob[start:end])
+            if body:
+                out.append({"author": m.group(2), "ts": m.group(1), "text": body})
+        return out
+
+    @classmethod
+    def _split_comments(cls, blob: Any) -> List[str]:
+        """Backward-compatible list of comment bodies (text only)."""
+        return [c["text"] for c in cls._parse_comments(blob)]
 
     def _normalize(self, hsd_id: str, data: Any,
                    _comments: Optional[List[str]] = None) -> Dict[str, Any]:
@@ -160,7 +179,8 @@ class HSDESClient:
 
         title = self._clean(g("title", "subject"))
         description = self._clean(g("description", "reason"))
-        comments = self._split_comments(g("comments"))
+        comments_structured = self._parse_comments(g("comments"))
+        comments = [c["text"] for c in comments_structured]
         full_text = "\n\n".join(filter(None, [
             f"TITLE: {title}",
             f"DESCRIPTION:\n{description}" if description else "",
@@ -184,6 +204,7 @@ class HSDESClient:
             "product_found": g("product_found"),
             "description": description,
             "comments": comments,
+            "comments_structured": comments_structured,
             "full_text": full_text,
             "raw": rec,
         }
