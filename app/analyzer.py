@@ -476,7 +476,13 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
         L.append(f"- **Suspected area (from attachment):** {suspected_area}")
     if cf.get("workaround"):
         L.append(f"- **Workaround / fix:** {_short(cf['workaround'], 200)}")
-    if top_sig:
+    # Key failure signatures read from the attached logs (top few by severity).
+    sigs = (log_findings or {}).get("signatures", []) if log_findings else []
+    if sigs:
+        key = " · ".join(f"{s['label']} ({s['severity']}, x{s['count']})"
+                         for s in sigs[:4])
+        L.append(f"- **Key failure signatures (from attached logs):** {key}")
+    elif top_sig:
         L.append(f"- **Top failure signature:** {top_sig['label']} ({top_sig['severity']}, x{top_sig['count']})")
     L.append(f"- **Immediate next action:** {next_action}")
     if cf.get("status_hint"):
