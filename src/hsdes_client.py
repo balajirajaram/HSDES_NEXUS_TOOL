@@ -36,6 +36,22 @@ import certifi
 import requests
 from requests_kerberos import OPTIONAL, HTTPKerberosAuth
 
+try:
+    # truststore makes Python's ssl module verify against the OS-native
+    # certificate store (Windows Certificate Store / macOS Keychain / Linux
+    # system trust) instead of the bundled certifi CA list. This is required
+    # on corp machines behind a TLS-inspecting proxy: the proxy's root CA is
+    # trusted by the OS (installed via Group Policy) but is NOT present in
+    # certifi's bundle, so certifi-only verification fails with
+    # "self-signed certificate in certificate chain" even though the OS
+    # trusts the connection fine.
+    import truststore
+
+    truststore.inject_into_ssl()
+    _TRUSTSTORE_AVAILABLE = True
+except ImportError:
+    _TRUSTSTORE_AVAILABLE = False
+
 
 class HSDESComprehensiveClient:
     """Comprehensive client for Intel HSDES REST API supporting all documented endpoints.
@@ -48,7 +64,8 @@ class HSDESComprehensiveClient:
         base_url (str): Base URL for the HSDES API
         auth (HTTPKerberosAuth): Kerberos authentication handler
         session (requests.Session): HTTP session with configured SSL certificates
-        ca_bundle_path (str): Path to CA certificate bundle
+        ca_bundle_path (bool | str): `True` if verifying via the OS trust store
+            (via `truststore`), otherwise a path to a CA certificate bundle
 
     Example:
         >>> client = HSDESComprehensiveClient()
@@ -75,8 +92,24 @@ class HSDESComprehensiveClient:
             "APP": "hsdes-python-client"
         })
 
-    def _setup_ca_bundle(self) -> str:
-        """Set up CA bundle with Intel internal certificates."""
+    def _setup_ca_bundle(self) -> bool | str:
+        """Set up CA bundle with Intel internal certificates.
+
+        Preferred path: if `truststore` is available, `ssl.SSLContext` has already
+        been patched (see module import) to verify against the OS-native certificate
+        store, which trusts Intel's TLS-inspecting proxy CA out of the box. In that
+        case `requests.Session.verify` should simply be `True`.
+
+        Fallback path (no truststore installed): attempt to combine certifi's bundle
+        with an Intel-internal CA file from a corp file share. This path is legacy
+        and depends on a share location that may not exist for all users/environments
+        - if it's missing, we silently fall back to certifi only, which will fail
+        SSL verification behind a TLS-inspecting proxy. Installing `truststore`
+        (`pip install truststore`) is the robust fix.
+        """
+        if _TRUSTSTORE_AVAILABLE:
+            return True
+
         intel_certs_path = (
             "\\\\amr.corp.intel.com\\ec\\proj\\ha\\sighting\\share\\hsdes_2.0\\"
             "Tools\\OpenSource_py\\certs\\20240813-Intel_certs\\pem_files\\"
