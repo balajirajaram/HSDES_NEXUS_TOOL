@@ -80,6 +80,14 @@ Parameters are resolved in this priority order: **NLP prompt → `session_init.j
 | `initial_symptom` | `"symptom is: <text>"` | (in `--initial-logs` file) | from HSD MCP |
 | `testcase_name` | — | (in `--initial-logs` file) | from NGA MCP |
 | `testcase_command` | — | (in `--initial-logs` file) | from NGA MCP |
+| `enrichment_mode` | `"enriched analysis"` / `"phase-b"` / `"phase-a only"` | `--enrichment-mode` | `none` |
+| `exclude_hsd_ids` | `"exclude HSD 15018590736"` | `--exclude-hsd` (repeatable) | `[]` |
+
+> **Enrichment modes** — when `enrichment_mode` is `phase-b`, invoke `mcp-enrichment`
+> skill BEFORE the first debug iteration to build platform context, register annotation,
+> and symptom-matched historical sighting blocks. Always pair with `--exclude-hsd` for
+> every HSD used to design the repro script (ground truth labels must not feed BugScout).
+> Default `none` is backwards-compatible — all existing sessions are unaffected.
 
 > **Bootstrap logs are persisted.** When `--initial-logs` is provided, the session runner stores the collected logs in session state and includes them in the generated markdown/HTML reports.
 
