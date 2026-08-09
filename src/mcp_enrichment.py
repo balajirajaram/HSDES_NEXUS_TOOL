@@ -12,7 +12,7 @@ Usage:
         key_signals=["IERR after idle", "SEL voltage lower critical"],
         exclude_hsd_ids=["15018590736"],
         mca_banks_observed=[31],
-        mode="phase-b"     # "none" | "phase-a" | "phase-b"
+        # mode defaults to "phase-b" (MCP-enriched); pass mode="none" for raw blind run
     )
     context_block = enricher.run()
     enriched_payload = context_block + "\n\n" + raw_evidence
@@ -141,7 +141,7 @@ class MCPEnrichmentPipeline:
     key_signals: list[str]
     exclude_hsd_ids: list[str] = field(default_factory=list)
     mca_banks_observed: list[int] = field(default_factory=list)
-    mode: str = "none"   # "none" | "phase-a" | "phase-b"
+    mode: str = "phase-b"   # "phase-b" (default) | "phase-a" | "none" (raw blind)
 
     # Results populated by each phase
     _phase1_block: str = ""

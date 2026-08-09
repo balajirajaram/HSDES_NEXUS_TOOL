@@ -14,8 +14,8 @@ description: |
     are redacted). Repro HSDs are excluded by their IDs.
 
   Use when: BugScout is about to perform blind analysis and platform context is available.
-  DO NOT USE FOR: live debug sessions where the HSD is already known, or when HSD data
-  should be withheld entirely (Phase A evaluation runs).
+  DO NOT USE FOR: live debug sessions where the HSD is already known. For pure baseline
+  evaluation (Phase A), call with mode="none" explicitly.
 ---
 
 # MCP Pre-Enrichment Pipeline for BugScout
@@ -31,12 +31,11 @@ Estimated accuracy improvement: 75% → ~90% for silicon RAS/MCA failures.
 
 ## Evaluation Methodology Rule
 
-> **CRITICAL:** This skill is used for Phase B (augmented) evaluation ONLY.
-> Phase A (baseline) runs must receive raw evidence with NO enrichment.
+> **CRITICAL:** The default mode is `phase-b` (MCP-enriched). To get a pure Phase A
+> baseline score, explicitly pass `mode="none"` or `--enrichment-mode none`.
 > Repro HSDs must be listed in `exclude_hsd_ids` — they are ground truth labels,
 > never pattern-match inputs for BugScout.
-> Phase B evaluation must use a DIFFERENT repro case from the one in `exclude_hsd_ids`
-> to prevent circular scoring.
+> Phase A vs Phase B scores must be reported separately and never averaged together.
 
 ---
 

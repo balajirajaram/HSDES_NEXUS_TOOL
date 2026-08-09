@@ -42,9 +42,9 @@ Do not treat any of the above skills as separate agents.
 
 | Mode | When to Use | BugScout Input |
 |---|---|---|
-| `--enrichment-mode none` | Default — pure blind run, Phase A evaluation | Raw evidence only |
+| `--enrichment-mode phase-b` | **Default** — MCP-augmented run | Evidence + platform context + register map + symptom-matched sightings (root cause redacted) |
 | `--enrichment-mode phase-a` | Explicit Phase A baseline, tagged in report | Raw evidence only + `[PHASE-A]` tag |
-| `--enrichment-mode phase-b` | MCP-augmented run, Phase B evaluation | Evidence + platform context + register map + symptom-matched sightings (root cause redacted) |
+| `--enrichment-mode none` | Pure blind run, no MCP context at all | Raw evidence only |
 
 **Bias prevention:** Always pass `--exclude-hsd <id>` for every HSD used to design the repro script.
 These are ground truth labels — they must never appear in Phase 3 HSD pattern match results.
