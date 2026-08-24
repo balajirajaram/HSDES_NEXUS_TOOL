@@ -1,0 +1,3970 @@
+{
+  "0x1": {
+    "description": "bios_done.soc_bios_done is 0",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_BIOS_MSRS_CHECKS",
+    "dfx_group_id": 3,
+    "dfx_group_name": "DFX_CORE_GROUP",
+    "name": "BIOS_DONE_ERR"
+  },
+  "0x1001": {
+    "description": "failed because SocketEnable_CFG.Valid != 1",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_UBOX_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "UBOX_SOCKETENABLE_CFG_MISCONFIGURED_ERR"
+  },
+  "0x1002": {
+    "description": "failed because SocketID_CFG.LclSocketID != SOCKET_ID",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_UBOX_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "UBOX_SOCKETID_CFG_MISCONFIGURED_ERR"
+  },
+  "0x1003": {
+    "description": "failed because LockControl_CFG.LockDisable != 0",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_UBOX_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "UBOX_LOCKCONTROL_CFG_MISCONFIGURED_ERR"
+  },
+  "0x1004": {
+    "description": "in case Fixed_MMIOH_Alias is not defined: failed because ubox_mmio_base.addr_high != 0",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_UBOX_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "UBOX_MMIO_BASE_ADDR_HIGH_NOT_ZERO_ERR"
+  },
+  "0x1005": {
+    "description": "in case Fixed_MMIOH_Alias is defined: failed because ubox_mmio_base.addr_high isnt equal to the Fixed_MMIOH_Alias-based range decoded to given UBOX",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_UBOX_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "UBOX_MMIO_BASE_ADDR_HIGH_MISCONFIGURED_ERR"
+  },
+  "0x1006": {
+    "description": "failed because IOCA instances dont have consistent configuration",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_IOCA_CONSISTENCY_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IOCA_INSTANCES_MISMATCH_ERR"
+  },
+  "0x1007": {
+    "description": "failed because IOCA instances dont have consistent configuration in both iMHs",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_IOCA_CONSISTENCY_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IOCA_INSTANCES_MISMATCH_IN_IMHS_ERR"
+  },
+  "0x1008": {
+    "description": "failed because MESEG (IOCA version) overlaps protected memory",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_IOCA_OVERLAP_PROTECTED_MEM_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IOCA_MESEG_OVERLAPS_PROTECTED_MEMORY_ERR"
+  },
+  "0x1009": {
+    "description": "failed because SMMSEG (IOCA version) overlaps CMRs",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_IOCA_OVERLAP_PROTECTED_MEM_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IOCA_SMMSEG_OVERLAPS_CMRS_ERR"
+  },
+  "0x100a": {
+    "description": "failed because TPR (IOCA version) overlaps CMRs",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_IOCA_OVERLAP_PROTECTED_MEM_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IOCA_TPR_OVERLAPS_CMRS_ERR"
+  },
+  "0x100b": {
+    "description": "failed because LTDPR (IOCA version) overlaps CMRs",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_IOCA_OVERLAP_PROTECTED_MEM_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IOCA_LTDPR_OVERLAPS_CMRS_ERR"
+  },
+  "0x100d": {
+    "description": "failed because there is CMRs that are below 4GB and not fully below TOLM_CFG",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_IOCA_OVERLAP_PROTECTED_MEM_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IOCA_TOLM_ABOVE_CMRS_ERR"
+  },
+  "0x100f": {
+    "description": "failed because TOHM_CFG is not configured to include highest address in CMRs",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_IOCA_OVERLAP_PROTECTED_MEM_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IOCA_TOHM_DOESNT_INCLUDE_HIGHEST_CMR_ADDR_ERR"
+  },
+  "0x1010": {
+    "description": "TAD rules overlap each other",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_TAD_RULES_OVERLAP_EACH_OTHER_ERR"
+  },
+  "0x1011": {
+    "description": "TAD_Rule_Cfg.HA_Intlv_Granularity should be: - 512B - If there are enabled MCs in 2 iMHs - 1KB - If only 1 iMH has enabled MCs",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_TAD_RULES_INVALID_TAD_RULE_GRANULARITY_ERR"
+  },
+  "0x1012": {
+    "description": "TAD_Rule_Cfg reserved field is not zero",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_TAD_RULES_RESERVED_NOT_ZERO_ERR"
+  },
+  "0x1014": {
+    "description": "tad rule (granularity  ways) is not a divisor of tad_limit",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_TAD_RULES_INVALID_LIMIT_ERR"
+  },
+  "0x1015": {
+    "description": "TAD_Rule_Cfg.HA_Intlv_Ways is not a power of 2 and TAD_Rule_Cfg.TAD_Base/TAD_Rule_Cfg.TAD_Limit is not 3G aligned",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_TAD_RULES_LIMIT_BASE_NOT_ALIGNED_ERR"
+  },
+  "0x1018": {
+    "description": "HSF_CFG_MEM regiter in one of HAMVF instances is misconfigured: num_ia_way_partitions should be 1..4",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_HSF_CFG_MEM_MISCONFIGURED_ERR"
+  },
+  "0x101a": {
+    "description": "CACHEIFC_PARTITION_WAYS_MEM regiter in one of HAMVF instances is misconfigured",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_CACHEIFC_PARTITION_WAYS_MEM_MISCONFIGURED_ERR"
+  },
+  "0x101b": {
+    "description": "HSF_IACA_PARTITION_MAPPING_MEM regiter in one of HAMVF instances is misconfigured",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_HSF_IACA_PARTITION_MAPPING_MEM_MISCONFIGURED_ERR"
+  },
+  "0x101c": {
+    "description": "RT_COM_ROUTING_CTRL_SECURE_MEM regiter in one of HAMVF instances is not consistent with the corresponding UBR register",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_RT_COM_ROUTING_CTRL_SECURE_MEM_MISCONFIGURED_ERR"
+  },
+  "0x101d": {
+    "description": "TAD rules in enabled HAs are not configured to identical values (checked accross all enabled HA and betweem IMHs)",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IMH_HAMVF_TAD_RULES_MISMATCH_ERR"
+  },
+  "0x101e": {
+    "description": "Mirroring is not enabled, but there are TAD rules of type mirror",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_HAMVF_MIRRORING_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_EXISTING_TAD_MIRROR_RULES_MIRROR_NOT_ENABLED_ERR"
+  },
+  "0x1020": {
+    "description": "Invalid mirroring logical ID buddy configuration",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_HAMVF_MIRRORING_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_INVALID_MIRRORING_BUDDY_CONFIGURATION_RULES_ERR"
+  },
+  "0x1021": {
+    "description": "CDNID of iMH exists more than once in hsf_ioca_partition_mapping_mem register in one of HAMVF instances",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_HSF_IOCA_PARTITION_MAPPING_CDNID_EXISTS_TWICE_ERR"
+  },
+  "0x1022": {
+    "description": "CDNID of iMH doesnt exist in hsf_ioca_partition_mapping_mem register in one of HAMVF instances",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_HSF_IOCA_PARTITION_MAPPING_CDNID_DOESNT_EXIST_ERR"
+  },
+  "0x1024": {
+    "description": "F2LM TAD rule is defined not in instance 0, or both hamvf_mode.nmcaching and hamvf_mode.flat2lm are not enabled",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_HAMVF_F2LM_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_INVALID_F2LM_TAD_RULE_ERR"
+  },
+  "0x1026": {
+    "description": "SUBRANK_BITS doesnt equal to DIMMMTR.3DS_NUMRANKS_CS (DDR type = native DDR5)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_RANK_TYPE_RDIMM_SUBRANK_BITS_MISCONFIGURED_ERR"
+  },
+  "0x1027": {
+    "description": "RANK is 1, and DIMMMTR.RANK_CNT == 2 (DDR type = native DDR5)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_RANK_TYPE_RDIMM_RANK_CNT_MISCONFIGURED_ERR"
+  },
+  "0x1028": {
+    "description": "BA_BITS != 2",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_BA_BITS_MISCONFIGURED_ERR"
+  },
+  "0x1029": {
+    "description": "BG_BITS = 2 and DIMMMTR.BA_SHRINK != 1",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMMMTR_BA_SHRINK_MISCONFIGURED_ERR"
+  },
+  "0x102a": {
+    "description": "COL_BITS doesnt equal DIMMMTR.CA_WIDTH",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_COL_BITS_MISCONFIGURED_ERR"
+  },
+  "0x102b": {
+    "description": "ROW_BITS bigger than to the value encoded in DIMMMTR.RA_WIDTH",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_ROW_BITS_MISCONFIGURED_ERR"
+  },
+  "0x102d": {
+    "description": "Start RA is smaller than end RA",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_RIR_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "RIR_INVALID_START_AND_END_ERR"
+  },
+  "0x102e": {
+    "description": "One of the following conditions do not meet: - All enabled RIR rules (bit VALID = 1) precede any disabled rules - There is at least one enabled rule",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_RIR_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "RIR_INVALID_ENABLED_RULES_ERR"
+  },
+  "0x102f": {
+    "description": "One of the following conditions do not meet: - RIR_LIMIT of enabled rules is increasing - CAmax < RIR_LIMIT of the last enabled rule",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_RIR_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "RIR_INVALID_LIMIT_ERR"
+  },
+  "0x1030": {
+    "description": "WAYNESS = 0 or (CA / WAYNESS) < OFFSET",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_RIR_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "RIR_INVALID_CALC_RA_VALUES_ERR"
+  },
+  "0x1031": {
+    "description": "DIMM Manifest don't have an entry for the combination of iMH, MC, DIMM and rank (Note: if rank = b’0dr0, d and r are DIMM/rank defined in the DIMM Manifest)",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_RIR_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "RIR_INVALID_RANK_ERR"
+  },
+  "0x1032": {
+    "description": "RANKMAP rank address end exceed the capacity calculated for given rank",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_RIR_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "RIR_RA_END_ADDR_EXCEED_MAX_RA_ADDR_ERR"
+  },
+  "0x1033": {
+    "description": "RANKMAP rank regions overlap",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_RIR_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "RIR_RANK_REGIONS_OVERLAP_ERR"
+  },
+  "0x1034": {
+    "description": "dfi_common_ctrl.dfi_init_start must be 0",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_MMC_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "DFI_COMMON_CTRL_MISCONFIGURED_ERR"
+  },
+  "0x1035": {
+    "description": "AMAP registers have reserved bits set",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_AMAP_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "AMAP_REGISTERS_RESERVED_BITS_SET_ERR"
+  },
+  "0x1036": {
+    "description": "failed because that Row0/1/2/15/16/17 , Column10 values have illegal values",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_AMAP_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "AMAP_COL_AMAP_ROW_BITS_MISCONFIGURED_ERR"
+  },
+  "0x103c": {
+    "description": "failed because AMAP registers dont define unique rank address bits",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_AMAP_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "AMAP_CONFIGURES_NON_UNIQUE_RANK_ADDRESS_ERR"
+  },
+  "0x103d": {
+    "description": "If MCMTR.DIMM_XOR_ENABLE: - For each r either both ranks b’00r0 and b’01r0 present, or none of them. - If both present, they should have the same offset (RIR_OFFSET). If MCMTR.RANK_XOR_ENABLE - For each d either both ranks b’0d00 and b’0d10 present, or none of them. - If both present, they should have the same offset (RIR_OFFSET).",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_RIR_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "RIR_RANKMAP_INVALID_RANK_CONFIG_ERR"
+  },
+  "0x103e": {
+    "description": "mctrk.dimm_xor_enable or mctrk.rank_xor_enable and not all rank targets are unique",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_RIR_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "RIR_RANKMAP_RANK_NOT_UNIQUE_ERR"
+  },
+  "0x103f": {
+    "description": "SEAMRR is not covered by TAD rules",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_SEAMRR_NOT_COVERED_BY_TAD_RULES_ERR"
+  },
+  "0x1040": {
+    "description": "CMRs are not covered by TAD rules",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_CMRS_NOT_COVERED_BY_TAD_RULES_ERR"
+  },
+  "0x1041": {
+    "description": "MCMTR is misconfigured: 'ecc_en' or 'normal' fields are not 1",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "DFX_MC_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "MCMTR_REGISTER_IS_MISCONFIGURED_ERR"
+  },
+  "0x1042": {
+    "description": "ECCMODESEL is misconfigured: 'ecc_1lm_9x4' or 'ecc_1lm_10x4_sddc' fields are not 0",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "DFX_MC_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "ECCMODESEL_REGISTER_IS_MISCONFIGURED_ERR"
+  },
+  "0x1044": {
+    "description": "MSE_SOCKET_ID.socket_id doesnt match the correct socket id",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "DFX_MC_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "MSE_SOCKET_ID_REGISTER_IS_MISCONFIGURED_ERR"
+  },
+  "0x1045": {
+    "description": "LINK_RETRY_CFG is misconfigured (link_retry_cfg.erf_en0 != 0)",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_SDC_LINK_RETRY_CFG_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "LINK_RETRY_CFG_IS_MISCONFIGURED_ERR"
+  },
+  "0x1046": {
+    "description": "MCTRK_CMI_CFG is misconfigured ((mctrk_cmi_cfg.req_force_uc_override != 0) || (mctrk_cmi_cfg.req_may_log_uc_override != 0))",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_SDC_MCTRK_CMI_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "MCTRK_CMI_CFG_IS_MISCONFIGURED_ERR"
+  },
+  "0x1047": {
+    "description": "mctrk_cmi_credit_struct_cnt_cfg is misconfigured: - wrtrkr_shared_cnt != MEM_TRKR_ENTRIES_WR (=184) - 1 (patrol reserved entry) - mctrk_cmi_credit_req_cp_cfg.wr_vc0_floor - early_rsp_fifo_vc0_shared_cnt != MC_EARLY_RSP_FIFO_DEPTH_VC0 (=33) - mctrk_cmi_credit_req_cp_cfg.wr_vc0_floor - early_rsp_fifo_vc2_shared_cnt != 0 - early_rsp_fifo_vc3_shared_cnt != 0 - early_rsp_fifo_vc4_shared_cnt != 0",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_SDC_MCTRK_CMI_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "MCTRK_CMI_CREDIT_STRUCT_CNT_CFG_IS_MISCONFIGURED_ERR"
+  },
+  "0x1048": {
+    "description": "cmpl_to_data_delay is misconfigured: - rddata_valid_to_rddata_delay != min(dfi_rddata_timings[rank].trddata_en + dfi_rddata_timings[rank].tphy_rdlat - dfi_rddata_timings[rank].early_roundtrip)/N, where N is 2 for Native DDR5 and 4 for MCR. - rddata_valid_to_rddata_delay < 12  or rddata_valid_to_rddata_delay > 36",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_SDC_DFI_RDDATA_TIMINGS_CMPL_TO_DATA_DELAY_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "CMPL_TO_DATA_DELAY_IS_MISCONFIGURED_ERR"
+  },
+  "0x1049": {
+    "description": "scheduler_delay is misconfigured: - cmd_delay != 0 - write_err_latency < ((mcdp_dfi_wrdata_timings.tphy_wrlatdata / (N  2)) + 1) / 2 - 1, where N = 1 for native DDR5 and N = 2 for MCR",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_SDC_DCHEDULAR_DELAY_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "SCHEDULAR_DELAY_IS_MISCONFIGURED_ERR"
+  },
+  "0x104a": {
+    "description": "bcastlist_cfg.intlist and bcastlist_cfg.stopstartlist should be equal to the socket list identified for the platform",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_UBOX_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "UBOX_BCAST_CFG_MISCONFIGURED_ERR"
+  },
+  "0x104f": {
+    "description": "There are overlaping CA ranges",
+    "dfx_bit_id": 11,
+    "dfx_bit_name": "DFX_CHANNEL_ADDRESS_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "OVERLAPPING_CA_RANGES_ERR"
+  },
+  "0x1052": {
+    "description": "CRNODE and CRNODE1 are not consistent",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_SDC_CRNODE_CONSISTENCY_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "CRNODE_AND_CRNODE1_INCONSISTENCY_ERR"
+  },
+  "0x1053": {
+    "description": "When AddrDecodeControl.AddLatencyIntlvMode is configured to use the FAST path pipeline, the number of ways, programmed in all the enabled instances of TAD_Rule_Cfg0.HA_intlv_Ways must be a power of 2",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_HAMVF_LATENCY_INTLV_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_LATENCY_INTLV_INVALID_TAD_INTLV_WAYS_ERR"
+  },
+  "0x1054": {
+    "description": "TAD_Rule_Cfg.HA_Intlv_Ways is not equal to the number of enabled HAs",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_NOT_EQUAL_TO_NUMBER_OF_ENABLE_HA_ERR"
+  },
+  "0x1055": {
+    "description": "PRMRR is not covered by TAD rules",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_PRMRR_NOT_COVERED_BY_TAD_RULES_ERR"
+  },
+  "0x1056": {
+    "description": "isolation mode is enabled and enabled TAD rules type not 1LM-DDR",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "PERF_ISO_MODE_TAD_RULE_NOT_1LM_ERR"
+  },
+  "0x1057": {
+    "description": "isolation mode is enabled and DDR memory is not symmetrically populated within the socket (not the same DIMM capacity in all channels/regions)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "PERF_ISO_MODE_MEM_NOT_SYMMETRIC_ERR"
+  },
+  "0x1058": {
+    "description": "When any protected region (PRMRR / SEAMRR / CMR) is allocated (fully or partially) in CXL or Flat2LM range, MCHECK should verify that mode.EnableHBE = Enabled in all active HAMVF instances",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_ENABLEHBE_MODE_IS_NOT_SET_ERR"
+  },
+  "0x1059": {
+    "description": "There is a protected region (PRMRR / SEAMRR / CMR) that is covered by CXL-HDM-D or CXL-HDM-DB rules",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "PROTECTED_RANGE_IS_COVERED_BY_INVALID_TAD_RULE_ERR"
+  },
+  "0x105a": {
+    "description": "If TDX is required then, ecc_metadata_td should not be set to 1",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "DFX_MC_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "ECC_METADATA_TD_MISCONFIGURED_ERR"
+  },
+  "0x105b": {
+    "description": "dfi_rddata_timings.trddata_en + dfi_rddata_timings.tphy_rdlat) should be bigger than dfi_rddata_timings.early_roundtrip",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_SDC_DFI_RDDATA_TIMINGS_CMPL_TO_DATA_DELAY_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DFI_RDDATA_TIMINGS_UNDERFLOW_INTERNAL_ERR"
+  },
+  "0x105d": {
+    "description": "Invalid encoded value for interleaving way read from tad rule",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_TAD_RULE_INTERLV_WAYS_ERR"
+  },
+  "0x105e": {
+    "description": "Invalid encoded value for granularity read from tad rule",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_TAD_RULE_GRANULARITY_ERR"
+  },
+  "0x105f": {
+    "description": "Inconsistent of hsf_iaca_nid_virt or uxi_route_table between HAs",
+    "dfx_bit_id": 12,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CONSISTENCY_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HSF_REGS_ICONSISTENCY_ERR"
+  },
+  "0x1060": {
+    "description": "MCHECK checks only fields S<x>IACA<y>_CNID, where <x> is current socket ID and <y> are CBBs enumerated on the socket. For instance, if MCHECK runs on S1 and S1 has CBB 0, 1 and 2, MCHECK will check only fields S1_IACA0_CNID MCHECK will ensure that the checked fields represent monotonically increasing virtual CNIDs starting from 0. I.e., if there are N CBBs, the values will be 0..N-1.All other fields are ignored",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "INVALID_HSF_IACA_NID_VIRT_COFIGURATION_ERR"
+  },
+  "0x1061": {
+    "description": "Invalid encoded value for interleaving way read from cxl rule",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_CXL_RULE_INTERLV_WAYS_ERR"
+  },
+  "0x1062": {
+    "description": "Invalid encoded value for interleaving granularity read from cxl rule",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_CXL_RULE_INTERLV_GRANULARITY_ERR"
+  },
+  "0x1063": {
+    "description": "Invalid encoded value for interleaving way read from hdm decoder",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_HDM_INTERLV_WAYS_ERR"
+  },
+  "0x1064": {
+    "description": "Invalid encoded value for interleaving granularity read from hdm decoder",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_HDM_INTERLV_GRANULARITY_ERR"
+  },
+  "0x1065": {
+    "description": "MCHECK should fail if there is no full overlap between the combined interleaving address bits (as computed above) and the cumulative address bits used for interleaving in: - The HA CXL decoder - HDM decoder definitions",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "INVALID_HA_HDM_COMBINED_GRANULARITY_ADDR_BITS_ERR"
+  },
+  "0x1066": {
+    "description": "If HA wayness = 3, HA decoder granularity should be less than HDM decoder granularity",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "INVALID_HA_HDM_COMBINED_GRANULARITY_WAYNESS_3_ERR"
+  },
+  "0x1067": {
+    "description": "For each HDM decoder that covers the protected region, MCHECK will fail if the same target port is used more than once in TARGET_LIST",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "HDM_DECODERS_TARGET_PORT_USED_MORE_THAN_ONCE_ERR"
+  },
+  "0x1068": {
+    "description": "When AddrDecodeControl.AddLatencyIntlvMode is configured to use the FAST path pipeline, the number of ways, programmed in all the enabled instances of CXL_Mem_Rule_Cfg0.InterleaveWays must be a power of 2",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_HAMVF_LATENCY_INTLV_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_LATENCY_INTLV_INVALID_CXL_INTLV_WAYS_ERR"
+  },
+  "0x1069": {
+    "description": "Value of intlv target should be between 0-5 for local iMH or 6 for peer iMH. All other values are reserved",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "INVALID_HA_DECODER_INTERLV_TARGET_ERR"
+  },
+  "0x106a": {
+    "description": "The combined wayness calculated for HA and HDM does not match the combined wayness on CXL device",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "INCONSISTENT_COMBINED_INTLV_WAYNESS_ERR"
+  },
+  "0x106b": {
+    "description": "The combined granularity calculated for HA and HDM does not match the combined granularity on CXL device",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "INCONSISTENT_COMBINED_INTLV_GRANULARITY_ERR"
+  },
+  "0x106c": {
+    "description": "CXL sub-range in cxl_device can be covered by only one HDM decoder",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CXL_RANGE_IS_COVERED_BY_MORE_THAN_ONE_DECODER_ERR"
+  },
+  "0x106d": {
+    "description": "CXL sub-range in cxl_device should be fully covered by all HDM decoders",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CXL_RANGE_IS_COVERED_NOT_FULLY_COVERED_ERR"
+  },
+  "0x106e": {
+    "description": "CXL rules in enabled HAs are not configured to identical values (checked accross all enabled HAs)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CXL_MEM_RULES_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "HAMVF_CXL_RULES_MISMATCH_ERR"
+  },
+  "0x106f": {
+    "description": "CXL device is overlapping with protected area and is not found in cxl_acm_output.devices",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CXL_DEVICE_NOT_FOUND_IN_DEVICE_LIST_ERR"
+  },
+  "0x1070": {
+    "description": "If DIMM type is MCR, DIMM index should not be 0",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_TYPE_MCR_FOR_DIMM_INDEX_0_ERR"
+  },
+  "0x1071": {
+    "description": "If DIMM type is MCR and DIMM index is 1, DIMMMTR_1.DIMM_POP should be 0",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_TYPE_MCR_DIMMMTR1_DIM_POP_IS_DDR_ERR"
+  },
+  "0x1072": {
+    "description": "SUBRANK_BITS doesnt equal to DIMMMTR.3DS_NUMRANKS_CS or SUBRANK_BITS and 3DS_NUMRANKS_CS does not equal 0 (DDR type = MCR)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_RANK_TYPE_MCR_SUBRANK_BITS_MISCONFIGURED_ERR"
+  },
+  "0x1073": {
+    "description": "RANK is 1, and DIMMMTR.RANK_CNT == 4 (DDR type = MCR)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_RANK_TYPE_MCR_RANK_CNT_MISCONFIGURED_ERR"
+  },
+  "0x1074": {
+    "description": "DIMMMTR_0.RANK_CNT indicates 1 rank or 3 ranks (DDR type = MCR)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_DIMM_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "DIMM_RANK_TYPE_MCR_RANK_CNT_INVALID_ERR"
+  },
+  "0x1077": {
+    "description": "Legal values of rt_com_ctrl_secure.valid_socket_ids: 0x1 (for single socket) / 0x3 (for 2 sockets) / 0xf (for 4 sockets). MCHECK must fail for any other value MCHECK must verify consistency of the configured value with the number of sockets on the platform",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_RT_COM_CTRL_SECURE_VALID_SOCKET_IDS_MISCONFIGURED_ERR"
+  },
+  "0x1078": {
+    "description": "RT_COM_ROUTING_CTRL_SECURE_MEM regiter is not consistent between HAs",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_RT_COM_ROUTING_CTRL_SECURE_MEM_NOT_CONSISTENT_ERR"
+  },
+  "0x1079": {
+    "description": "The register rat_cfg is checked as following: num_imh should be consistent with number of iMHs with MCs. i.e., 1 if HUB1 exists, 0 otherwise num_subchnl should be consistent with number of HAs in iMH in use (taking in account disabled HAs and perf isolation) subchnl_id should be equal to the value calculated (see HAS)",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_HAMVF_HSF_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_RAT_CFG_MISCONFIGURED_ERR"
+  },
+  "0x107b": {
+    "description": "inconsistency between matching RAT and TAD rules checks: rat_rule_cfg0.enable == 1 (done implicitly during previous step of mapping TAD/RAT rules). rat_rule_cfg0.enable_2lm == (TAD_Rule_cfg.Target_type == “Flat2LM”) TAD_Rule_Cfg.RDT_Mem_Type_is_2LM rat_rule_cfg.mirror_enable = (TAD_Rule_cfg.Target_type == “mirrored”) rat_rule_cfg0.tad_offset_sign = TAD_Rule_Cfg2.offset_sign rat_rule_cfg0.tad_offset = TAD_Rule_CFG2.tad_offset",
+    "dfx_bit_id": 13,
+    "dfx_bit_name": "DFX_HAMVF_RAT_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_TAD_RULE_AND_RAT_RULE_INCONSISTENCY_ERR"
+  },
+  "0x107c": {
+    "description": "MCHECK failed because not all RA bits are covered by the fixed and configurable AMAP bits",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_AMAP_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "AMAP_NOT_ALL_RA_BITS_ARE_COVERED_ERR"
+  },
+  "0x107d": {
+    "description": "MCHECK failed because mirroring is not configured according to one of these options: 1. All the DDR region is mirrored: 1 TAD rule of type mirrored – no other TAD rules for DDR regions (1lm / flat2LM) 2. All the DDR region is not mirrored: No TAD rules of type mirrored – other rules can define DDR regions (1LM / Flat2LM)",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_HAMVF_MIRRORING_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "ILLEGAL_TAD_RULES_FULL_MIRRORING_CONFIGURATION_ERR"
+  },
+  "0x107e": {
+    "description": "MCHECK have to check field unique_ip_sig in register MMC_UNIQUE_IP_SIG equals either all 1s or all 0s.",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_MMC_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "MMC_UNIQUE_IP_MISCONFIGURED_ERR"
+  },
+  "0x107f": {
+    "description": "number of HAs is not zero in CNIC or IOH",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "CNIC_OR_IOH_HA_NUM_NOT_ZERO_ERR"
+  },
+  "0x1080": {
+    "description": "For MCR, memory_timings_adj.dram_mrdimm_devices == 1",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_SDC_MEMORY_TIMING_ADJ_CHECKS",
+    "dfx_group_id": 4,
+    "dfx_group_name": "DFX_MC_DECODING_GROUP",
+    "name": "MEMORY_TIMING_ADJ_IS_MISCONFIGURED_ERR"
+  },
+  "0x1081": {
+    "description": "TAD_RULES not enabled in order (enabled rule after disabled rule)",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "TAD_RULES_NOT_ENABLED_IN_ORDER_ERR"
+  },
+  "0x1082": {
+    "description": "RAT_RULES not enabled in order (enabled rule after disabled rule)",
+    "dfx_bit_id": 13,
+    "dfx_bit_name": "DFX_HAMVF_RAT_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "RAT_RULES_NOT_ENABLED_IN_ORDER_ERR"
+  },
+  "0x1083": {
+    "description": "TAD_Rule_Cfg.TAD_Limit is not greater than TAD_Rule_Cfg.TAD_BASE",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "TAD_RULES_LIMIT_NOT_BIGGER_THAN_BASE_ERR"
+  },
+  "0x1084": {
+    "description": "RAT rules in enabled HAs are not configured to identical values (checked accross all enabled HA and betweem IMHs)",
+    "dfx_bit_id": 13,
+    "dfx_bit_name": "DFX_HAMVF_RAT_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "IMH_HAMVF_RAT_RULES_MISMATCH_ERR"
+  },
+  "0x1086": {
+    "description": "enabled rules should go in the order of increasing rat_rule_cfg1.haddr_limit",
+    "dfx_bit_id": 13,
+    "dfx_bit_name": "DFX_HAMVF_RAT_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "ENABLED_RAT_RULES_HADDR_LIMIT_ASCENDING_ORDER_ERR"
+  },
+  "0x1087": {
+    "description": "enabled rules should go 1LM/Mirror rules then FLAT2LM then CXL",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_HAMVF_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "RAT_RULES_ORDER_ERR"
+  },
+  "0x1088": {
+    "description": "2 HAs belong to the same MC, are buddies",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_HAMVF_MIRRORING_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "HAMVF_INVALID_MIRRORING_BUDDY_CONFIGURATION_RULES_3_ERR"
+  },
+  "0x1200": {
+    "description": "ACP.poison_en != 1 or ACP.ras_sgx_optin != 1",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_ALL_CORES_POISON_CHECK",
+    "dfx_group_id": 3,
+    "dfx_group_name": "DFX_CORE_GROUP",
+    "name": "ALL_CORES_POISON_CHECK_ERR"
+  },
+  "0x1201": {
+    "description": "Package ID defined in WHOAMI MSR is bigger than maximum allowed number",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_PACKAGE_ID_ERR"
+  },
+  "0x1202": {
+    "description": "PRMRR is not enough to include all the enabled features",
+    "dfx_bit_id": 11,
+    "dfx_bit_name": "DFX_BIOS_PRM_SIZE_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "NOT_ENOUGH_MEMORY_FOR_ALL_FEATURES_ERR"
+  },
+  "0x1203": {
+    "description": "BIOS enabled non-supported feature in BIOS_PARAMS.features",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_BIOS_FEATURES_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "UNDEFINED_FEATURE_ENABLED_ERR"
+  },
+  "0x1205": {
+    "description": "Illegal TOPOLOGY_INFO struct - bios struct is not fully within dram address, not aligned, or overlaps server",
+    "dfx_bit_id": 15,
+    "dfx_bit_name": "DFX_BIOS_CXL_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "TOPOLOGY_INFO_STRUCT_ERR"
+  },
+  "0x1206": {
+    "description": "TEE_INFO.flags.sgx_enabled is not set",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_BIOS_TEE_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "TEE_INFO_FLAG_SGX_ENABLED_ERR"
+  },
+  "0x1207": {
+    "description": "TEE_INFO.FLAGS.CXL_SUPPORT is not one of the valid options or one of the reserved bits is not 0",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_BIOS_TEE_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "TEE_INFO_STRUCT_ERR"
+  },
+  "0x1208": {
+    "description": "invalid CSM structure",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_BIOS_TEE_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CSM_NULL_ERR"
+  },
+  "0x1209": {
+    "description": "Legacy attestation is enabled and TEE_INFO.REG_SERVER_ID points to an invalid REG_SERVER_ID structure",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_BIOS_TEE_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "TEE_INFO_REG_SERVER_ERR"
+  },
+  "0x120a": {
+    "description": null,
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_IOMT_CHECKS",
+    "dfx_group_id": 10,
+    "dfx_group_name": "DFX_PUNIT_REGS_GROUP",
+    "name": "IOMT_MISCONFIGURED_ERR"
+  },
+  "0x120b": {
+    "description": "issue in reading IOMT using PUNIT",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_IOMT_CHECKS",
+    "dfx_group_id": 10,
+    "dfx_group_name": "DFX_PUNIT_REGS_GROUP",
+    "name": "PROBLEM_IN_READING_IOMT_ERR"
+  },
+  "0x120c": {
+    "description": "TEE_INFO.flags.legacy_attestation is not 0",
+    "dfx_bit_id": 15,
+    "dfx_bit_name": "DFX_BIOS_CXL_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "TEE_INFO_FLAG_ATTESTATION_MISCONFIGUED_ERR"
+  },
+  "0x120d": {
+    "description": "TME_ACTIVATE should be enabled when SGX or TDX is enabled",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_BIOS_FEATURES_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "SGX_OR_TDX_AND_TME_ACTIVATE_DISBALED_ERR"
+  },
+  "0x1400": {
+    "description": "Fail to generate platform secrets",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "KEY_GEN_ERR"
+  },
+  "0x1401": {
+    "description": "Fail to generate key blob",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "KEY_BLOB_GEN_ERR"
+  },
+  "0x1402": {
+    "description": "Fail to get blob seal key",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "BLOB_SEAL_KEY_ERR"
+  },
+  "0x1403": {
+    "description": "Fail to decrypt key blob",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_S3M_RD_MCHECKNONCE",
+    "dfx_group_id": 6,
+    "dfx_group_name": "DFX_S3M_GROUP",
+    "name": "DECRYPT_BLOB_ERR"
+  },
+  "0x1404": {
+    "description": "Fail to initialize key blob",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INIT_KEY_BLOB_ERR"
+  },
+  "0x1405": {
+    "description": "Fail to update key blob",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "UPDATE_KEY_BLOB_ERR"
+  },
+  "0x1406": {
+    "description": "invalid registration server id",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_ATTEST_REG_SRV_ID_CHECKS",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "INVALID_REG_SERVER_ID_ERR"
+  },
+  "0x1407": {
+    "description": "Failed to generate platform id",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "KDF_PID_ERR"
+  },
+  "0x1409": {
+    "description": "Failed to generate blob nonce",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "KDF_BLOB_IV_ERR"
+  },
+  "0x1410": {
+    "description": "Failed to generate PCK",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_S3M_GENERATE_ECDSA384",
+    "dfx_group_id": 6,
+    "dfx_group_name": "DFX_S3M_GROUP",
+    "name": "PCK_GEN_ERR"
+  },
+  "0x1411": {
+    "description": "Failed to generate platform certificate",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "PLAT_CERT_GEN_ERR"
+  },
+  "0x1412": {
+    "description": "Failed to generate encrypted platform keys",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "ENC_PLAT_KEY_GEN_ERR"
+  },
+  "0x1413": {
+    "description": "Failed to generate encrypted platform keys header",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_ATTEST_GEN_ENC_PLAT_KEYS",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "ENC_PLAT_HEADER_ERR"
+  },
+  "0x1414": {
+    "description": "Failed to encrypt encrypted platform keys WRAP KEY",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_ATTEST_GEN_ENC_PLAT_KEYS",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "ENC_PLAT_ENC_WRAP_KEY_ERR"
+  },
+  "0x1415": {
+    "description": "Failed to encrypt encrypted platform keys p_pr_reset-keys",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_ATTEST_GEN_ENC_PLAT_KEYS",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "ENC_PLAT_ENC_PLAT_KEY_ERR"
+  },
+  "0x1417": {
+    "description": "Failed to generate platform certificate x509 data",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_ATTEST_GEN_PLAT_CERT",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "PLAT_CERT_CERT_DATA_ERR"
+  },
+  "0x1418": {
+    "description": "Failed to generate platform certificate CBOR metadata",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_ATTEST_GEN_PLAT_CERT",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "PLAT_CERT_CBOR_METADATA_ERR"
+  },
+  "0x1419": {
+    "description": "Failed to generate CPU or CXL CBOR",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_ATTEST_GEN_PLAT_CERT",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "PLAT_CERT_CBOR_ERR"
+  },
+  "0x1420": {
+    "description": "Failed to read s3m zcode svn",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "DFX_S3M_GET_AUX_DATA",
+    "dfx_group_id": 6,
+    "dfx_group_name": "DFX_S3M_GROUP",
+    "name": "GET_AUX_DATA_ERR"
+  },
+  "0x1421": {
+    "description": "Failed to generate XuCode canary",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GEN_CANARY_ERR"
+  },
+  "0x1422": {
+    "description": "Failed to generate XuCode report2 key",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GEN_REPORT2_KEY_ERR"
+  },
+  "0x1423": {
+    "description": "Failed to generate SGX paging key",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GEN_PAGING_KEY_ERR"
+  },
+  "0x1424": {
+    "description": "Failed to generate XuCode FI random",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GEN_FI_RANDOM_ERR"
+  },
+  "0x1425": {
+    "description": "Failed to generate SGX report key",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GEN_SGX_REPORT_KEY_ERR"
+  },
+  "0x1427": {
+    "description": "Failed to copy encrypted platfrom keys p_pr_reset_keys to the output info",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "WRITE_ENC_PLAT_KEY_ERR"
+  },
+  "0x1428": {
+    "description": "Failed to generate and copy the encrypted platfrom wrap key to the output info",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "WRITE_ENC_PLAT_WRAP_KEYS_ERR"
+  },
+  "0x1429": {
+    "description": "Failed to write key blob nonce to S3M",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_S3M_WR_MCHECKNONCE",
+    "dfx_group_id": 6,
+    "dfx_group_name": "DFX_S3M_GROUP",
+    "name": "KEY_BLOB_WR_NONCE_ERR"
+  },
+  "0x1430": {
+    "description": "Failed to load PCK",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_ATTEST_GEN_PLAT_CERT",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "S3M_PCK_LD_ERR"
+  },
+  "0x1431": {
+    "description": "Failed to sign platform certificate",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_ATTEST_GEN_PLAT_CERT",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "PLAT_CERT_SIGN_ERR"
+  },
+  "0x1432": {
+    "description": "Failed to sign encrypted platfom keys",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_ATTEST_GEN_ENC_PLAT_KEYS",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "ENC_PLAT_KEYS_SIGN_ERR"
+  },
+  "0x1433": {
+    "description": "Failed to write key blob to output info",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "OUTPUT_INFO_KEY_BLOB_ERR"
+  },
+  "0x1434": {
+    "description": "Failed to write encrypted platform keys to output info",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "OUTPUT_INFO_ENC_PLAT_KEY_ERR"
+  },
+  "0x1435": {
+    "description": "Failed to write platform certificate to output info",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "OUTPUT_INFO_PLAT_CERT_ERR"
+  },
+  "0x1436": {
+    "description": "Failed to write certificate chain to output info",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "OUTPUT_INFO_CERT_CHAIN_ERR"
+  },
+  "0x1437": {
+    "description": "Failed to get certificate chain",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_S3M_GET_CERT_CHAIN",
+    "dfx_group_id": 6,
+    "dfx_group_name": "DFX_S3M_GROUP",
+    "name": "GET_CERT_CHAIN_ERR"
+  },
+  "0x1438": {
+    "description": "Unsuported S3M protocol version",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_S3M_GET_PROTOCOL_VERSION",
+    "dfx_group_id": 6,
+    "dfx_group_name": "DFX_S3M_GROUP",
+    "name": "S3M_VERSION_ERR"
+  },
+  "0x1439": {
+    "description": "Failed to generate SGX_TME_KEY using KDF",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GEN_SGX_TME_KEY_ERR"
+  },
+  "0x143a": {
+    "description": "Failed to generate SGX_TME_TWEAK_KEY using KDF",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GEN_SGX_TME_TWEAK_KEY_ERR"
+  },
+  "0x143b": {
+    "description": "Failed to to activate TME Engine (PCONFIIG command failed)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_PCONFIG_CHECKS",
+    "dfx_group_id": 11,
+    "dfx_group_name": "DFX_UXI_GROUP",
+    "name": "PCONFIG_FAILED_MK_TME_INITIALIZATION_ERR"
+  },
+  "0x143c": {
+    "description": "Failed to to read S3M app pub key",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "DFX_S3M_GET_PUB_KEY",
+    "dfx_group_id": 6,
+    "dfx_group_name": "DFX_S3M_GROUP",
+    "name": "APP_PUB_KEY_ERR"
+  },
+  "0x143d": {
+    "description": "inconsistent key blob security property",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "KEY_BLOB_SEC_PROP_ERR"
+  },
+  "0x143e": {
+    "description": "incorrect hub configuration",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "HUBS_INCORRET_CONFIGURATION_ERR"
+  },
+  "0x1600": {
+    "description": "Invalid src or dst ID: (src_id >= MAX_SOCKETS) || (dst_id >= MAX_SOCKETS) || (src_id == dst_id)",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_SRC_DST_ID_ERR"
+  },
+  "0x1601": {
+    "description": "Message size is larger than MAX allowed message size",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_MESSAGE_SIZE_ERR"
+  },
+  "0x1602": {
+    "description": "Message ID is not a valid message type",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_MESSAGE_ID_ERR"
+  },
+  "0x1603": {
+    "description": "IV.Invocation is not greater than the IV.Invocation of the previous message from the same sender",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_MESSAGE_IV_ERR"
+  },
+  "0x1604": {
+    "description": "message timeout interval expired",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "MESSAGE_TIMEOUT_ERR"
+  },
+  "0x1605": {
+    "description": "IPC invalid state",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_STATE_ERR"
+  },
+  "0x1800": {
+    "description": "HIOP has enabled root ports that are not in the allow list",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_RP_BITMAP_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_RP_BITMAP_ERR"
+  },
+  "0x1802": {
+    "description": "Enabled IIO stack for TDX-Connect does not have a matching UBR rule",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_MATCHING_UBR_DECODER_FOR_HIOP_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "NO_MATCHING_UBR_RULE_FOR_IIO_STACK_ERR"
+  },
+  "0x1803": {
+    "description": "Enabled IIO stack for TDX-Connect have a more than one matching UBR rule",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_MATCHING_UBR_DECODER_FOR_HIOP_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "MORE_THAN_ONE_MATCHING_UBR_RULE_FOR_IIO_STACK_ERR"
+  },
+  "0x1804": {
+    "description": "FBLP_PPBIFCTL_P0.CL is not 1",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "BIFURCATION_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "FBLP_PPBIFCTL_CL_IS_NOT_1_ERR"
+  },
+  "0x1805": {
+    "description": "FBLP_PPBIFCTL_P0.BIFCTL0 is not one of the supported values (0x40,0x24,0x1C,0x23,0x1B)",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "BIFURCATION_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "FBLP_PPBIFCTL_BIFCTL0_IS_NOT_SUPPORTED_ERR"
+  },
+  "0x1806": {
+    "description": "FBLP_PPBIFCTL_P0.BIFCTL0 is not valid: 1- MIO is mixed mode (UXI and PCIe/CXL) and PortA is not x8 2- The subset of ports BIOS requests for TDX Connect is supported by bifctl0",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "BIFURCATION_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "FBLP_PPBIFCTL_BIFCTL0_IS_NOT_VALID_ERR"
+  },
+  "0x1807": {
+    "description": "MIO stack is intended to be used for TDX-Connect according to BIOS, but the type of this MIO stack doesnt support TDX-Concnet",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "MIO_SUPPORT_TDX_CONNECT_CHECK",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "MIO_DOESNT_SUPPORT_TDX_CONNECT_BUT_REQUESTED_BY_BIOS_ERR"
+  },
+  "0x1808": {
+    "description": "POISON_CONTROL register is misconfigured. one of the following bits is not set to 1: en_inb_poison_escalation, en_outbound_poison_escalation, en_poison_on_hf, en_poison_on_ca, en_poison_on_ur",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "POISON_CONTROL_VMD_DUALCAST_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "POISON_CONTROL_IS_MISCONFIGURED_ERR"
+  },
+  "0x1809": {
+    "description": "fw_disvmd in register VMD_CTL is not set to 1",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "POISON_CONTROL_VMD_DUALCAST_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "VMD_CTL_IS_MISCONFIGURED_ERR"
+  },
+  "0x180a": {
+    "description": "dis_mcast in register iop_control is not set to 1",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "POISON_CONTROL_VMD_DUALCAST_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "IOP_CONTROL_IS_MISCONFIGURED_ERR"
+  },
+  "0x180b": {
+    "description": "Register PPD1 is misconfigured: - Field 'CL' is not set to 1 (relevant fields in PPD1 are not locked until next reset), or - Field 'PDM' is not set to 'b0001' (the RP is not configured to \"Operate as RP or DSP\")",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "TDX_CONNECT_NTB_DEVHIDE_SILENT_DROPS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "PPD1_MISCONFIGURED_ERR"
+  },
+  "0x180c": {
+    "description": "CXLRBBAR is either not all 1s or enable bit is set (and register is not all 1s) for RP which is not enabled/ not supported by bifurcation",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_CXLRBBAR_NOT_ENABLED_RP_ERR"
+  },
+  "0x180d": {
+    "description": "CXLRBBAR is all 1s for enabled RP",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "CXLRBBAR_FOR_ENABLED_RP_ALL_1S_ERR"
+  },
+  "0x180f": {
+    "description": "There can one or zero CXLRBBAR with enabled bit set to 1 for enabled RPs",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "MORE_THAN_1_EN_CXLRBBAR_ENABLED_RP_ERR"
+  },
+  "0x1810": {
+    "description": "If the MIO is configured as Mixed PCIe/CXL & UXI Mode, CXLRBBAR on RP A must not be enabled",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "EN_CXLRBBAR_ENABLED_RP_A_ERR"
+  },
+  "0x1811": {
+    "description": "FW Attributes priority field for enabled RPs should be 2",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_FW_ATTRIBUTES_FOR_ENABLED_RP_ERR"
+  },
+  "0x1812": {
+    "description": "FW Attributes priority field for not enabled RPs should be 3",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_FW_ATTRIBUTES_FOR_NOT_ENABLED_RP_ERR"
+  },
+  "0x1813": {
+    "description": "Register BARMASK.Size must be 64KB for enabled RPs",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_BARMASK_SIZE_FOR_ENABLED_RP_ERR"
+  },
+  "0x1814": {
+    "description": "Invalid register Type0 configuration for enabled RPs: - Field 'VALID' must be 1. - Fields 'BASE' and 'LIMIT' must be identical. - 16 MSBs in BASE must equal SEGMENT:BUS from ROOT_ID - 8 LSBs must equal the D/F of the respective RP @note ROOT_ID SEGMENT:BUS is set to bits [35:20] of the base address of MMCFG range allocated for current MIO stack",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_TYPE0_FOR_ENABLED_RP_ERR"
+  },
+  "0x1815": {
+    "description": "Register Type0.Valid must be 0",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_TYPE0_FOR_INDICES_12_TO_15_ERR"
+  },
+  "0x1816": {
+    "description": "Register Type1.Valid must be 0",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_TYPE1_FOR_INDICES_12_TO_15_ERR"
+  },
+  "0x1817": {
+    "description": "If HI_MEM_BASE valid is set to 1, then Range defined by HI_MEM_BASE/LIMIT must be inside MMIOH range allocated for current HIOP",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_HIGH_MEM_RANGE_FOR_INDICES_12_TO_15_ERR"
+  },
+  "0x1818": {
+    "description": "If HI_MEM_BASE valid is set to 1, field 'Priority' in register FW_ATTRIBUTES is set to 0 else (HI_MEM_BASE valid is not set to 1), then field 'Priority' in register FW_ATTRIBUTES must be set to 3",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_PRIORITY_FOR_INDICES_12_TO_15_ERR"
+  },
+  "0x1819": {
+    "description": "If CXLRBBAR is configured on any of the Ports, then HI_MEM_BASE valid must be 1 for index 12",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_HIGH_MEM_BASE_FOR_INDX_12_ERR"
+  },
+  "0x181a": {
+    "description": "If CXLRBBAR is configured on any of the Ports, then MCHECK should apply the following restrictions on Index 12: VC0 configuration in VC to IC should be according to the single enabled port with enabled CXLRBBAR: PortA: VC0-->IC0; PortC: VC0-->IC2; PortE: VC0-->IC4; PortG: VC0-->IC6",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_V0_CONFIGURATION_IDX12_ERR"
+  },
+  "0x181b": {
+    "description": "If the MIO is configured as Mixed PCIe/CXL & UXI, there must not be an enabled SFI_AGENT Register Set for PortA i.e - type0 valid bit for port A must be zero",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_TYPE0_FOR_PORT_A_ERR"
+  },
+  "0x181c": {
+    "description": "If CXLRBBAR is configured on any of the Ports, then MCHECK should apply the following restrictions on Index 12: HI_MEM_BASE valid must be 1",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_HI_MEM_BASE_IDX12_CONFIGURATION_ERR"
+  },
+  "0x181d": {
+    "description": "Invalid bar mask and base",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "INVALID_BAR_BASE_MASK_ERR"
+  },
+  "0x181e": {
+    "description": "Invalid hi mem limit and base (limit < base)",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_HI_MEM_BASE_LIMIT_ERR"
+  },
+  "0x181f": {
+    "description": "For each MIO that is required to be used for TDX Connect, MCHECK will verify: DEVHIDE is locked until next reset. For each port supported by the bifurcation, if the port is enabled, then the port is not hidden.",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "TDX_CONNECT_NTB_DEVHIDE_SILENT_DROPS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "DEVHIDE_MISCONFIGURED_ERR"
+  },
+  "0x1820": {
+    "description": "one of the IMRs is enabled",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "TDX_CONNECT_NTB_DEVHIDE_SILENT_DROPS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "IMR_IS_ENABLED_ERR"
+  },
+  "0x1821": {
+    "description": "Verify that top of any CMR that is below 4GB is not above IDI_LOW_MEM Verify top of all CMRs are not above IDI_HIGH_MEM",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "TDX_CONNECT_NTB_DEVHIDE_SILENT_DROPS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "IDI_LOW_HIGH_MEM_MISCONFIGURED_ERR"
+  },
+  "0x1822": {
+    "description": "Verify VTBAR is in the MMIOH range allocated for the IOMMU of current IO stack",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_VTBAR_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "VTBAR_NOT_COVERED_MMIOH_IOMMU_RANGE_ERR"
+  },
+  "0x1823": {
+    "description": "HI_MEM BASE and LIMIT for index 12 must cover the 64 KB CXL RB Bar range in MMIOH",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "HI_MEM_DONT_COVER_CXLRBBAR_ERR"
+  },
+  "0x1824": {
+    "description": "The range defined by REQID_FILTER doesn't equals the MMCFG range allocated for the respective IIO stack in the UBR decoders",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_SFI_TYPES0_1REQID_FILTER_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "REQID_FILTER_MMCFG_MISMATCH_ERR"
+  },
+  "0x1825": {
+    "description": "One of the entries in the SFI_AGENTS_TYPE1_ID set is valid and it range is outside the range defined by REQID_FILTER.",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_SFI_TYPES0_1REQID_FILTER_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "SFI_AGENT_TYPE1_OUTSIDE_OF_REQID_FILTER_RANGE_ERR"
+  },
+  "0x1826": {
+    "description": "One of the entries in the SFI_AGENTS_TYPE0_ID set is valid and it range is outside the range defined by REQID_FILTER.",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_SFI_TYPES0_1REQID_FILTER_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "SFI_AGENT_TYPE0_OUTSIDE_OF_REQID_FILTER_RANGE_ERR"
+  },
+  "0x1827": {
+    "description": "If the result of MMIOH range for some IO stack is 0 after subtracting the MMIOH ranges of SFI Agents 12..15, then MCHECK must fail",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "HIOP_DOWNSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "MMIOH_RANGE_FOR_IO_STACK_IS_ZERO_ERR"
+  },
+  "0x1828": {
+    "description": "For IO stacks that are not required for tdx_connect, if the IO stack is not disabled and there is no MMCFG decoder targeting that IO stack (mmcfg base and limit = 0), than force reqid_filter.en to be 0",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_SFI_TYPES0_1REQID_FILTER_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "REQID_FILTER_MUST_NOT_BE_ENABLED_ERR"
+  },
+  "0x1829": {
+    "description": "The RP bitmap for a disabled IIO should be zero",
+    "dfx_bit_id": 12,
+    "dfx_bit_name": "VALID_HIOP_RP_BITMAP_CHECK",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "RP_BITMAP_FOR_IIO_THAT_IS_DISABLED_IS_NOT_ZERO_ERR"
+  },
+  "0x182a": {
+    "description": "If TDX Connect is required, TDX Connect fuseshould be enabled",
+    "dfx_bit_id": 12,
+    "dfx_bit_name": "VALID_HIOP_RP_BITMAP_CHECK",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "TDX_CONNECT_NOT_ENABLED_ERR"
+  },
+  "0x182d": {
+    "description": "IMRGLOBAL_BM_CP doesn't equal set of SAIs trusted by MCHECK after locking it",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "TDX_CONNECT_NTB_DEVHIDE_SILENT_DROPS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "IMRGLOBAL_BM_CP_MISCONFIGURED_ERR"
+  },
+  "0x182e": {
+    "description": "If SOC is DMR-SP, for IO stack 10 (MIO2 on iOH): MCHECK must verify BIOS does not request to use PortG for TDX-Connect.",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "MIO_SUPPORT_TDX_CONNECT_CHECK",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "PORT_G_REQUESTED_FOR_DMR_SP_MIO2_ERR"
+  },
+  "0x2": {
+    "description": "Memcpy failed since source and destination areas overlaps",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "MEMCPY_DEST_SRC_OVERLAP_ERR"
+  },
+  "0x200": {
+    "description": "Failed if there is PRMRR defined beow 1MB",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_BIOS_PRMRR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "PRMRR_BELOW_1MB_ERR"
+  },
+  "0x2000": {
+    "description": "Failed to init DH context",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INIT_DH_CTX_ERR"
+  },
+  "0x2001": {
+    "description": "Failed to generate DH keys",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GEN_DH_KEYS_ERR"
+  },
+  "0x2002": {
+    "description": "IPC state machine error",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "IPC_STATE_MACHINE_ERR"
+  },
+  "0x2003": {
+    "description": "Failed to verify establish message",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_ATTEST_GEN_PLAT_CERT",
+    "dfx_group_id": 5,
+    "dfx_group_name": "DFX_ATTEST_GROUP",
+    "name": "VERIFY_EST_MSG_FAIL_ERR"
+  },
+  "0x2004": {
+    "description": "Failed to send message",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "PROTOCOL_SEND_ERR"
+  },
+  "0x2005": {
+    "description": "Failed to generate master comm key",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "MASTER_COM_GEN_ERR"
+  },
+  "0x2006": {
+    "description": "Failed to generate auth key",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "AUTH_KEY_GEN_ERR"
+  },
+  "0x2007": {
+    "description": "Failed to generate enc session key",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "ENC_SESSION_KEY_GEN_ERR"
+  },
+  "0x2009": {
+    "description": "Failed to process EST_M1 message",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "RCV_EST_M1_ERR"
+  },
+  "0x201": {
+    "description": "Memory type is not consistent for all enabled PRMRRs",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_BIOS_PRMRR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "ALL_PRMS_SHOULD_HAVE_SAME_MEM_TYPE_ERR"
+  },
+  "0x2010": {
+    "description": "Failed to process EST_M2 message",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "RCV_EST_M2_ERR"
+  },
+  "0x2011": {
+    "description": "Failed to process EST_M3 message",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "RCV_EST_M3_ERR"
+  },
+  "0x2012": {
+    "description": "Failed to send EST_M1 message",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "SEND_EST_M1_ERR"
+  },
+  "0x2013": {
+    "description": "Failed to send EST_M2 message",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "SEND_EST_M2_ERR"
+  },
+  "0x2014": {
+    "description": "Failed to send EST_M3 message",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "SEND_EST_M3_ERR"
+  },
+  "0x2015": {
+    "description": "Failed to generate and comuincate plat keys",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "IPC_PLAT_KEYS_ERR"
+  },
+  "0x2016": {
+    "description": "One of the UXI_AGENTS_ID is outside of the MMCFG range",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "UXI_AGENTS_OUTSIDE_MMCFG_ERR"
+  },
+  "0x2017": {
+    "description": "Two UXI_AGENTS_IDs overlap eachother",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "UXI_AGENTS_OVERLAP_ERR"
+  },
+  "0x2018": {
+    "description": "The UXI_AGENTS_IDs are not monotonically increasing",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "UXI_AGENTS_NOT_MONOTONICALLY_INCREASING_ERR"
+  },
+  "0x2019": {
+    "description": "One of the UXI_AGENTS_HI_MEM_BASE is outside of the MMIOH range",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "UXI_AGENTS_BASE_OUTSIDE_MMIOH_ERR"
+  },
+  "0x201a": {
+    "description": "UXI_AGENTS_HI_MEM_BASEs are not monotonically increasing",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "UXI_AGENTS_BASE_NOT_MONOTONICALLY_INCREASING_ERR"
+  },
+  "0x201b": {
+    "description": "Failed to config UXI keys",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_UXI_CRYPTO",
+    "dfx_group_id": 11,
+    "dfx_group_name": "DFX_UXI_GROUP",
+    "name": "WRITE_UXI_FAIL_ERR"
+  },
+  "0x201c": {
+    "description": "Failed to enable UXI keys",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_UXI_CRYPTO",
+    "dfx_group_id": 11,
+    "dfx_group_name": "DFX_UXI_GROUP",
+    "name": "ENABLE_UXI_FAIL_ERR"
+  },
+  "0x201d": {
+    "description": "Failed to initialzie MKTME",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INIT_MKTME_FAIL_ERR"
+  },
+  "0x201e": {
+    "description": "Failed to initialzie PRM",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INIT_MEM_FAIL_ERR"
+  },
+  "0x201f": {
+    "description": "Failed to generate UXI keys",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GEN_UXI_KEYS_ERR"
+  },
+  "0x202": {
+    "description": "PRMRR0 is not configured",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "PRM0_NOT_CONFIGURED_ERR"
+  },
+  "0x2020": {
+    "description": "Secondary MCHECK sent an invalid conf_checks_message payload to the main MCHECK",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CONF_CHECKS",
+    "dfx_group_id": 12,
+    "dfx_group_name": "DFX_MULTISOCKET_GROUP",
+    "name": "INVALID_CONF_CHECKS_1_PAYLOAD_ERR"
+  },
+  "0x2021": {
+    "description": "Failed to copy one of the field when generating the MSG_CONF message",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "MEMCPY_AT_MSG_CONF_FAILED_ERR"
+  },
+  "0x2022": {
+    "description": "MCHECK found a hole between enabled UXI agents.",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "ENABLED_UXI_AGENTS_NOT_CONTINUES_ERR"
+  },
+  "0x2023": {
+    "description": "MCHECK found a hole between enabled UXI agents.",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "ILLEGAL_ULA_UCE_STREAM_SELECT_STREAM_ERR"
+  },
+  "0x2024": {
+    "description": "UXI agents hiop upstream decoders are not consistent accros all HIOPs",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "UXI_AGENTS_INCONSISTENCY_ERR"
+  },
+  "0x2025": {
+    "description": "Remote UXI link PORT_ID is below or above threshold",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CONF_CHECKS",
+    "dfx_group_id": 12,
+    "dfx_group_name": "DFX_MULTISOCKET_GROUP",
+    "name": "INVALID_UXI_LINK_PORTID_ERR"
+  },
+  "0x2026": {
+    "description": "UXI links contain different SOCKET_ID, IMH_ID or PORT_ID values(s)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CONF_CHECKS",
+    "dfx_group_id": 12,
+    "dfx_group_name": "DFX_MULTISOCKET_GROUP",
+    "name": "UXI_LINK_MISMATCH_ERR"
+  },
+  "0x2027": {
+    "description": "The number of active links on HUB0 and HUB1 are not the same",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CONF_CHECKS",
+    "dfx_group_id": 12,
+    "dfx_group_name": "DFX_MULTISOCKET_GROUP",
+    "name": "IMH_ACTIVE_LINK_COUNTER_MISMATCH_ERR"
+  },
+  "0x2028": {
+    "description": "The platform is neither a 2S nor a 4S configuration",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CONF_CHECKS",
+    "dfx_group_id": 12,
+    "dfx_group_name": "DFX_MULTISOCKET_GROUP",
+    "name": "PLATFORM_NOT_2_4_S_ERR"
+  },
+  "0x2029": {
+    "description": "The tag decrypted should be equal to the tag in the message header",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "IPC_DECRYPT_TAG_NOT_CONSISTEN_ERR"
+  },
+  "0x202a": {
+    "description": "field ‘force_drain’ in the respective UXI_AGENTS_ATTR register is set to 0",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "FORCE_DRAIN_ENABLED_ON_LOCAL_RULE_ERR"
+  },
+  "0x202b": {
+    "description": "UXI polling timout error",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_UXI_CRYPTO",
+    "dfx_group_id": 11,
+    "dfx_group_name": "DFX_UXI_GROUP",
+    "name": "UXI_POLLING_TIMEOUT_ERR"
+  },
+  "0x202c": {
+    "description": "IDI_{LOW,HIGH}_MEM are not consistent with TOLM and TOHM in the CBB",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "IDI_MEM_NOT_CONSISTENT_WITH_TOLM_TOHM_ERR"
+  },
+  "0x202d": {
+    "description": "Number of UXI ports exceeds MAX suported UXI links (3)",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "MAX_UXI_PORTS_ERR"
+  },
+  "0x202e": {
+    "description": "KEY_REFRESH_CAP and TRUNC_TRANSMIT_DELAY_CAP and cee_init values must be the same for all UXI links",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_PCONFIG_CHECKS",
+    "dfx_group_id": 11,
+    "dfx_group_name": "DFX_UXI_GROUP",
+    "name": "VALUES_NOT_COSISTENT_IN_UXI_LINKS_ERR"
+  },
+  "0x202f": {
+    "description": "no UBR rule matches MMCFG UXI AGENT",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "NO_UBR_RULE_MATCHES_UXI_MMCFG_RULE_ERR"
+  },
+  "0x203": {
+    "description": "PRM addresses exceeds processor's physical address space (as returned by CPUID.EAX=80000008H)",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_BIOS_PRMRR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "BAD_PRMRR_BASE_MASK_ERR"
+  },
+  "0x2030": {
+    "description": "no UBR rule matches MMIOH UXI AGENT",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "HIOP_UPSTREAM_DECODERS_CHECKS",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "NO_UBR_RULE_MATCHES_UXI_MMIOH_RULE_ERR"
+  },
+  "0x204": {
+    "description": "At least two PRMRRs overlap",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_BIOS_PRMRR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "TWO_PRMS_OVERLAP_ERR"
+  },
+  "0x205": {
+    "description": "One of the PRMRRs holds an invalid size range",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_BIOS_PRMRR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "PRMRR_NOT_WITHIN_PHYS_MEMORY_ERR"
+  },
+  "0x207": {
+    "description": "END_OF_BIOS_ACTIONS_TRIGGER MSR is not 0",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_BIOS_MSRS_CHECKS",
+    "dfx_group_id": 3,
+    "dfx_group_name": "DFX_CORE_GROUP",
+    "name": "END_OF_BIOS_ACTIONS_TRIGGER_MSR_ERR"
+  },
+  "0x20a": {
+    "description": "Bit 29 (RH prevention) in TME_ACTIVATE MSR must be set",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_TME_ACTIVATE_CHECKS",
+    "dfx_group_id": 3,
+    "dfx_group_name": "DFX_CORE_GROUP",
+    "name": "TME_ACTIVATE_RH_PREVENTION_ZERO_ERR"
+  },
+  "0x20b": {
+    "description": "If XNC_CLUSTER_CFG.xNC_Present == 1, MCHECK must fail",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_BIOS_MSRS_CHECKS",
+    "dfx_group_id": 3,
+    "dfx_group_name": "DFX_CORE_GROUP",
+    "name": "XNC_PRESENT_IS_SET_ERR"
+  },
+  "0x20c": {
+    "description": "uCode CMA input is: CMA.mcheck_disable=1",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_MCHECK_DISABLE_CHECK",
+    "dfx_group_id": 3,
+    "dfx_group_name": "DFX_CORE_GROUP",
+    "name": "MCHECK_DISABLE_SET_BY_UCODE_ERR"
+  },
+  "0x2200": {
+    "description": "DIMM_DESCRIPTOR.MR59[7:6], DIMM_DESCRIPTOR.MR58[7:5] and DIMM_DESCRIPTOR.MR58[4:1] must not be RFU",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "ROWHAMMER_RFM_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "MR58_OR_MR59_BITS_ARE_RFU_ERR"
+  },
+  "0x2201": {
+    "description": "rfm_ctrl0.rfm_ref_credit must match DIMM_DESCRIPTOR.MR59[6]",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "ROWHAMMER_RFM_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "RFM_CTRL0_RFM_REF_CREDIT_MISCONFIGURED_ERR"
+  },
+  "0x2202": {
+    "description": "rfm_ctrl0.rfm_raaimt is misconfigured, it should be: 0 < rfm_ctrl0.rfm_raaimt <= DIMM_DESCRIPTOR.MR58[4:1]",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "ROWHAMMER_RFM_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "RFM_CTRL0_RFM_RAAIMT_MISCONFIGURED_ERR"
+  },
+  "0x2203": {
+    "description": "rfm_ctrl0.rfm_raammt is misconfigured, it should be: (DIMM_DESCRIPTOR.MR58[4:1]  DIMM_DESCRIPTOR.MR58[7:5] - 3) <= rfm_ctrl0.rfm_raammt <= (DIMM_DESCRIPTOR.MR58[4:1]  DIMM_DESCRIPTOR.MR58[7:5]) - 1)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "ROWHAMMER_RFM_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "RFM_CTRL0_RFM_RAAMMT_MISCONFIGURED_ERR"
+  },
+  "0x2204": {
+    "description": "MR70 is misconfigured: MR70[2] must be set to 0 // Normal Operation Mode. MR70[3] must be set to 1 // Initialization completed. MR70[4] must be set to 1 // 4 ACT before recovery",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "ROWHAMMER_PRAC_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "MR70_MISCONFIGURED_ERR"
+  },
+  "0x2205": {
+    "description": "MR70 is misconfigured: Field en_prac must be set to 1. // Ensures PRAC HW is enabled to send RFM commands due to ALERTn assertion rfmab_cmdcnt must equal MR71[1:0] // Ensures MC sends the DRAM-specified number of RFM commands when ALERTn is asserted",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "ROWHAMMER_PRAC_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "PRAC_CFG_MISCONFIGURED_ERR"
+  },
+  "0x2206": {
+    "description": "failed field in mr_config is set to 1 after mr_config command",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "MR_CFG_FAILED_ERR"
+  },
+  "0x2207": {
+    "description": "mr_config command timeout",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "MR_CFG_TIMEOUT_ERR"
+  },
+  "0x2208": {
+    "description": "MCHECK failed sending the last IPC TEARDOWN message",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "TEARDOWN_FAIL_ERR"
+  },
+  "0x2209": {
+    "description": "DIMM is 8H 3DS",
+    "dfx_bit_id": 13,
+    "dfx_bit_name": "DIMM_3DS_HEIGHT_CHECK",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "DIMM_IS_8H_3DS_ERR"
+  },
+  "0x220a": {
+    "description": "ref_2xrefsb_en = 0 for the following configurations: 16Gb: Any 4H/8H 3DS 24Gb/32Gb: Any 2H/4H/8H 3DS",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "REFRESH_CTRL0_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL0_REF_2XREFSB_EN_MISCONFIGURED_ERR"
+  },
+  "0x220b": {
+    "description": "ref_trfc must equal tRFC2HCLKs",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "REFRESH_CTRL0_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL0_REF_TRFC_MISCONFIGURED_ERR"
+  },
+  "0x220c": {
+    "description": "ref_trefi must equal tREFI2HCLKs",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "REFRESH_CTRL0_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL0_REF_TRRFI_MISCONFIGURED_ERR"
+  },
+  "0x220d": {
+    "description": "Verify pmmnt_ctrl0: pmmnt_en must be 1",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "PMMNT_CTRL_0_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "PMMNT_CTRL0_PMMNT_EN_MISCONFIGURED_ERR"
+  },
+  "0x220f": {
+    "description": "scheduler_hammers fields must: // 2 <= refdebt_hammer_on_wm <= 7 // 1 <= refdebt_hammer_off_wm <= 6 // refdebt_hammer_off_wm <= (refdebt_hammer_on_wm - 1)",
+    "dfx_bit_id": 11,
+    "dfx_bit_name": "SCHEDULAR_HAMMERS_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "SCHEDULER_HAMMERS_MISCONFIGURED_ERR"
+  },
+  "0x2210": {
+    "description": "Verify refresh_ctrl3: refreshfsm_en = 1 panicref_en = 1",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "REFRESH_CTRL3_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL3_MISCONFIGURED_ERR"
+  },
+  "0x2211": {
+    "description": "If 24Gb/32Gb, 4H 3DS DIMMs, then verify ‘All Bank Refresh Mode’ (refsb_en == 0)",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "REFRESH_CTRL3_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL3_REFSB_EN_ENABLED_ERR"
+  },
+  "0x2212": {
+    "description": "If not \"24Gb/32Gb, 4H 3DS DIMMs\", then verify 'Same Bank Refresh Mode' (refsb_en == 1)",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "REFRESH_CTRL3_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL3_REFSB_EN_DISABLED_ERR"
+  },
+  "0x2213": {
+    "description": "Verify ref_trfcsb = tRFCsbHCLKs",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "REFRESH_CTRL3_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL3_REF_TRFCSB_MISCONFIGURED_ERR"
+  },
+  "0x2214": {
+    "description": "Verify refresh_ctrl3.ref_trfcsb_slr == tRFCsb_slrHCLKs - refresh_ctrl1.numclks_onerefseq",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "REFRESH_CTRL3_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL3_REF_TRFCSB_SLR_MISCONFIGURED_ERR"
+  },
+  "0x2215": {
+    "description": "Verify 2 <= refresh_ctrl2.ref_trrdl <= 6",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "REFRESH_CTRL2_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL2_REF_TRRDL_MISCONFIGURED_ERR"
+  },
+  "0x2217": {
+    "description": "Verify refresh_ctrl10.ref_ch_stagger <= tRFC2HCLKs / 2",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "REFRESH_CTRL10_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL10_REF_CH_STAGGER_MISCONFIGURED_ERR"
+  },
+  "0x2218": {
+    "description": "if FGR- Verify refresh_ctrl10.ref_ch_stagger <= tRFCsbHCLKs / 2",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "REFRESH_CTRL10_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL10_REF_CH_STAGGER_FGR_MISCONFIGURED_ERR"
+  },
+  "0x2219": {
+    "description": "if 2H: Verify refab_dpr_stagger == tRFC_dprHCLKs - 2 HCLKs",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "REFRESH_CTRL10_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL7_REFAB_DPR_STAGGER_2H_MISCONFIGURED_ERR"
+  },
+  "0x221a": {
+    "description": "if 4H: if(dimm_temp_ev_ctrl[dimm_idx].thr_2xrefresh_en_sch0 || dimm_temp_ev_ctrl[dimm_idx].thr_2xrefresh_en_sch1) Verify refab_dpr_stagger == 0",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "REFRESH_CTRL10_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL7_REFAB_DPR_STAGGER_4H_MISCONFIGURED_ERR"
+  },
+  "0x221c": {
+    "description": "Verify refresh_ctrl5.refsb_stagger_min_non3ds = (tRFCsbHCLKs - refresh_ctrl1.refsb_numclks_onerefseq)",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "REFRESH_CTRL5_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL5_REFSB_STAGGER_MIN_NON3DS_MISCONFIGURED_ERR"
+  },
+  "0x221d": {
+    "description": "Verify refresh_ctrl5.refsb_stagger_target_non3ds <= ROUNDDOWN((tREFI2HCLKs - tRFCsbHCLKs)/(3))",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "REFRESH_CTRL5_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL5_REFSB_STAGGER_TARGET_NON3DS_MISCONFIGURED_ERR"
+  },
+  "0x221f": {
+    "description": "Verify refresh_ctrl5.refsb_stagger_target_non3ds2xref <= ROUNDDOWN((tREFI2HCLKs/2 - tRFCsbHCLKs)/(3))",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "REFRESH_CTRL5_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL5_REFSB_STAGGER_TARGET_NON3DS2XREF_MISCONFIGURED_ERR"
+  },
+  "0x2220": {
+    "description": "Verify refresh_ctrl6.refab_stagger_min = (tRFC_dlrHCLKs - refresh_ctrl1.refab_numclks_onerefseq)",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "REFRESH_CTRL6_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL6_REFAB_STAGGER_MIN_MISCONFIGURED_ERR"
+  },
+  "0x2221": {
+    "description": "Verify refresh_ctrl6.refab_stagger_target <= ROUNDDOWN((tREFI1HCLKs - tRFC1HCLKs)/(#_total_refs-1)) Where '#_total_refs' equals stack height",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "REFRESH_CTRL6_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL6_REFAB_STAGGER_TARGET_MISCONFIGURED_ERR"
+  },
+  "0x2222": {
+    "description": "Verify refresh_ctrl6.refab_stagger_target_2xref <= ROUNDDOWN((tREFI1HCLKs/2 - tRFC1HCLKs)/(#_total_refs-1) Where '#_total_refs' equals stack height",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "REFRESH_CTRL6_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL6_REFAB_STAGGER_TARGET_2XREF_MISCONFIGURED_ERR"
+  },
+  "0x2223": {
+    "description": "If Same Bank Refresh: Verify Refresh_ctrl4.refsb_stagger_min_3ds = tRFCsb_dlrHCLKs - refresh_ctrl1.refsb_numclks_onerefseq",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "REFRESH_CTRL4_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL4_REFSB_STAGGER_MIN_3DS_MISCONFIGURED_ERR"
+  },
+  "0x2224": {
+    "description": "refresh_ctrl4.refsb_stagger_target_3ds <= ROUNDOWN((tREFI2HCLKs-tRFCsbHCLKs)/(#_total_Refs-1)) Where '#_total_refs' equals (stack height 4). E.g. for a 2H 3DS DIMM, #_total_refs = 8",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "REFRESH_CTRL4_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL4_REFSB_STAGGER_TARGET_3DS_MISCONFIGURED_ERR"
+  },
+  "0x2228": {
+    "description": "MR_CONFIG result should be the same for all ranks",
+    "dfx_bit_id": 12,
+    "dfx_bit_name": "MR_CONFIG_CONSISTENCY_CHECK",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "MR_CONFIG_INCONSISTENCY_ERR"
+  },
+  "0x2229": {
+    "description": "Mcheck checks: memory_timings_bank_trp_trc_tras.t_rp >= (40 us converted to nCK) - 2 nCK memory_timings_bank_trp_trc_tras.t_ras >= (16us converted to nCK) Verify memory_timings_bank_trp_trc_tras.t_rc >= (52ns converted to nCK)",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "MEMORY_TIMINGS_BANK_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "MEMORY_TIMINGS_BANK_TRP_TRC_TRAS_MISCONFIGURED_ERR"
+  },
+  "0x222a": {
+    "description": "Mcheck verify memory_timings_bank_trtp_twr.t_rtp >= (5ns converted to nCK)",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "MEMORY_TIMINGS_BANK_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "MEMORY_TIMINGS_BANK_TRTP_TWR_MISCONFIGURED_ERR"
+  },
+  "0x222b": {
+    "description": "Mcheck verify memory_timings_bank_trcd_twrpre.t_wrpre >= (10ns converted to nCK)",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "MEMORY_TIMINGS_BANK_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "MEMORY_TIMINGS_BANK_TRCD_TWRPRE_MISCONFIGURED_ERR"
+  },
+  "0x222c": {
+    "description": "refresh_ctrl1.ref_trp is misconfigured (see HAS for full check explanation)",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "REFRESH_CTRL7_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL1_REF_TRP_MISCONFIGURED_ERR"
+  },
+  "0x2230": {
+    "description": "PRAC and RFM not enabled/supported",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "ROWHAMMER_PRAC_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "PRAC_AND_RFM_NOT_SUPPORTED_ERR"
+  },
+  "0x2231": {
+    "description": "Verify refresh_ctrl4.refsb_stagger_target_3ds2xref <= ROUNDOWN((tREFI2HCLKs/2-tRFCsbHCLKs)/(#_total_Refs-1)) Where '#_total_refs' equals (stack height 4). E.g. for a 2H 3DS DIMM, #_total_refs = 8",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "REFRESH_CTRL4_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "REFRESH_CTRL4_REFAB_STAGGER_TARGET_2XREF_MISCONFIGURED_ERR"
+  },
+  "0x2232": {
+    "description": "Verify that if the respective DIMM/Sub-Channel dimm_temp_ev_ctrl[1:0].thr_2xrefresh_en_sch0/1 = 1, then the respective DIMM/Sub-Channel dimm_temp_ref_thresh[1:0].temp_2xrefresh_threshold_sch0/1 ≤ 85.",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DIMM_TEMP_EV_CTRL_CHECK",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "DIMM_TEMP_REF_THRESH_MISCONFIGURED_ERR"
+  },
+  "0x2233": {
+    "description": "If (scheduler_enables.page_mode == 2) Verify refresh_ctrl1.numclks_onerefseq == pmmnt_ctrl0.presafevalid_latency + refresh_ctrl2.ref_trrdl + 7 HCLKs Else // scheduler_enables.page_mode ≠ 2 Verify refresh_ctrl1.numclks_onerefseq == pmmnt_ctrl0.presafevalid_latency + MAX(refresh_ctrl2.ref_trrdl, refresh_ctrl1.ref_trp) + 10 HCLKs",
+    "dfx_bit_id": 15,
+    "dfx_bit_name": "SCHEDULAR_ENABLES_CHECK",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "SCHEDULER_ENABLES_MISCONFIGURED_ERR"
+  },
+  "0x2234": {
+    "description": "Bit 4 of dfi_frequency should be configured by BIOS according to DIMM type. RDIMM: b0; MRDIMM (MCR): b1",
+    "dfx_bit_id": 16,
+    "dfx_bit_name": "DFI_FREQUENCY_CHECK",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "DFI_FREQUENCY_BIT_4_MISMATCH_ERR"
+  },
+  "0x2235": {
+    "description": "pmmnt_sch_ctrl0 should be 0",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "PMMNT_CTRL_0_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "PMMNT_SCH_CTRL0_MISCONFIGURED_ERR"
+  },
+  "0x2400": {
+    "description": "CXL_MEM rules in enabled HAs are not configured to identical values (checked accross all enabled HA and betweem IMHs)",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CXL_MEM_RULES_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "IMH_CXL_MEM_RULES_MISMATCH_ERR"
+  },
+  "0x2401": {
+    "description": "Both the CXL Mem rule (instance 0) and the corresponding TAD Rule (instance 0) will map the same address range (NM + FM)",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_HAMVF_F2LM_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "F2LM_CXL_MEM_RUL0_MISMATCH_TAD_RUE0_ERR"
+  },
+  "0x2402": {
+    "description": "F2LM base and size granularity should be 8GB",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_HAMVF_F2LM_TAD_RULES_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "F2LM_RANGE_BASE_AND_SIZE_GRANULARITY_NOT_8GB_ERR"
+  },
+  "0x2406": {
+    "description": "negative CA base after substrcting TAD offset",
+    "dfx_bit_id": 11,
+    "dfx_bit_name": "DFX_CHANNEL_ADDRESS_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "INVALID_CA_BASE_AFTER_TAD_OFFSET_SUBSTRACT_ERR"
+  },
+  "0x2500": {
+    "description": "CXL_ACM_OUTPUT integrity check failed",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CXL_ACM_INTEGRITY_ERR"
+  },
+  "0x2501": {
+    "description": "Failed to create CXL blob",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CXL_BLOB_ERR"
+  },
+  "0x2502": {
+    "description": "CXL device consistency check failed",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_CXL_DEV_CONSISTENCY_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CXL_DEV_CHECK_ERR"
+  },
+  "0x2503": {
+    "description": "Failed to generate CXL init key",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CXL_INIT_KEY_GEN_ERR"
+  },
+  "0x2504": {
+    "description": "CXL_MEM_RULES overlap each other",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_CXL_MEM_RULES_OVERLAP_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "HAMVF_CXL_RULES_OVERLAP_EACH_OTHER_ERR"
+  },
+  "0x2505": {
+    "description": "BIOS provides valid CXL_ACM_OUTPUT, and ACM_MCHECK_SECRET0...3 MSRs are 0",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CXL_ACM_OUTPUT_ENC_KEY_IS_ZERO_ERR"
+  },
+  "0x2507": {
+    "description": "Invalid cxl_mem_rule interlv target is not a valid target (Should be 0-5 for local imh and 6 for peer imh)",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "INVALID_CXL_MEM_RULE_INTERLV_TARGET_ERR"
+  },
+  "0x2508": {
+    "description": "CXL_RULE_CFG0/1 (UBR version) is different in HUB0 and HUB1",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_CXL_MEM_RULE_CFG0_CFG1_DIFFERENT_IN_HUB0_AND_HUB1_ERR"
+  },
+  "0x2509": {
+    "description": "CXL_MEM_RULES_CFG0/1/2 must be consistent between UBR and HA",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CXL_RULES_MISMATCH_IN_HAMVF_AND_UBR_ERR"
+  },
+  "0x250a": {
+    "description": "CXL_MEM_RULES_CFG2 should have unique values of {IMH,target_id}",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CXL_RULES_CFG2_IMH_TARGET_NOT_UNIQUE_ERR"
+  },
+  "0x250b": {
+    "description": "In CXL_MEM_RULES_CFG2, for local imh target: - Peer target is set to CXL_MEM_RULE_PEER_INTRLV_TARGET - local_target != 0 (not accelerator) - local_target is enabled - MIO type supports CXL",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "INVALID_CXL_MEM_RULE_INTERLV_LOCAL_TARGET_ERR"
+  },
+  "0x250c": {
+    "description": "In CXL_MEM_RULES_CFG2, if local target is set to peer imh target, than peer target cannot be set to peer imh target",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "INVALID_CXL_MEM_RULE_INTERLV_PEER_TARGET_ERR"
+  },
+  "0x250d": {
+    "description": "valid CXL INFO but CXL topology flag is not set",
+    "dfx_bit_id": 15,
+    "dfx_bit_name": "DFX_BIOS_CXL_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CXL_TOPOLOGY_FLAG_ERR"
+  },
+  "0x250e": {
+    "description": "Mcheck verify pmmnt_ctrl0.pmmnt_trp ≥ (40 ns converted to HCLKs)",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "PMMNT_CTRL_0_CHECKS",
+    "dfx_group_id": 8,
+    "dfx_group_name": "DFX_ROWHAMMER_CHECKS_GROUP",
+    "name": "PMMNT_CTRL0_PMMNT_TRP_MISCONFIGURED_ERR"
+  },
+  "0x250f": {
+    "description": "Mcheck verify that the overall size of the locally decoded PRMRRs is within the boundaries defined by PROTECTED_MEMORY_PER_SKT MSR",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "PRMRR_INVALID_SIZE_ERR"
+  },
+  "0x2510": {
+    "description": "Mcheck checks IMH MMIOL RULES",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CONF_CHECKS",
+    "dfx_group_id": 12,
+    "dfx_group_name": "DFX_MULTISOCKET_GROUP",
+    "name": "INVALID_IMH_MMIOL_RULES_ERR"
+  },
+  "0x2511": {
+    "description": "Mcheck checks IML MMIOH RULES",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CONF_CHECKS",
+    "dfx_group_id": 12,
+    "dfx_group_name": "DFX_MULTISOCKET_GROUP",
+    "name": "INVALID_IMH_MMIOH_RULES_ERR"
+  },
+  "0x2512": {
+    "description": "Mcheck checks IMH MMCFG RULES",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CONF_CHECKS",
+    "dfx_group_id": 12,
+    "dfx_group_name": "DFX_MULTISOCKET_GROUP",
+    "name": "INVALID_IMH_MMCFG_RULES_ERR"
+  },
+  "0x2513": {
+    "description": "Secondary MCHECK sent an invalid conf_checks_2_message payload to the main MCHECK",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CONF_CHECKS",
+    "dfx_group_id": 12,
+    "dfx_group_name": "DFX_MULTISOCKET_GROUP",
+    "name": "INVALID_CONF_CHECKS_2_PAYLOAD_ERR"
+  },
+  "0x2514": {
+    "description": "CXL_ACM_OUTPUT is NULL and CXL_MEM_RULES enabled",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CXL_MEM_CONFIGURATION_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CXL_MEM_RULE_ENABLED_BUT_CXL_ACM_OUTPUT_NULL_ERR"
+  },
+  "0x2602": {
+    "description": "Invalid CSM structure",
+    "dfx_bit_id": 16,
+    "dfx_bit_name": "DFX_BIOS_CSM_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CSM_STRUCT_ERR"
+  },
+  "0x2603": {
+    "description": "Invalid CSM header",
+    "dfx_bit_id": 16,
+    "dfx_bit_name": "DFX_BIOS_CSM_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CSM_HEADER_ERR"
+  },
+  "0x2604": {
+    "description": "CXL dev connected but CSM flag mode is NO_CXL",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_CXL_DEV_CONSISTENCY_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CXL_DEV_FLAG_CHECK_ERR"
+  },
+  "0x2605": {
+    "description": "CXL dev SVN mismatch",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_CXL_DEV_CONSISTENCY_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CXL_DEV_SVN_ERR"
+  },
+  "0x2606": {
+    "description": "CSM authentication failed",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_CSM_VERIFY",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CSM_VERIFY_ERR"
+  },
+  "0x2607": {
+    "description": "Failed to generate csm blob",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CSM_BLOB_GEN_ERR"
+  },
+  "0x2608": {
+    "description": "CSM blob flag mismatch",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CSM_BLOB_FLAGS_ERR"
+  },
+  "0x2609": {
+    "description": "svn was not found in CSM model entry",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CSM_SVN_NOT_FOUND_ERR"
+  },
+  "0x260a": {
+    "description": "cxl device model not found in CSM",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_UNIFIED_CXL_SVN",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CSM_MISSING_MODEL_ERR"
+  },
+  "0x260b": {
+    "description": "cxl info hash mismatch",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_UNIFIED_CXL_SVN",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CSM_INFO_HASH_ERR"
+  },
+  "0x260c": {
+    "description": "failed to generate CXL blob",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CXL_BLOB_GEN_ERR"
+  },
+  "0x260d": {
+    "description": "failed to create min model table",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "BUILD_MIN_MODEL_TBL_ERR"
+  },
+  "0x260e": {
+    "description": "CSM pub key inconsistency across boots",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_CSM_VERIFY",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CSM_PUB_KEY_ERR"
+  },
+  "0x260f": {
+    "description": "CSM id inconsistency across boots",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_CSM_VERIFY",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "CSM_ID_ERR"
+  },
+  "0x2610": {
+    "description": "Corrupted CSM",
+    "dfx_bit_id": 16,
+    "dfx_bit_name": "DFX_BIOS_CSM_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CSM_CORRUPT_ERR"
+  },
+  "0x2611": {
+    "description": "DEVICE_SVNs should be from 0-0xFF",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_CXL_DEV_CONSISTENCY_CHECKS",
+    "dfx_group_id": 13,
+    "dfx_group_name": "DFX_CXL_GROUP",
+    "name": "DEVICE_SVN_OUT_OF_RANGE_ERR"
+  },
+  "0x2612": {
+    "description": "copy the cxl model svn entry to local memory failed",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CXL_MODEL_SVN_INTO_LOCAL_MEM_ERR"
+  },
+  "0x3": {
+    "description": "Failed to generate random KDK",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INSUFFICIENT_KDK_ENTROPY_ERR"
+  },
+  "0x4": {
+    "description": "Failed to generate KDF",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_KDF_PARAMS_ERR"
+  },
+  "0x400": {
+    "description": "Invalid bios struct - bios struct is not fully within dram address, not aligned, or overlaps server",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_BIOS_PARAMS_STRUCT_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "BIOS_PARAM_STRUCT_ERR"
+  },
+  "0x401": {
+    "description": "The CORE_CAPABILITIES_MSR is not enabling FUSA",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_BIOS_SAF_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "FUSA_DOES_NOT_EXIST_ERR"
+  },
+  "0x402": {
+    "description": "RDMSR INTEGRITY_CAPABILITIES (0x2D9) - check bit 4 (SCAN_AT_FIELD)",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_BIOS_SAF_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "SCAN_AT_FIELD_DISABLED_ERR"
+  },
+  "0x403": {
+    "description": "The CORE_CAPABILTIES_BIT is not enabled on the platform",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_BIOS_SAF_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CORE_CAP_MSR_NOT_SUPPORTED_ERR"
+  },
+  "0x405": {
+    "description": "At least two of CMRs passed by BIOS are overlapping",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_BIOS_CMR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CMRS_OVERLAP_EACH_OTHER_ERR"
+  },
+  "0x406": {
+    "description": "One of field in the BIOS header is invalid (UUID, size, version, reserved)",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_BIOS_PARAMS_STRUCT_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "BIOS_PARAMS_HEADER_ERR"
+  },
+  "0x407": {
+    "description": "One of field in the TEE_INFO is invalid (UUID, size, version, reserved)",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_BIOS_TEE_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "TEE_INFO_HEADER_ERR"
+  },
+  "0x408": {
+    "description": "BIOS param info in the MSR TEE_INPUT_PARAM is NULL",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "MISSING_BIOS_PARAMS_ERR"
+  },
+  "0x409": {
+    "description": "BIOS passed a NULL TEE_INFO address",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "NULL_TEE_INFO_ERR"
+  },
+  "0x40b": {
+    "description": "Reserved keyid bits in XU_IA32_CR_TME_ACTIVATE_MSR are not zero",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_BIOS_FEATURES_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "ENABLED_TDX_RESERVED_KEYID_BITS_ERR"
+  },
+  "0x40c": {
+    "description": "BIOS passed a valid TEE_INFO address without SGX nor TDX",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "TEE_INFO_ISNT_ZERO_ERR"
+  },
+  "0x40e": {
+    "description": "SGX was requested but the CPU_SGX_SUPPORT_BIT is not enabled on the platform",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_BIOS_SGX_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "SGX_FUSED_OFF_ERR"
+  },
+  "0x40f": {
+    "description": "TDX was requested but a NULL address was passed by BIOS",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "NULL_TDX_INFO_ERR"
+  },
+  "0x411": {
+    "description": "TME active holds invalid field configuration",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_BIOS_TDX_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "INVALID_TME_ACTIVATE_ERR"
+  },
+  "0x412": {
+    "description": "The CMR list size passed by BIOS is invalid",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_CMR_LIST_SIZE_ERR"
+  },
+  "0x413": {
+    "description": "The CMR array address passed by BIOS is NULL",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "NULL_CMR_LIST_ERR"
+  },
+  "0x414": {
+    "description": "One of the CMRs holds an invalid size range",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_BIOS_CMR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CMR_INVALID_RANGE_SIZE_ERR"
+  },
+  "0x415": {
+    "description": "One of the CMR bases is not 4KB aligned",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_BIOS_CMR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CMR_NOT_4KB_ALIGNED_ERR"
+  },
+  "0x416": {
+    "description": "One of the CMR sizes is not a 4KB granularity",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_BIOS_CMR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CMR_NOT_4KB_GRAN_SIZE_ERR"
+  },
+  "0x417": {
+    "description": "The CMRs' bases are not in an ascending order",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_BIOS_CMR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CMR_NOT_ORDERED_ERR"
+  },
+  "0x419": {
+    "description": "One of the CMR bases is below 1MB",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_BIOS_CMR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CMR_BELOW_1MB_ERR"
+  },
+  "0x41a": {
+    "description": "The BIOS param info holds an valid boot scenario",
+    "dfx_bit_id": 3,
+    "dfx_bit_name": "DFX_BIOS_PARAMS_STRUCT_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "INV_BIOS_BOOT_SCENARIO_ERR"
+  },
+  "0x41d": {
+    "description": "The MAC key is zero",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_BIOS_DIMM_MANIFEST_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "ZERO_ACTM_MAC_KEY_ERR"
+  },
+  "0x41e": {
+    "description": "‘MCHECK Manifest MAC’ and ‘ACTM Manifest MAC’ are not identical",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_BIOS_DIMM_MANIFEST_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "DIMM_MANIFEST_MAC_MISMATCH_ERR"
+  },
+  "0x41f": {
+    "description": "DIMM manifest header is invalid",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_BIOS_DIMM_MANIFEST_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "INVALID_DIMM_MANIFEST_HEADER_ERR"
+  },
+  "0x420": {
+    "description": "DIMM manifest actual size is smaller than DIMM manifest max size",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_BIOS_DIMM_MANIFEST_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "DIMM_MANIFEST_INCORRECT_SIZE_ERR"
+  },
+  "0x422": {
+    "description": "Invalid key blob header",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "DFX_BIOS_KEY_BLOB_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "KEY_BLOB_HEADER_ERR"
+  },
+  "0x423": {
+    "description": "Key blob provided on IPE boot scenario",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "KEY_BLOB_IPE_ERR"
+  },
+  "0x424": {
+    "description": "No key blob provided",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "NO_KEY_BLOB_ERR"
+  },
+  "0x425": {
+    "description": "Invalid key blob struct - bios struct is not fully within dram address, not aligned, or overlaps server",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "KEY_BLOB_STRUCT_ERR"
+  },
+  "0x426": {
+    "description": "No registration server id provided",
+    "dfx_bit_id": 13,
+    "dfx_bit_name": "DFX_BIOS_REG_SVR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "NO_REG_SERVER_ID_ERR"
+  },
+  "0x427": {
+    "description": "Invalid reg server id struct - bios struct is not fully within dram address, not aligned, or overlaps server",
+    "dfx_bit_id": 13,
+    "dfx_bit_name": "DFX_BIOS_REG_SVR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "REG_SERVER_ID_STRUCT_ERR"
+  },
+  "0x428": {
+    "description": "Invalid reg server id header",
+    "dfx_bit_id": 13,
+    "dfx_bit_name": "DFX_BIOS_REG_SVR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "REG_SERVER_ID_HEADER_ERR"
+  },
+  "0x429": {
+    "description": "Invalid topology info - number of sockets or flags misconfigured",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "TOPOLOGY_INFO_FLAGS_OR_NUM_OF_SOCKETS_MISCONFIG_ERR"
+  },
+  "0x430": {
+    "description": "Invalid dimm manifest struct - bios struct is not fully within dram address, not aligned, or overlaps server",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_BIOS_DIMM_MANIFEST_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "DIM_MANIFEST_STRUCT_ERR"
+  },
+  "0x431": {
+    "description": "Working area should not be null in case of multi socket configuration",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "WORKING_AREA_ERR"
+  },
+  "0x432": {
+    "description": "Invalid OUTPUT_INFO struct",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "DFX_BIOS_OUTPUT_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "OUTPUT_INFO_STRUCT_ERR"
+  },
+  "0x433": {
+    "description": "Illegal OUTPUT_INFO struct size (less than 150KB)",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "DFX_BIOS_OUTPUT_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "ILLEGAL_OUTPUT_INFO_SIZE_ERR"
+  },
+  "0x434": {
+    "description": "Invalid B2M_TIO_SOCKET_INFO server id struct - bios struct is not fully within dram address, not aligned, or overlaps server",
+    "dfx_bit_id": 11,
+    "dfx_bit_name": "TIO_SOCKET_INFO_STRUCT_CHECK",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "TIO_SOCKET_INFO_STRUCT_ERR"
+  },
+  "0x436": {
+    "description": "Working area should be null in case of single socket",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "WORKING_AREA_NOT_NULL_ERR"
+  },
+  "0x437": {
+    "description": "The size of b2m_tio buffer should be consistent with the number of sockets",
+    "dfx_bit_id": 11,
+    "dfx_bit_name": "TIO_SOCKET_INFO_STRUCT_CHECK",
+    "dfx_group_id": 7,
+    "dfx_group_name": "DFX_TDX_CHECKS_GROUP",
+    "name": "B2M_TIO_INVALID_SIZE_ERR"
+  },
+  "0x438": {
+    "description": "CXL_ACM_OUTPUT header is invalid",
+    "dfx_bit_id": 15,
+    "dfx_bit_name": "DFX_BIOS_CXL_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "INVALID_CXL_ACM_OUTPUT_HEADER_ERR"
+  },
+  "0x439": {
+    "description": "Invalid tdx info struct - bios struct is not fully within dram address, not aligned, or overlaps server",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_BIOS_TDX_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "TDX_INFO_STRUCT_ERR"
+  },
+  "0x43a": {
+    "description": "Blob.MaxCPUSVN < current SVN and boot scenario is normal",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "BLOB_SVN_ERR"
+  },
+  "0x43b": {
+    "description": "Blob RSAK hash mismatch",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "BLOB_RSAK_ERR"
+  },
+  "0x43c": {
+    "description": "TCBR and Blob.MaxCPUSVN >= patch SVN",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "TCBR_SVN_ERR"
+  },
+  "0x6": {
+    "description": "calling the BASEKEY (XuCode function) failed",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_COND_MCHECK_KDE_ENCRYPTION",
+    "dfx_group_id": 9,
+    "dfx_group_name": "DFX_ENCRYPTION_GROUP",
+    "name": "BASEKEY_FAILED_ERR"
+  },
+  "0x600": {
+    "description": "Invalid SEAMRR range",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_TDX_CHECKS",
+    "dfx_group_id": 3,
+    "dfx_group_name": "DFX_CORE_GROUP",
+    "name": "SEAMRR_NOT_WITHIN_PHYS_MEMORY_ERR"
+  },
+  "0x602": {
+    "description": "SEAMR is not configured",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_BIOS_TDX_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "SEAMRR_NOT_CONFIGURED_ERR"
+  },
+  "0x604": {
+    "description": "SEAMRR overlaps PRMRR",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_TDX_CHECKS",
+    "dfx_group_id": 3,
+    "dfx_group_name": "DFX_CORE_GROUP",
+    "name": "SEAMRR_AND_PRMRRS_OVERLAP_ERR"
+  },
+  "0x605": {
+    "description": "SEAMRR base address below 1MB",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_TDX_CHECKS",
+    "dfx_group_id": 3,
+    "dfx_group_name": "DFX_CORE_GROUP",
+    "name": "SEAMRR_BELOW_1MB_ERR"
+  },
+  "0x606": {
+    "description": "SEAMRR is disabled in MTRRCAP",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_BIOS_TDX_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "MTRRCAP_SEAMRR_DISABLED_ERR"
+  },
+  "0x607": {
+    "description": "SEAMRR configuration error",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_BIOS_FEATURES_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "SEAMRR_BASE_CONFIG_ERR"
+  },
+  "0x608": {
+    "description": "Check that the socket ID in the x2APIC is configured correctly: Issue CPUID(EAX=0xB, ECX=0x01). EDX is now x2APIC ID and EAX has the number of bits to shift to isolate the socket ID. Extract Socket ID = EDX >> EAX If Socket ID != at-reset-socket-ID (determined from MSR 0x920) then fail",
+    "dfx_bit_id": 12,
+    "dfx_bit_name": "DFX_BIOS_X2APIC_CHECK",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CPUID_SOCKET_ID_DIFF_WHOAMI_SOCKET_ID_ERR"
+  },
+  "0x609": {
+    "description": "Invalid SEAMRR base and mask",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_BIOS_TDX_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "SEAMRR_INVALID_MASK_ERR"
+  },
+  "0x60a": {
+    "description": "SEAMRR overlaps PRMRR",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_BIOS_CMR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CMRS_AND_PRMRRS_OVERLAP_ERR"
+  },
+  "0x60b": {
+    "description": "SEAMRR overlaps PRMRR",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_BIOS_CMR_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "CMRS_AND_SEAMRR_OVERLAP_ERR"
+  },
+  "0x60c": {
+    "description": "SMM Feature Control CFG is not locked",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_BIOS_TDX_INFO_CHECKS",
+    "dfx_group_id": 0,
+    "dfx_group_name": "DFX_BIOS_GROUP",
+    "name": "SMRR_FEATURE_CONTROL_CFG_LOCK_ERR"
+  },
+  "0x7": {
+    "description": "Failed to initialize the debug mechanism, This error is used for debug purpeses only to ensure that the debug buffer was set correctly",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "DEBUG_MECHANISM_INIT_ERR"
+  },
+  "0x8": {
+    "description": "internal error, get_lsb_idx() or get_msb_idx() function was called with input=0",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "GET_LSB_MSB_FNC_INTERNAL_ERROR_ERR"
+  },
+  "0x801": {
+    "description": "MMCFGBAR is not enabled",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CBB_MMCFG_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMCFGBAR_IS_NOT_ENABLED_ERR"
+  },
+  "0x802": {
+    "description": "MMCFG BAR.SIZE is not one of the legal sizes (0..8)",
+    "dfx_bit_id": 2,
+    "dfx_bit_name": "DFX_CBB_MMCFG_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMCFGBAR_ILLEGAL_SIZE_ERR"
+  },
+  "0x803": {
+    "description": "MMIO_H is not above MMCFG (CBB versions)",
+    "dfx_bit_id": 16,
+    "dfx_bit_name": "DFX_CBB_MMCFG_CONSISTENCY_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIO_H_NOT_ABOVE__MMCFG_ERR"
+  },
+  "0x804": {
+    "description": "MMIOH base is bigger than the limit, so it defines illegal range",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "MMIO_H_BASE_BIGGER_THAN_LIMIT_ERR"
+  },
+  "0x805": {
+    "description": "TOLM equals DRAM lower bound, or is bigger than MMIO_L lower bound",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CBB_REGION_BOUNDS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "ILLEGAL_TOLM_ADDRESS_ERR"
+  },
+  "0x806": {
+    "description": "TOHM is not bigger than TOLEG top address or is not bugger than TOHM",
+    "dfx_bit_id": 0,
+    "dfx_bit_name": "DFX_CBB_REGION_BOUNDS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "ILLEGAL_TOHM_ADDRESS_ERR"
+  },
+  "0x807": {
+    "description": "Fixed_MMIOH_Alias is not the same on all CBBs",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_CBB_FIXED_MMIOH_ALIAS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "DIFFERENT_FIXED_MMIOH_ALIAS_RANGE_BETWEEN_CBBS_ERR"
+  },
+  "0x808": {
+    "description": "mmio_h_cbbbar.cbb_base[31:0] is not the same as Fixed MMIO_L address for the same CBB",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_CBB_FIXED_MMIOH_ALIAS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIO_H_CBBBAR_BITS_31_0_NOT_EQUAL_MMIO_L_ERR"
+  },
+  "0x809": {
+    "description": "1GB region defined by mmio_h_cbbbar.cbb_base[63:30] is not within MMIO_H area defined by CBB",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_CBB_FIXED_MMIOH_ALIAS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIO_H_CBBBAR_BITS_63_30_NOT_INSIDE_MMIO_H_ERR"
+  },
+  "0x80b": {
+    "description": "MMIOL range is not covered by the corresponding CBB range",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_UBR_MMIOL_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIOL_RANGE_IS_NOT_INSIDE_CORRESPONDING_CBB_RANGE_ERR"
+  },
+  "0x80c": {
+    "description": "MMIOH has multiple decoders for a specific local target",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_UBR_MMIOH_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIO_H_MULTIPLE_DECODERS_FOR_LOCAL_TGT_ERR"
+  },
+  "0x80d": {
+    "description": "MMIOH base address is under 4GB",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_UBR_MMIOH_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIO_H_ADDRESS_UNDER_4GB_ERR"
+  },
+  "0x80e": {
+    "description": "MMIOH local rule targets UBOX",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_UBR_MMIOH_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIO_H_LOCAL_RULE_TARGETS_UBOX_ERR"
+  },
+  "0x80f": {
+    "description": "Peer decoder of one IMH should fully cover local decoders of the other IMH",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_UBR_COMMON_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_LOCAL_RANGE_IS_NOT_COVERED_BY_PEER_ERR"
+  },
+  "0x810": {
+    "description": "One of the following conditions is not met: - If Fixed_MMIOH_Alias == 0, ubr_fixed_mmioh_rule.mmioh_mask must be 0xF_FFFF - If Fixed_MMIOH_Alias != 0, ubr_fixed_mmioh_rule.mmioh_mask == 0",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_UBR_FIXED_MMIOH_RANGE_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_INVALID_FIXED_MMIOH_MASK_ERR"
+  },
+  "0x811": {
+    "description": "ubr_fixed_mmioh_rule.mmioh_base != Fixed_MMIOH_Alias",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_UBR_FIXED_MMIOH_RANGE_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_INVALID_FIXED_MMIOH_BASE_ERR"
+  },
+  "0x812": {
+    "description": "1GB range defined by Fixed_MMIOH_Alias overlaps with MMIO_H decoder",
+    "dfx_bit_id": 6,
+    "dfx_bit_name": "DFX_UBR_FIXED_MMIOH_RANGE_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_FIXED_MMIO_OVERLAP_WITH_MMIOH_DECODERS_ERR"
+  },
+  "0x813": {
+    "description": "MMIO_L decoder overlaps Fixed MMIO_L range",
+    "dfx_bit_id": 5,
+    "dfx_bit_name": "DFX_UBR_MMIOL_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_RANGE_OVERLAPS_FIXED_MMIOL_CBB_RANGE_ERR"
+  },
+  "0x814": {
+    "description": "ubr_dram_local_rule is enabled or base is bigger than limit",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_UBR_DRAM_DECODERS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_DRAM_LOCAL_RULE_IS_ENABLED_ERR"
+  },
+  "0x815": {
+    "description": "ubr_dram_local_rule_pow2 is not enabled",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_UBR_DRAM_DECODERS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_DRAM_LOCAL_RULE_POW2_IS_DISABLED_ERR"
+  },
+  "0x816": {
+    "description": "UBR remote DRAM rules overlap with ubr_dram_local_rule_pow2",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_UBR_DRAM_DECODERS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_LOCAL_DRAM_POW2_OVERLAPS_REMOTE_DRAM_ERR"
+  },
+  "0x817": {
+    "description": "UBR remote DRAM rules overlap with each other",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_UBR_DRAM_DECODERS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_REMOTE_DRAM_RULES_OVERLAP_EACH_OTHER_ERR"
+  },
+  "0x818": {
+    "description": "there is overlap between all the enabled UBR rules (MMCFG, MMIOL and MMIOH)",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_UBR_COMMON_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_RULES_OVERLAP_EACH_OTHER_ERR"
+  },
+  "0x819": {
+    "description": "CAPID3 Bit 8 indicates that HUB0 is not present",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "HUB0_IS_NOT_PRESENT_ERR"
+  },
+  "0x81a": {
+    "description": "CAPID3 indicates that there are no CBBs present",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "NO_CBB_IS_PRESENT_ERR"
+  },
+  "0x81b": {
+    "description": "Invalid soc type",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "INVALID_SOC_TYPE_ERR"
+  },
+  "0x81c": {
+    "description": "UBR registers (full list in the HAS) are not consistent accross all UBR slices",
+    "dfx_bit_id": 9,
+    "dfx_bit_name": "DFX_UBR_CONSISTENCY_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_INSTANCES_MISMATCH_ERR"
+  },
+  "0x822": {
+    "description": "ubr_Fixed_MMIOH_rule doesnt have the same value on HUB0 and HUB1",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_FIXED_MMIOH_RULE_MISMATCH_HUB0_HUB1_ERR"
+  },
+  "0x823": {
+    "description": "Mcheck fails if ubr_rt_com_ctrl_secure.num_ha_slices defines illegal number (valid nubmers are: 4,8,12,16)",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "ILLEGAL_NUM_HA_SLICES_ERR"
+  },
+  "0x824": {
+    "description": "Mcheck fails if ubr_rt_com_ctrl_secure.ha_left_right_override is 1",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "HA_LEFT_RIGHT_OVERRIDE_IS_SET_ERR"
+  },
+  "0x825": {
+    "description": "Mcheck fails if ubr_ha_slice_id_remap configures duplciated rows ids",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "HA_SLICE_ID_REMAP_CONFIGURE_DUPLICATES_ERR"
+  },
+  "0x826": {
+    "description": "Mcheck fails if during HA/MC enumeration there was MC found, that doesnt exist/not enabled according to CAPID3",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "FOUND_MC_NOT_SET_IN_CAPID3_ERR"
+  },
+  "0x827": {
+    "description": "Mcheck fails HUB0 and HUB1 has different number of MCs or HAs",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "DIFFERENT_NUM_OF_MC_OR_HA_IN_HUB0_AND_HUB1_ERR"
+  },
+  "0x829": {
+    "description": "failed because ubr_ctrl_secure.local_socket_id is not equal to the SOCKET_ID",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "CTRL_SECURE_LOCAL_SOCKET_MISMATCH_LOCAL_SOCKET_ERR"
+  },
+  "0x82a": {
+    "description": "failed because ubr_error_mask is not zero",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_ERROR_MASK_IS_NOT_ZERO_ERR"
+  },
+  "0x82b": {
+    "description": "failed because ubr_rt_com_ctrl_secure is not the same in HUB0 and HUB1",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_RT_COM_CTRL_SECURE_DIFFERENT_IN_HUB0_AND_HUB1_ERR"
+  },
+  "0x82c": {
+    "description": "failed because reg_ubr_dram_local_rule_pow2.mask_address includes illegal value: not power of 2, or smaller than 32GB, or bigger than maximum allowed size",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_DRAM_LOCAL_RULE_POW2_MASK_ADDRESS_MISCONFIGURED_ERR"
+  },
+  "0x82d": {
+    "description": "fail if s3m_tsc_transfer_offset is not zero",
+    "dfx_bit_id": 20,
+    "dfx_bit_name": "DFX_TSC_TRANSFER_OFFSET_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "TSC_TRANSFER_OFFSET_IS_MISCONFIGURED_ERR"
+  },
+  "0x82e": {
+    "description": "MCHECK should verify that protected ranges are fully covered by reg_ubr_dram_local_rule_pow2 (after removing all higher priority ranges) and by CBB DRAM range (after removing all higher priority ranges)",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "PROT_MEM_COVERAGE_BY_UBR_AND_CBB_ERR"
+  },
+  "0x830": {
+    "description": "MIO stack type (according to FBLP UXI_LINKSTS0) is not supported by HW (according to CAPID8 value)",
+    "dfx_bit_id": 15,
+    "dfx_bit_name": "DFX_UXI_IO_MIO_STACK_TYPE_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MIO_TYPE_IS_NOT_SUPPORTED_BY_CAPID8_ERR"
+  },
+  "0x831": {
+    "description": "MMIOH/MMCFG has multiple decoders for a specific remote target",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_UBR_COMMON_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MULTIPLE_DECODERS_FOR_REMOTE_TGT_ERR"
+  },
+  "0x832": {
+    "description": "There may be as much as 2 remote MMIO_L decoders targeting S0 and as much as 1 remote MMIO_L decoder targeting any other socket",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_UBR_COMMON_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIO_L_MULTIPLE_DECODERS_FOR_REMOTE_TGT_ERR"
+  },
+  "0x834": {
+    "description": "UBR decoders define remote target while the platform is 1S",
+    "dfx_bit_id": 4,
+    "dfx_bit_name": "DFX_UBR_COMMON_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_DEFINES_REMOTE_TGT_IN_1S_ERR"
+  },
+  "0x835": {
+    "description": "FIXED_MMIOH is zero in case of multi-socket",
+    "dfx_bit_id": 1,
+    "dfx_bit_name": "DFX_CBB_FIXED_MMIOH_ALIAS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "FIXED_MMIOH_IS_ZERO_IN_CASE_OF_MS_ERR"
+  },
+  "0x836": {
+    "description": "BIOS_RESET_CPL.RST_CPL4 must be 1 on HUB0",
+    "dfx_bit_id": 19,
+    "dfx_bit_name": "DFX_BIOS_RESET_CPL_TME_EXCLUDE_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "BIOS_RESET_CPL_IS_MISCONFIGURED_ERR"
+  },
+  "0x837": {
+    "description": "ubr_ctrl_secure.iso_perf_mode is set to mode3",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "DFX_PERFORMANCE_ISOLATION_REGISTER_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "PERF_ISOLATION_MODE_MISCONFIGURED_ERR"
+  },
+  "0x838": {
+    "description": "isolation mode is enabled and number of sockets is not 1",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "DFX_PERFORMANCE_ISOLATION_REGISTER_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "PERF_ISO_MODE_NOT_SINGLE_SOCKET_ERR"
+  },
+  "0x839": {
+    "description": "isolation mode is enabled and ubr_rt_com_ctrl_secure.num_ha_slices is not 16",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "DFX_PERFORMANCE_ISOLATION_REGISTER_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "PERF_ISO_MODE_ILLEGAL_HA_SLICES_NUM_ERR"
+  },
+  "0x83a": {
+    "description": "ubr_ctrl_secure.iso_perf_mode = 1 and total size of DRAM region (DDR + CXL type 3) exceeds 2TB",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "DFX_PERFORMANCE_ISOLATION_REGISTER_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "PERF_ISO_MODE_ILLEGAL_DRAM_SIZE_MODE1_ERR"
+  },
+  "0x83c": {
+    "description": "One of the CBB IA exclusion range registers' (imriaexcbase(1) / imriaexclimit(1)) lock bit is not enabled",
+    "dfx_bit_id": 17,
+    "dfx_bit_name": "DFX_CBB_IA_EXCLUSION_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "IA_EXCL_LOCK_ERR"
+  },
+  "0x83f": {
+    "description": "One of the CBB IA exclusion ranges overlaps a protected memory range (PRMRRs, SEAMRR or CMRs)",
+    "dfx_bit_id": 17,
+    "dfx_bit_name": "DFX_CBB_IA_EXCLUSION_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "IA_EXCL_OVERLAPS_PROTECTED_MEMORY_ERR"
+  },
+  "0x840": {
+    "description": "IA exclusion range is not consistent across all CBBs",
+    "dfx_bit_id": 17,
+    "dfx_bit_name": "DFX_CBB_IA_EXCLUSION_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "IA_EXCL_INCONSISTENT_RANGE_ERR"
+  },
+  "0x841": {
+    "description": "IA exclusion range (1) is not consistent across all CBBs",
+    "dfx_bit_id": 17,
+    "dfx_bit_name": "DFX_CBB_IA_EXCLUSION_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "IA_EXCL_1_INCONSISTENT_RANGE_ERR"
+  },
+  "0x844": {
+    "description": "UBR mmiol remote rules are inconsistent",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_MMIOL_REMOTE_RULES_NOT_CONSISTENT_ERR"
+  },
+  "0x845": {
+    "description": "UBR mmioh remote rules are inconsistent",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_MMIOH_REMOTE_RULES_NOT_CONSISTENT_ERR"
+  },
+  "0x846": {
+    "description": "UBR mmcfg remote rules are inconsistent",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_MMCFG_REMOTE_RULES_NOT_CONSISTENT_ERR"
+  },
+  "0x847": {
+    "description": "The remote targets should be one of the valid remote socket IDs",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "REMOTE_TARGET_INVALID_TARGET_ID_ERR"
+  },
+  "0x848": {
+    "description": "MMIOH range is not covered by the corresponding CBB range",
+    "dfx_bit_id": 7,
+    "dfx_bit_name": "DFX_UBR_MMIOH_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIOH_RANGE_IS_NOT_INSIDE_CORRESPONDING_CBB_RANGE_ERR"
+  },
+  "0x84a": {
+    "description": "MCHECK should fail if performance - isolation and remap are both enabled",
+    "dfx_bit_id": 10,
+    "dfx_bit_name": "DFX_PERFORMANCE_ISOLATION_REGISTER_CHECKS",
+    "dfx_group_id": 2,
+    "dfx_group_name": "DFX_UBOX_IOCA_HAMVF_GROUP",
+    "name": "PERF_ISOLATION_MODE_AND_SLICE_REMAP_BOTH_ENABLED_ERR"
+  },
+  "0x84b": {
+    "description": "UBR_DRAM_REMOTE_RULE.target defines illegal target (equals local socket, or above maximum allowed number of sockets)",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_UBR_DRAM_DECODERS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_REMOTE_DRAM_RULES_INVALID_TARGET_ERR"
+  },
+  "0x84c": {
+    "description": "Invalid ubr_dram_local_rule_pow2 base and mask",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_UBR_DRAM_DECODERS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "DRAM_LOCAL_RULE_INVALID_BASE_MASK_ERR"
+  },
+  "0x84d": {
+    "description": "UBR dram remote rules are inconsistent",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_DRAM_REMOTE_RULES_NOT_CONSISTENT_ERR"
+  },
+  "0x84f": {
+    "description": "MCHECK must verify that ubr_rt_com_ctrl_secure.num_sockets equals to the number of sockets on the platform",
+    "dfx_bit_id": 14,
+    "dfx_bit_name": "DFX_UBR_HA_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "CTRL_SECURE_NUM_SOCKETS_MISMATCH_ERR"
+  },
+  "0x851": {
+    "description": "TME Exclusion range is enabled",
+    "dfx_bit_id": 19,
+    "dfx_bit_name": "DFX_BIOS_RESET_CPL_TME_EXCLUDE_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "TME_EXCLUDE_IS_ENABLED_ERR"
+  },
+  "0x852": {
+    "description": "Mcheck must verify that secondary hub is also iMH, it shall have the same number of MCs as the primary hub. Otherwise it will have no MCs.",
+    "dfx_bit_id": 15,
+    "dfx_bit_name": "DFX_UXI_IO_MIO_STACK_TYPE_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MCS_NUM_IS_INCORRECT_ERR"
+  },
+  "0x853": {
+    "description": "ubr_rt_com_ctrl_secure register should have the same value on the primary and secondary hub.",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_RT_COM_CTRL_SECURE_MISMATCH_ERR"
+  },
+  "0x854": {
+    "description": "Mcheck must check ubr_Fixed_MMIOH_rule should have the same value on both primary and secondary hub.",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_FIXED_MMIOH_RULE_MISMATCH_ERR"
+  },
+  "0x855": {
+    "description": "No one of the enabled ubr_remote_rule[0..2] defines peer iMH as a target.",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_UBR_DRAM_DECODERS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_NO_UBR_REMOTE_RULE_DEFINE_PEER_IMH_AS_TARGET_ERR"
+  },
+  "0x856": {
+    "description": "local DRAM (defined by ubr_dram_local_rule_pow2 on the primary hub) is NOT covered by the ubr_dram_remote_dram_rule targeting the peer hub.",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_UBR_DRAM_DECODERS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_NO_UBR_REMOTE_RULE_COVER_PEER_IMH_AS_TARGET_ERR"
+  },
+  "0x857": {
+    "description": "fail if more than one rule covers peer IMH",
+    "dfx_bit_id": 8,
+    "dfx_bit_name": "DFX_UBR_DRAM_DECODERS_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_MULTIPLE_REMOTE_RULES_DEFINE_PEER_IMH_ERR"
+  },
+  "0x858": {
+    "description": "fail if primary MMIOL remote rule is not covered by peer",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "PRIMARY_UBR_MMIOL_REMOTE_RULES_NOT_COVERED_BY_PEER_ERR"
+  },
+  "0x859": {
+    "description": "fail if primary MMIOH remote rule is not covered by peer",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "PRIMARY_UBR_MMIOH_REMOTE_RULES_NOT_COVERED_BY_PEER_ERR"
+  },
+  "0x85a": {
+    "description": "fail if primary MMCFG remote rule is not covered by peer",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "PRIMARY_UBR_MMCFG_REMOTE_RULES_NOT_COVERED_BY_PEER_ERR"
+  },
+  "0x85b": {
+    "description": "fail if primary DRAM remote rule is not covered by peer",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "PRIMARY_UBR_DRAM_REMOTE_RULES_NOT_COVERED_BY_PEER_ERR"
+  },
+  "0x85d": {
+    "description": "in DMR-SP, no IO stack on secondary hub should be in UXI/mixed mode",
+    "dfx_bit_id": 15,
+    "dfx_bit_name": "DFX_UXI_IO_MIO_STACK_TYPE_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "DMR_SP_MIO_TYPE_ON_IOH_SUPPORTS_UXI_ERR"
+  },
+  "0x85e": {
+    "description": "UBR dram local rules pow2 are inconsistent",
+    "dfx_bit_id": 18,
+    "dfx_bit_name": "DFX_UBR_REMOTE_DECODERS_CONSISTENCY_CHECK",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "UBR_DRAM_RULE_POW2_NOT_CONSISTENT_ERR"
+  },
+  "0x85f": {
+    "description": "CBB Address map are inconsistent on all enabled CBBs (MMCFG)",
+    "dfx_bit_id": 16,
+    "dfx_bit_name": "DFX_CBB_MMCFG_CONSISTENCY_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMCFG_INFO_NOT_CONSISTENT_BETWEEN_CBB_ERR"
+  },
+  "0x860": {
+    "description": "Fixed MMIOL range overlaps SMRR",
+    "dfx_bit_id": 21,
+    "dfx_bit_name": "DFX_CBB_MMIOL_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "FIXED_MMIOL_SMRR_OVERLAP_ERR"
+  },
+  "0x861": {
+    "description": "MMIOL range overlaps SMRR",
+    "dfx_bit_id": 21,
+    "dfx_bit_name": "DFX_CBB_MMIOL_CHECKS",
+    "dfx_group_id": 1,
+    "dfx_group_name": "DFX_UBR_CBB_IP_ENUMERATION_GROUP",
+    "name": "MMIOL_SMRR_OVERLAP_ERR"
+  },
+  "0x9": {
+    "description": "internal error, error in clearing huge memory blocks using movdir64",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CLEAR_MEMORY_CHUNKS_ERR"
+  },
+  "0xa": {
+    "description": "Crypto self test did not pass",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "CRYPTO_SELF_TESTS_FAILURE_ERR"
+  },
+  "0xb": {
+    "description": "Failed to get base key",
+    "dfx_bit_id": null,
+    "dfx_bit_name": null,
+    "dfx_group_id": null,
+    "dfx_group_name": null,
+    "name": "KDF_GET_BASE_KEY_ERR"
+  }
+}

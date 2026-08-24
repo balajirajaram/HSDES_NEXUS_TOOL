@@ -256,11 +256,43 @@ class HSDESClient:
 
     # ---- attachments (logs already on the ticket) ----
     def attachment_ids(self, target: Optional[Dict[str, Any]]) -> List[str]:
-        """Resource IDs of files attached to the ticket, parsed from its text
-        (HSDES references them as https://hsdes.intel.com/resource/<id>)."""
+        """Resource IDs of files referenced INLINE in the ticket text
+        (HSDES references them as https://hsdes.intel.com/resource/<id>).
+        NOTE: real file attachments are discovered via ``list_attachments``."""
         text = (target or {}).get("full_text", "") or ""
         ids = re.findall(r"hsdes\.intel\.com/resource/(\d+)", text, re.I)
         return list(dict.fromkeys(ids))
+
+    async def list_attachments(self, hsd_id: str,
+                               tenant: str = "server_platf") -> List[Dict[str, str]]:
+        """List the ticket's real FILE attachments via an EQL relationship query
+        (``POST /rest/query/execution/eql``). Attachments are child 'document'
+        records (``parent_id = <hsd_id>``). Returns ``[{id, name, size}]``.
+
+        This is what a fresh sighting actually carries — SOL/serial zips, PythonSV
+        dumps, crashdump JSON — none of which appear as inline resource links."""
+        if not self.enabled:
+            return []
+        hsd_id = re.sub(r"\D", "", str(hsd_id))
+        tenant = re.sub(r"[^a-zA-Z0-9_]", "", tenant or "server_platf")
+        eql = (f"SELECT id, title, subject WHERE tenant='{tenant}' "
+               f"AND subject='document' AND parent_id='{hsd_id}'")
+        try:
+            data = await self._post_json(
+                f"{self.base}/query/execution/eql", {"eql": eql})
+        except Exception:
+            return []
+        rows = (data or {}).get("data") or []
+        out: List[Dict[str, str]] = []
+        for r in rows:
+            if not isinstance(r, dict):
+                continue
+            rid = str(r.get("id") or "").strip()
+            if not rid:
+                continue
+            name = (r.get("title") or r.get("document.file_name") or "").strip()
+            out.append({"id": rid, "name": name, "size": str(r.get("document.size") or "")})
+        return out
 
     def _kerberos_bytes(self, url: str) -> bytes:
         if not (_REQUESTS_AVAILABLE and _KERBEROS_KIND):
@@ -284,42 +316,56 @@ class HSDESClient:
             return r.content
 
     @staticmethod
-    def _bytes_to_text(rid: str, data: bytes, max_bytes: int) -> str:
-        """Extract text from an attachment (zip members, gzip, or plain)."""
+    def _bytes_to_text(rid: str, data: bytes, max_bytes: int, name: str = "") -> str:
+        """Extract text from an attachment (zip members, gzip, or plain). The
+        attachment filename is embedded in the marker so downstream classifiers
+        (SOL vs PythonSV) and the report can name the exact file."""
+        tag = f"{rid}:{name}" if name else rid
         try:
             if data[:2] == b"PK":  # zip
                 parts: List[str] = []
                 with zipfile.ZipFile(io.BytesIO(data)) as z:
-                    for name in z.namelist():
-                        if name.endswith("/"):
+                    for member in z.namelist():
+                        if member.endswith("/"):
                             continue
                         try:
-                            with z.open(name) as f:
+                            with z.open(member) as f:
                                 raw = f.read(max_bytes)
-                            parts.append(f"### attachment {rid}:{name}\n"
+                            parts.append(f"### attachment {rid}:{member}\n"
                                          + raw.decode("utf-8", "replace"))
                         except Exception:
                             continue
                 return "\n".join(parts)
             if data[:2] == b"\x1f\x8b":  # gzip
                 import gzip
-                return (f"### attachment {rid}\n"
+                return (f"### attachment {tag}\n"
                         + gzip.decompress(data)[:max_bytes].decode("utf-8", "replace"))
-            return f"### attachment {rid}\n" + data[:max_bytes].decode("utf-8", "replace")
+            return f"### attachment {tag}\n" + data[:max_bytes].decode("utf-8", "replace")
         except Exception:
             return ""
 
     async def fetch_attachment_text(self, target: Optional[Dict[str, Any]],
                                     max_files: int = 8,
-                                    max_bytes: int = 4_000_000) -> str:
-        """Download and extract text from the ticket's attached log resources."""
+                                    max_bytes: int = 8_000_000,
+                                    attachments: Optional[List[Dict[str, str]]] = None) -> str:
+        """Download and extract text from the ticket's attachments.
+
+        Prefers the real file attachments passed in ``attachments`` (from
+        ``list_attachments``); falls back to inline resource links in the ticket
+        text. Large PythonSV / crashdump files are read up to ``max_bytes``."""
+        items: List[Dict[str, str]] = list(attachments or [])
+        if not items:
+            items = [{"id": rid, "name": ""} for rid in self.attachment_ids(target)]
         out: List[str] = []
-        for rid in self.attachment_ids(target)[:max_files]:
+        for a in items[:max_files]:
+            rid = a.get("id", "")
+            if not rid:
+                continue
             try:
                 data = await self.download_binary(rid)
             except Exception:
                 continue
-            txt = self._bytes_to_text(rid, data, max_bytes)
+            txt = self._bytes_to_text(rid, data, max_bytes, a.get("name", ""))
             if txt:
                 out.append(txt)
         return "\n".join(out)

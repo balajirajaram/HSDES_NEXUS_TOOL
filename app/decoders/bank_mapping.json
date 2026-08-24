@@ -1,0 +1,245 @@
+{
+  "0": {
+    "bank_id": 0,
+    "location": "Core",
+    "domain0_component": "IFU",
+    "domain1_component": "IFU",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "1": {
+    "bank_id": 1,
+    "location": "",
+    "domain0_component": "DCU",
+    "domain1_component": "DCU",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "2": {
+    "bank_id": 2,
+    "location": "",
+    "domain0_component": "DTLB",
+    "domain1_component": "DTLB",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "3": {
+    "bank_id": 3,
+    "location": "Module",
+    "domain0_component": "MLC",
+    "domain1_component": "MLC",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "4": {
+    "bank_id": 4,
+    "location": "CBB",
+    "domain0_component": "Punit",
+    "domain1_component": "Punit",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "5": {
+    "bank_id": 5,
+    "location": "",
+    "domain0_component": "NCU",
+    "domain1_component": "NCU",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "6": {
+    "bank_id": 6,
+    "location": "",
+    "domain0_component": "CCF",
+    "domain1_component": "CCF",
+    "merged": "Y",
+    "index_range_0": "0-31",
+    "index_range_1": "0-31"
+  },
+  "7": {
+    "bank_id": 7,
+    "location": "",
+    "domain0_component": "D2D",
+    "domain1_component": "D2D",
+    "merged": "Y",
+    "index_range_0": "0-7",
+    "index_range_1": "0-7"
+  },
+  "8": {
+    "bank_id": 8,
+    "location": "",
+    "domain0_component": "Reserved/Undefined",
+    "domain1_component": "Reserved/Undefined",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "9": {
+    "bank_id": 9,
+    "location": "",
+    "domain0_component": "Reserved/Undefined",
+    "domain1_component": "Reserved/Undefined",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "10": {
+    "bank_id": 10,
+    "location": "",
+    "domain0_component": "RASIP (CXL/PCIE)",
+    "domain1_component": "RASIP (CXL/PCIE)",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "11": {
+    "bank_id": 11,
+    "location": "",
+    "domain0_component": "Punit",
+    "domain1_component": "Punit",
+    "merged": "N",
+    "index_range_0": "0",
+    "index_range_1": "0"
+  },
+  "12": {
+    "bank_id": 12,
+    "location": "",
+    "domain0_component": "HA/MVF",
+    "domain1_component": "HA/MVF",
+    "merged": "Y",
+    "index_range_0": "0-15",
+    "index_range_1": "0-15"
+  },
+  "13": {
+    "bank_id": 13,
+    "location": "",
+    "domain0_component": "HSF",
+    "domain1_component": "HSF",
+    "merged": "Y",
+    "index_range_0": "0-15",
+    "index_range_1": "0-15"
+  },
+  "14": {
+    "bank_id": 14,
+    "location": "",
+    "domain0_component": "SCA",
+    "domain1_component": "SCA",
+    "merged": "Y",
+    "index_range_0": "0-15",
+    "index_range_1": "0-15"
+  },
+  "15": {
+    "bank_id": 15,
+    "location": "",
+    "domain0_component": "D2D",
+    "domain1_component": "D2D",
+    "merged": "Y",
+    "index_range_0": "0-11",
+    "index_range_1": "0-11"
+  },
+  "16": {
+    "bank_id": 16,
+    "location": "",
+    "domain0_component": "MSE",
+    "domain1_component": "MSE",
+    "merged": "Y",
+    "index_range_0": "0-15",
+    "index_range_1": "0-15"
+  },
+  "17": {
+    "bank_id": 17,
+    "location": "",
+    "domain0_component": "IOCache",
+    "domain1_component": "IOCache",
+    "merged": "Y",
+    "index_range_0": "0-15",
+    "index_range_1": "0-15"
+  },
+  "18": {
+    "bank_id": 18,
+    "location": "",
+    "domain0_component": "UXI",
+    "domain1_component": "UXI",
+    "merged": "Y",
+    "index_range_0": "0-3",
+    "index_range_1": "0-3"
+  },
+  "19": {
+    "bank_id": 19,
+    "location": "",
+    "domain0_component": "MCCHAN0",
+    "domain1_component": "MCCHAN8",
+    "merged": "Y(merge for subCh only)",
+    "index_range_0": "0-1",
+    "index_range_1": "0-1"
+  },
+  "20": {
+    "bank_id": 20,
+    "location": "",
+    "domain0_component": "MCCHAN1",
+    "domain1_component": "MCCHAN9",
+    "merged": "Y(merge for subCh only)",
+    "index_range_0": "0-1",
+    "index_range_1": "0-1"
+  },
+  "21": {
+    "bank_id": 21,
+    "location": "",
+    "domain0_component": "MCCHAN2",
+    "domain1_component": "MCCHAN10",
+    "merged": "Y(merge for subCh only)",
+    "index_range_0": "0-1",
+    "index_range_1": "0-1"
+  },
+  "22": {
+    "bank_id": 22,
+    "location": "",
+    "domain0_component": "MCCHAN3",
+    "domain1_component": "MCCHAN11",
+    "merged": "Y(merge for subCh only)",
+    "index_range_0": "0-1",
+    "index_range_1": "0-1"
+  },
+  "23": {
+    "bank_id": 23,
+    "location": "",
+    "domain0_component": "MCCHAN4",
+    "domain1_component": "MCCHAN12",
+    "merged": "Y(merge for subCh only)",
+    "index_range_0": "0-1",
+    "index_range_1": "0-1"
+  },
+  "24": {
+    "bank_id": 24,
+    "location": "",
+    "domain0_component": "MCCHAN5",
+    "domain1_component": "MCCHAN13",
+    "merged": "Y(merge for subCh only)",
+    "index_range_0": "0-1",
+    "index_range_1": "0-1"
+  },
+  "25": {
+    "bank_id": 25,
+    "location": "",
+    "domain0_component": "MCCHAN6",
+    "domain1_component": "MCCHAN14",
+    "merged": "Y(merge for subCh only)",
+    "index_range_0": "0-1",
+    "index_range_1": "0-1"
+  },
+  "26": {
+    "bank_id": 26,
+    "location": "",
+    "domain0_component": "MCCHAN7",
+    "domain1_component": "MCCHAN15",
+    "merged": "Y(merge for subCh only)",
+    "index_range_0": "0-1",
+    "index_range_1": "0-1"
+  }
+}

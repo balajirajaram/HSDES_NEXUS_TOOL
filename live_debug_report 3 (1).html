@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Debug Session — HSD 16031306835</title>
+<style>
+  :root {
+    --bg: #f8f9fa; --card-bg: #ffffff; --border: #dee2e6; --text: #212529;
+    --text-muted: #6c757d; --primary: #0d6efd; --success: #198754; --warning: #ffc107;
+    --danger: #dc3545; --info: #0dcaf0; --tier1: #d4edda; --tier2: #fff3cd; --tier3: #f8d7da;
+    --expand-bg: #f1f3f5; --conf-high: #198754; --conf-med: #fd7e14; --conf-low: #dc3545;
+    --timeline-line: #dee2e6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 24px; line-height: 1.5; }
+  .report-header { background: var(--card-bg); border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .report-header h1 { font-size: 1.6em; margin-bottom: 4px; }
+  .report-header h1 a { color: inherit; text-decoration: none; }
+  .report-header h1 a:hover { color: var(--primary); }
+  .report-header .subtitle { font-size: 1em; color: var(--text-muted); margin-bottom: 12px; }
+  .report-header .meta { color: var(--text-muted); font-size: 0.88em; margin-bottom: 16px; }
+  .header-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { padding: 6px 16px; border-radius: 20px; font-size: 0.85em; font-weight: 600; white-space: nowrap; }
+  .pill-total { background: #e9ecef; color: #495057; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: 700; white-space: nowrap; }
+  .badge-found { background: var(--tier1); color: #155724; }
+  .badge-manual { background: #e9ecef; color: #495057; }
+  .metrics-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .metric-card { background: var(--card-bg); border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .metric-card .value { font-size: 2em; font-weight: 700; color: var(--primary); }
+  .metric-card .label { font-size: 0.82em; color: var(--text-muted); margin-top: 4px; }
+  .metric-card .value.conf-high { color: var(--conf-high); }
+  .metric-card .value.conf-med { color: var(--conf-med); }
+  .metric-card .value.conf-low { color: var(--conf-low); }
+  .section-title { font-size: 1em; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
+  .timeline-card, .iterations-card, .related-card { background: var(--card-bg); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .timeline-table, .related-table, .hyp-table, .mca-table { width: 100%; border-collapse: collapse; font-size: 0.86em; }
+  .timeline-table th, .related-table th { background: #343a40; color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; white-space: nowrap; }
+  .timeline-table td, .related-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .timeline-table tr:last-child td, .related-table tr:last-child td { border-bottom: none; }
+  .conf-bar-wrap { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+  .conf-bar-track { flex: 1; height: 10px; background: #e9ecef; border-radius: 5px; overflow: hidden; }
+  .conf-bar-fill { height: 100%; border-radius: 5px; }
+  .conf-bar-fill.high { background: var(--conf-high); }
+  .conf-bar-fill.med { background: var(--conf-med); }
+  .conf-bar-fill.low { background: var(--conf-low); }
+  .conf-label { font-weight: 700; font-size: 0.85em; min-width: 40px; }
+  .iter-panel { border-bottom: 1px solid var(--border); padding: 16px 0; }
+  .iter-panel:last-child { border-bottom: none; }
+  .iter-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #343a40; color: #fff; font-weight: 700; font-size: 0.88em; margin-right: 10px; }
+  .iter-label { background: linear-gradient(90deg, #e3f2fd, #f8f9fa); padding: 10px 14px; border-radius: 6px; font-weight: 700; font-size: 0.88rem; color: #1565c0; margin: 14px 0 8px; }
+  .iter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .iter-section h4 { font-size: 0.8em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .iter-section p, .iter-section ul { font-size: 0.88em; line-height: 1.6; }
+  .iter-section ul { padding-left: 16px; }
+  .iter-section code { background: #1e1e1e; color: #9cdcfe; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+  .hyp-table th { background: #495057; color: #fff; padding: 6px 10px; text-align: left; }
+  .hyp-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .corrections-card { background: #fff8e1; border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid #f59e0b; }
+  .corrections-card .section-title { color: #92400e; }
+  .corrections-card .corr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
+  .corrections-card .corr-section h4 { font-size: 0.82em; color: #92400e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .corrections-card .corr-section p, .corrections-card .corr-section li { font-size: 0.9em; line-height: 1.6; }
+  .discard-list, .unchanged-list { list-style: none; margin: 8px 0 0 16px; font-size: 0.83rem; line-height: 1.9; padding: 0; }
+  .discard-list li::before { content: '❌ '; margin-right: 4px; }
+  .unchanged-list li::before { content: '✅ '; margin-right: 4px; }
+  .rootcause-card { background: var(--card-bg); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 4px solid var(--success); }
+  .rootcause-card.active { border-top-color: var(--warning); }
+  .rc-box { background: #d4edda; border-radius: 10px; padding: 18px 22px; margin-bottom: 20px; border-left: 5px solid var(--success); }
+  .rc-box .rc-badge { display:inline-block; background:#198754; color:#fff; font-size:0.75em; font-weight:700; padding:3px 12px; border-radius:12px; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+  .rc-box p { font-size: 0.95em; line-height: 1.6; }
+  .rootcause-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
+  .rc-section h4 { font-size: 0.82em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .rc-section p { font-size: 0.9em; line-height: 1.6; }
+  .rc-section code { background: #1e1e1e; color: #9cdcfe; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+  .evidence-chain { list-style: none; padding: 0; margin-top: 6px; }
+  .evidence-chain li { display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.88em; align-items: flex-start; }
+  .evidence-chain .ev-iter { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 22px; border-radius: 11px; background: #343a40; color: #fff; font-size: 0.72em; font-weight: 700; flex-shrink: 0; padding: 0 6px; }
+  .ev-chain { counter-reset: ev; margin: 12px 0; }
+  .ev-step { display: flex; gap: 14px; margin-bottom: 14px; align-items: flex-start; }
+  .ev-num { counter-increment: ev; background: #0d6efd; color: #fff; border-radius: 50%; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .ev-body { flex: 1; background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 10px 14px; font-size: 0.83rem; }
+  .ev-body .ev-src { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-family: Consolas; }
+  .ev-arrow { text-align: center; color: #0d6efd; font-size: 1.1rem; margin: 2px 0 2px 36px; }
+  .log-box { background: #1e1e2e; color: #cdd6f4; border-radius: 6px; padding: 14px; font-size: 0.75rem; font-family: 'Cascadia Code', Consolas, monospace; white-space: pre-wrap; overflow: auto; max-height: 340px; margin: 8px 0; }
+  .log-box .err { color: #f38ba8; } .log-box .warn { color: #fab387; } .log-box .ok { color: #a6e3a1; }
+  .log-box .cmd { color: #89b4fa; } .log-box .info { color: #89dceb; } .log-box .key { color: #f9e2af; font-weight: 700; }
+  .finding-box { border-left: 4px solid; border-radius: 0 6px 6px 0; padding: 12px 16px; margin: 10px 0; font-size: 0.83rem; }
+  .finding-confirmed { border-color: #198754; background: #d4edda; }
+  .finding-mechanism { border-color: #0277bd; background: #e3f2fd; }
+  .finding-topology { border-color: #fd7e14; background: #fff3e0; }
+  .finding-fix { border-color: #6f42c1; background: #f3e8ff; }
+  .finding-box .fb-title { font-weight: 700; margin-bottom: 4px; }
+  .mca-table { font-family: Consolas, monospace; margin: 10px 0; }
+  .mca-table th { background: #2d2d3f; color: #89b4fa; padding: 6px 10px; text-align: left; }
+  .mca-table td { padding: 5px 10px; border-bottom: 1px solid #3a3a4f; background: #1e1e2e; color: #cdd6f4; }
+  .mca-table .field-set { color: #a6e3a1; font-weight: 700; }
+  .mca-table .field-zero { color: #6c7086; }
+  footer { text-align: center; color: var(--text-muted); font-size: 0.8em; margin-top: 24px; padding: 16px; }
+  a.ref { color: var(--primary); font-size: 0.85em; }
+  @media (max-width: 768px) { .iter-grid, .rootcause-grid, .corr-grid { grid-template-columns: 1fr; } .metrics-row { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- SESSION HEADER -->
+<div class="report-header">
+  <h1><a href="https://hsdes.intel.com/appstore/article/#/16031306835" target="_blank">HSD 16031306835</a></h1>
+  <div class="subtitle">[GNR AP][2S]: Observing system HUNG after UPI degradation, Cpu0P0KitPortDisable=1, Cpu0P2KitPortDisable=1 (multiple ports across sockets/CPUs)</div>
+  <div class="meta">
+    Component: <strong>hw.upi</strong> (Granite Rapids AP, 2-Socket) &nbsp;|&nbsp;
+    Platform: GNRAP 2S UCC C-B0 I-E0 &nbsp;|&nbsp;
+    Generated: 2026-07-31 14:01 IST
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-found">✓ Root Cause Found</span>
+    <span class="badge badge-manual">Manual / Offline Log Analysis</span>
+    <span class="pill pill-total">1 Investigation Pass</span>
+  </div>
+</div>
+
+<!-- METRICS -->
+<div class="metrics-row">
+  <div class="metric-card"><div class="value">5</div><div class="label">HSD Attachments Analyzed</div></div>
+  <div class="metric-card"><div class="value conf-high">88%</div><div class="label">Final Root-Cause Confidence</div></div>
+  <div class="metric-card"><div class="value">2</div><div class="label">Log Sources Correlated (PythonSV + Serial BIOS)</div></div>
+  <div class="metric-card"><div class="value">2</div><div class="label">Related HSDs (sibling test iterations)</div></div>
+</div>
+
+<!-- FIELD FEEDBACK / INFRA CORRECTIONS -->
+<div class="corrections-card">
+  <div class="section-title">⚠ Field Feedback &amp; Session Infrastructure Notes</div>
+  <div class="corr-grid">
+    <div class="corr-section">
+      <h4>Discarded / Non-causal</h4>
+      <ul class="discard-list">
+        <li>Warm-reset credit-programming hypothesis (H2, 0.45 conf.) — reset performed was a full cold/PowerGood reset, not warm reset; GNR BIOS FAS confirms warm reset is not required for GNR credit reload, so this path does not apply here.</li>
+        <li>Electrical/PHY link degradation (H4, 0.30 conf.) — surviving links never even reached the training/PHY stage; the failure is earlier, in topology/LEP discovery, not signal integrity.</li>
+      </ul>
+    </div>
+    <div class="corr-section">
+      <h4>Confirmed / Unchanged</h4>
+      <ul class="unchanged-list">
+        <li>H1 "UPI topology convergence failure" — confirmed with 0.88 confidence from real post-hang register captures.</li>
+        <li>Session infra: fixed a stale-CA-bundle SSL bug in <code>hsdes_client.py</code> (added <code>truststore</code>) enabling automatic HSD attachment download.</li>
+        <li>Corrected stale GENI tool name references in <code>live-debug</code>/<code>hsd-triage</code> skills to the verified real tool set (<code>DebugAssistantAgentTool</code>, <code>VeWikiTool</code>, <code>HSDTool</code>, <code>HSDIndexTool</code>, etc.).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ROOT CAUSE SUMMARY -->
+<div class="rc-box">
+  <span class="rc-badge">Hang — UPI Topology Convergence Failure</span>
+  <p><strong>Root cause:</strong> After programming <code>Cpu0P0KtiPortDisable=1</code> / <code>Cpu0P2KtiPortDisable=1</code> and a cold/PowerGood reset, BIOS's UPI Reference Code (UPIRC) hangs during early <em>SBSP minimum-path topology tree construction</em> ("CPU0 Link Exchange" / LEP peer discovery) — before it ever reaches the documented "Check for KTI Topology Degradation" handler. The peer socket's Link-Exchange-Peer (LEP) state is not correctly invalidated/reconciled after the asymmetric socket-0 port disable, so BIOS never converges on a valid 2S-degraded topology and the platform collapses into an unbootable degenerate state (enumerated as "1S0Q") with the entire Socket-0 UPI fabric left un-trained.</p>
+</div>
+
+<!-- PHASE LD-0/1: SESSION PARAMETERS -->
+<div class="timeline-card">
+  <div class="section-title">Phase LD-0/LD-1 — Session Parameters &amp; Test Context</div>
+  <table class="timeline-table">
+    <tbody>
+      <tr><td><strong>HSD ID</strong></td><td>16031306835</td></tr>
+      <tr><td><strong>Testcase</strong></td><td>Verify GNR AP UPI degradation (26.4 / WW27.2 / WW27.4 variants) — PythonSV-manual (ITP/PythonSV register commands, XmlCli BIOS-knob programming)</td></tr>
+      <tr><td><strong>Testcase type</strong></td><td><code>pythonsv-manual</code></td></tr>
+      <tr><td><strong>Execution mode</strong></td><td>Manual (offline analysis of 5 pre-collected HSD attachments; interactive MCP tool layer was unavailable in-session — GENI reached via direct stdio JSON-RPC workaround)</td></tr>
+      <tr><td><strong>Initial symptom</strong></td><td>System HUNG after UPI degradation with <code>KitPortDisable</code> bits set on multiple CPU0 ports (P0, P1, P2 across variants)</td></tr>
+      <tr><td><strong>Attachments processed</strong></td><td>
+        26.4 HUNG log (pysv_log + Serial log) · WW27.2 Test-BIOS · WW27.4 Test-BIOS · WW27.4 Test-BIOS-EDK · Verify 8S UPI degradation (sibling HSD reference)
+      </td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- PHASE LD-2/LD-3 -->
+<div class="iterations-card">
+  <div class="section-title">Phase LD-2 — Initial Hypotheses (GENI DebugAssistantAgentTool, symptom-only)</div>
+  <table class="hyp-table">
+    <thead><tr><th>#</th><th>Hypothesis</th><th>Initial Confidence</th><th>Outcome</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>UPI degradation/failover flow did not converge to a valid 2S topology, or BIOS mapped out the wrong UPI pair</td><td>0.55</td><td style="color:#198754;font-weight:700">✔ Confirmed (0.88)</td></tr>
+      <tr><td>2</td><td>Warm-reset / degraded-topology credit-programming issue (mesh credits only init on cold reset)</td><td>0.45</td><td style="color:#dc3545;font-weight:700">✘ Rejected — reset was cold/PowerGood, not warm</td></tr>
+      <tr><td>3</td><td>Known UPI failover/degrade firmware-level issue / incomplete IFWI-pcode-BIOS recipe</td><td>0.40</td><td>Superseded by more specific H1 mechanism</td></tr>
+      <tr><td>4</td><td>UPI link/credit-level hang signature (CRC instability, VNA/credit programming)</td><td>0.30</td><td style="color:#dc3545;font-weight:700">✘ Rejected — links never reached training/PHY stage</td></tr>
+    </tbody>
+  </table>
+
+  <div class="iter-label">GENI VeWikiTool spec cross-check (architectural validation)</div>
+  <div class="iter-section">
+    <p>Co-Design's <code>codesign-ask-specs-and-wikis</code> was unreachable (401 — cached OAuth tokens are generic identity tokens, not audience-scoped for the Co-Design MCP resource). Used GENI's <code>VeWikiTool</code> (BIOSBKM/GNR/DebugEncyclopedia wiki spaces) as the documented fallback. Result: hypothesis architecturally plausible, with a concrete discriminator — asymmetric <code>KitPortDisable</code> masks / disagreeing route-fabric tables between sockets ⇒ topology convergence failure; symmetric masks + trained links but stalled traffic ⇒ credit-programming issue. This discriminator was then applied directly to the real attachment logs below.</p>
+  </div>
+
+  <div class="iter-label">Phase LD-3 — Targeted log/register comparison executed on real attachments</div>
+  <div class="iter-section">
+    <p>Per the discriminator above, compared <strong>KitPortDisable/port-disable state</strong>, <strong>UPI link-state (L0/trained vs ResetC)</strong>, and <strong>bios_kti_err_st</strong> across both sockets, before vs after applying the BIOS knobs — using the already-downloaded <code>pysv_log</code> and Serial BIOS log from the HUNG capture (no new test run required).</p>
+  </div>
+</div>
+
+<!-- PHASE LD-4: EVIDENCE -->
+<div class="iterations-card">
+  <div class="section-title">Phase LD-4 — Evidence From Real Logs (HSD_16031306835 attachments)</div>
+
+  <div class="iter-panel">
+    <span class="iter-num">1</span><strong>Baseline capture (pre-degradation)</strong>
+    <div class="iter-grid">
+      <div class="iter-section">
+        <h4>Source</h4>
+        <p><code>pysv_log</code> — <code>us.printTopology(); us.printLinkSpeed()</code></p>
+      </div>
+      <div class="iter-section">
+        <h4>Finding</h4>
+        <p>Full <strong>2S6Q</strong> topology, all 12 UPI links trained <strong>Fast Mode, 24.0 GT/s</strong>; <code>ktireut_ph_css.s_clm = 0x00000007</code> uniformly across every socket/port. System is healthy and symmetric before any port is disabled.</p>
+      </div>
+    </div>
+    <div class="log-box"><span class="cmd">In :</span> import graniterapids.upi.upiStatus as us; us.printTopology();us.printLinkSpeed()
+<span class="key">2S6Q Topology</span>
+Socket 0, Port 0, Link Speed: 24.0 GT/s, Setting: Fast Mode, Status: Fast Mode | Tx State: <span class="ok">L1</span> | Rx State: <span class="ok">L1</span>
+...
+Socket 1, Port 0, Link Speed: 24.0 GT/s, Setting: Fast Mode, Status: Fast Mode | Tx State: <span class="ok">L0</span> | Rx State: <span class="ok">L1</span>
+(all 12 ports trained; ktireut_ph_css = 0x00000007 uniform)</div>
+  </div>
+
+  <div class="iter-panel">
+    <span class="iter-num">2</span><strong>BIOS knob programming (the trigger)</strong>
+    <div class="iter-grid">
+      <div class="iter-section">
+        <h4>Source</h4>
+        <p><code>pysv_log</code> — <code>cli.CvProgKnobs("Cpu0P0KtiPortDisable = 1,Cpu0P2KtiPortDisable = 1")</code></p>
+      </div>
+      <div class="iter-section">
+        <h4>Finding</h4>
+        <p>Knobs verified applied (<code>Cpu0P0KtiPortDisable</code>: 0→1, <code>Cpu0P2KtiPortDisable</code>: 0→1). Side effect flag = <strong>PowerGoodResetRequired</strong> — the system performed a full <strong>cold reset</strong> (CPU/S0/PCH power off then on), <em>not</em> a warm reset.</p>
+      </div>
+    </div>
+    <div class="log-box"><span class="cmd">In :</span> cli.CvProgKnobs("Cpu0P0KtiPortDisable = 1,Cpu0P2KtiPortDisable = 1")
+| 2| 010C| Cpu0P0KtiPortDisable| 1| 0 | <span class="warn">1</span> |
+| 2| 0110| Cpu0P2KtiPortDisable| 1| 0 | <span class="warn">1</span> |
+<span class="ok">Verify Passed!</span>
+Flags.SideEffects = <span class="key">"PowerGoodResetRequired"</span>
+TargetEvent: PowerDomain : CPU : Off -- 04:43:44
+TargetEvent: PowerDomain : S0 : Off  -- 04:43:44
+TargetEvent: Power : On              -- 04:44:52
+TargetEvent: PowerDomain : CPU : On  -- 04:44:53
+TargetEvent: Reset : Completed       -- 04:45:15</div>
+  </div>
+
+  <div class="iter-panel">
+    <span class="iter-num">3</span><strong>Serial BIOS log truncates mid-topology-tree construction</strong>
+    <div class="iter-grid">
+      <div class="iter-section">
+        <h4>Source</h4>
+        <p>Serial BIOS log (<code>SL-_26.4_...GNR_AP</code>), last ~40 lines of a 39,348-line capture</p>
+      </div>
+      <div class="iter-section">
+        <h4>Finding</h4>
+        <p>The log <strong>stops growing</strong> mid-way through <code>Constructing SBSP minimum path Topology Tree</code> → <code>CPU0 Link Exchange</code> → repeated <code>IpUpiGetStatus(UpiAgent[0][x], id=19)</code> LEP-peer reads. It <strong>never reaches</strong> the later <code>Check for KTI Topology Degradation</code> phase visible earlier in the same file (from the pre-degrade healthy boot). This is the BIOS hang point.</p>
+      </div>
+    </div>
+    <div class="log-box"><span class="info">******* Setting up Minimum Path - START *******</span>
+ Constructing SBSP minimum path Topology Tree
+ --------------------------------------------
+ Adding SBSP (CPU0) to the tree
+   CPU0 Link Exchange
+IpUpiGetStatus(UpiAgent[0][0], id=3):
+IpUpiGetStatus(UpiAgent[0][0], id=4):
+IpUpiGetStatus(UpiAgent[0][0], id=5):
+IpUpiGetStatus(UpiAgent[0][0], id=19):
+ : LEP0(1,CPU1)   Socket 0 Port 0:Primary - Peer Socket 1 Port 1 Secondary
+IpUpiGetStatus(UpiAgent[0][1], id=3):
+IpUpiGetStatus(UpiAgent[0][1], id=4):
+IpUpiGetStatus(UpiAgent[0][1], id=5):
+IpUpiGetStatus(UpiAgent[0][1], id=19):
+ : LEP1(0,CPU1)
+<span class="err">[log ends here — no further BIOS output; system unresponsive]</span></div>
+  </div>
+
+  <div class="iter-panel">
+    <span class="iter-num">4</span><strong>Post-hang register capture — degenerate 1S0Q enumeration</strong>
+    <div class="iter-grid">
+      <div class="iter-section">
+        <h4>Source</h4>
+        <p><code>pysv_log</code> — re-attach + <code>us.printTopology()</code> after hang</p>
+      </div>
+      <div class="iter-section">
+        <h4>Finding</h4>
+        <p>Topology enumerates as <strong>"1S0Q"</strong> (degenerate single-socket) instead of any valid 2S-degraded config. <strong>All six</strong> Socket-0 UPI ports show Not-trained / <code>ResetC</code> / 2.5 GT/s Slow Mode — not just the 2 explicitly disabled ports (P0, P2). Socket 1 ports show mixed RxDetect/L1b, also un-trained. <code>ktireut_ph_css = 0x00000000</code> uniformly (vs 0x7 baseline).</p>
+      </div>
+    </div>
+    <div class="log-box"><span class="err">1S0Q Topology</span>
+Socket 0, Port 0, Link Speed: 2.5 GT/s, Setting: Slow Mode, Status: <span class="err">Not trained</span> | Tx State: <span class="err">ResetC</span> | Rx State: <span class="err">ResetC</span>
+Socket 0, Port 1, Link Speed: 2.5 GT/s, Setting: Slow Mode, Status: <span class="err">Not trained</span> | Tx State: <span class="err">ResetC</span> | Rx State: <span class="err">ResetC</span>
+Socket 0, Port 2, Link Speed: 2.5 GT/s, Setting: Slow Mode, Status: <span class="err">Not trained</span> | Tx State: <span class="err">ResetC</span> | Rx State: <span class="err">ResetC</span>
+... (all 6 Socket-0 ports identical — not just P0/P2 which were the only ones disabled)
+Socket 1, Port 0, ... Tx State: <span class="warn">RxDetect</span> | Rx State: <span class="warn">RxDetect</span>
+CPU Bus Number MSR says that Bus Numbers haven't been initialized yet!, not setting bus map.</div>
+  </div>
+
+  <div class="iter-panel">
+    <span class="iter-num">5</span><strong>Asymmetric error-register signature (socket-disagreement)</strong>
+    <div class="iter-grid">
+      <div class="iter-section">
+        <h4>Source</h4>
+        <p><code>pysv_log</code> — <code>us.printErrors()</code> post-hang</p>
+      </div>
+      <div class="iter-section">
+        <h4>Finding</h4>
+        <p><code>bios_kti_err_st</code> = <code>0x0</code> on all Socket-0 ports, but <strong>large nonzero latched values on all six Socket-1 ports</strong> (e.g. <code>0xea1538c000010e0f</code>). Socket-0 error masks are aggressively disabled (<code>ktierrdis0/1</code> = <code>0x3ff</code>/<code>0x1fff</code>) while Socket-1's remain <code>0x0</code>. This exactly matches the VeWikiTool discriminator for topology-convergence failure: the two sockets disagree on link/fabric state because the peer LEP was never reconciled.</p>
+      </div>
+    </div>
+    <table class="mca-table">
+      <thead><tr><th>Register</th><th>Socket 0 (all 6 ports)</th><th>Socket 1 (all 6 ports)</th></tr></thead>
+      <tbody>
+        <tr><td>bios_kti_err_st</td><td class="field-zero">0x0</td><td class="field-set">0xea15…0e0f (nonzero, all ports)</td></tr>
+        <tr><td>ktierrdis0</td><td class="field-set">0x3ff (errors masked)</td><td class="field-zero">0x0 (errors active)</td></tr>
+        <tr><td>ktierrdis1</td><td class="field-set">0x1fff (errors masked)</td><td class="field-zero">0x0 (errors active)</td></tr>
+        <tr><td>ktireut_ph_css.s_clm</td><td class="field-zero">0x0 (was 0x7 baseline)</td><td class="field-zero">0x0 (was 0x7 baseline)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- PHASE LD-5: FINAL ROOT CAUSE -->
+<div class="rootcause-card">
+  <div class="section-title">Phase LD-5 — Final Root Cause (GENI synthesis, confidence 0.88)</div>
+  <div class="rootcause-grid">
+    <div class="rc-section">
+      <h4>Evidence Chain</h4>
+      <div class="ev-chain">
+        <div class="ev-step"><span class="ev-num"></span><div class="ev-body">Baseline: full 2S6Q, all links Fast Mode 24GT/s, symmetric registers — proves platform/wiring healthy pre-degrade.</div></div>
+        <div class="ev-arrow">↓</div>
+        <div class="ev-step"><span class="ev-num"></span><div class="ev-body">Cpu0P0/P2 KtiPortDisable=1 applied → cold/PowerGood reset (not warm) — rules out warm-reset credit hypothesis per BIOS FAS.</div></div>
+        <div class="ev-arrow">↓</div>
+        <div class="ev-step"><span class="ev-num"></span><div class="ev-body">Serial log hangs mid "CPU0 Link Exchange"/LEP discovery, before reaching "Check for KTI Topology Degradation" — failure is in early topology construction, not later routing/credit phases.</div></div>
+        <div class="ev-arrow">↓</div>
+        <div class="ev-step"><span class="ev-num"></span><div class="ev-body">Post-hang: system enumerates as degenerate "1S0Q"; ALL Socket-0 UPI ports (not just the 2 disabled) stuck in ResetC — BIOS never converged on any valid 2S-degraded topology.</div></div>
+        <div class="ev-arrow">↓</div>
+        <div class="ev-step"><span class="ev-num"></span><div class="ev-body">Asymmetric bios_kti_err_st / error-mask state between sockets — peer LEP/topology data not reconciled after the one-sided port disable.</div></div>
+      </div>
+    </div>
+    <div class="rc-section">
+      <h4>Recommended Fix</h4>
+      <p>Update BIOS/UPIRC so that when a socket-local UPI port disable is applied, the corresponding <strong>peer LEP/link entries are invalidated before SBSP minimum-path topology construction</strong>, then follow the documented GNR AP 2S degrade flow: try 2S-6L → 2S-4L (mapping out the correct UPI pair) → only fall back to 1S if no valid 2S topology exists. <code>IpUpiGetStatus</code>/LEP collection must not stall indefinitely waiting on inconsistent peer state.</p>
+      <h4 style="margin-top:14px">Next Debug Step</h4>
+      <p>Instrument UPIRC around LEP preprocessing, <code>CPU0 Link Exchange</code>, and entry to "Check for KTI Topology Degradation"; dump per-socket LEP valid bitmap, peer socket/port mapping table, and SSVDM-resolved UPI disable state on both sockets before topology-tree construction. Test whether explicitly invalidating peer-side LEPs (or disabling the paired peer link) allows convergence to a valid 2S4L topology.</p>
+      <h4 style="margin-top:14px">Spec References</h4>
+      <p>
+        <a class="ref" href="https://docs.intel.com/documents/arch_datacenter/gnr_family/system%20firmware/bhs_fas/birchstream_bios_fas.html" target="_blank">Birchstream BIOS FAS — UPI RC Phase 1/2, LEP &amp; degraded topology handling</a><br>
+        <a class="ref" href="https://docs.intel.com/documents/arch_datacenter/gnr_family/granite%20rapids%20-%20sp%20and%20ap/io_die_overview.html" target="_blank">GNR/SP/AP IO Die Overview — UPI topology / link failure recovery</a><br>
+        <a class="ref" href="https://docs.intel.com/documents/arch_datacenter/rcf/reset/xeon_2025_2026/feature%20has/xeon_25_26_ip_disable_feature_has.html" target="_blank">Xeon 2025/2026 IP Disable Feature HAS — SSVDM / cold-reset IP disable behavior</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- RELATED HSDs -->
+<div class="related-card">
+  <div class="section-title">Related HSDs / Test Iterations (same testline family, found among attached logs)</div>
+  <table class="related-table">
+    <thead><tr><th>HSD / Ref ID</th><th>Test Variant</th><th>Symptom</th><th>Relevance</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>16029344093</td>
+        <td>WW27.2 / WW27.4 GNR AP UPI degradation (Test-BIOS, Test-BIOS-EDK)</td>
+        <td>Same UPI port-disable degradation scenario on GNR AP 2S</td>
+        <td>Sibling test-BIOS attachments for the same testline; useful to check whether an EDK/BIOS build difference changes whether the hang reproduces.</td>
+      </tr>
+      <tr>
+        <td>16028628268</td>
+        <td>Verify 8S UPI degradation — remove all links with MLC stress (OPT1/UPLR5)</td>
+        <td>UPI degradation hang on GNR-SP 8S platform (different topology/socket count)</td>
+        <td>Related but distinct platform (8S vs 2S AP); confirms UPI degrade/topology-convergence issues are not unique to the 2S AP config — worth checking if the same LEP-invalidation defect applies to the 8S UPIRC path.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<footer>
+  Generated 2026-07-31 14:01 IST &nbsp;|&nbsp; Session: 16031306835_live_debug &nbsp;|&nbsp; Template v1 (live_debug_report_template.html) &nbsp;|&nbsp; BugScout Live-Debug Framework
+</footer>
+
+</body>
+</html>

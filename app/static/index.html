@@ -3,69 +3,275 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Auto HSD Analyser (Server Platforms)</title>
+  <title>HSDES NEXUS Control Center</title>
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <header>
-    <div class="header-row">
-      <h1>Auto HSD Analyser <span class="scope">Intel Server Platforms — any domain</span></h1>
-      <div id="account" class="account">
-        <span id="account-name" class="hint">Kerberos SSO</span>
+  <div class="bg-orb orb-a"></div>
+  <div class="bg-orb orb-b"></div>
+  <div class="bg-grid"></div>
+
+  <header class="hero">
+    <div class="hero-top">
+      <div>
+        <p class="eyebrow">HSD Triage &amp; Root-Cause Tool</p>
+        <h1>HSDES NEXUS <span class="scope">Control Center</span></h1>
+        <p class="sub">Reads the HSD ticket + attached logs, decodes the failure, and reports a ranked root cause with evidence and next steps.</p>
+      </div>
+      <div class="identity">
+        <div class="id-block">
+          <span class="id-label">Session</span>
+          <span id="account-name" class="id-value">Kerberos SSO</span>
+        </div>
       </div>
     </div>
     <div id="status" class="status-bar">
-      <span class="badge" id="badge-mode">mode: …</span>
-      <span class="badge" id="badge-auth">auth: …</span>
-      <span class="badge" id="badge-llm">LLM: …</span>
-      <span class="badge" id="badge-kb">KB: … entries</span>
+      <span class="badge" id="badge-mode">mode: ...</span>
+      <span class="badge" id="badge-auth">auth: ...</span>
+      <span class="badge" id="badge-llm">LLM: ...</span>
+      <span class="badge" id="badge-kb">KB: ...</span>
+      <span class="badge" id="badge-bugscout">BugScout bridge: ...</span>
     </div>
   </header>
 
   <nav class="tabs">
     <button class="tab active" data-tab="analyse">Analyse</button>
+    <button class="tab" data-tab="batchlearn">Batch Learn</button>
+    <button class="tab" data-tab="livedebug">Live Debug</button>
+    <button class="tab" data-tab="bugbatch">BugScout Batch</button>
+    <button class="tab" data-tab="crashdump">Crashdump</button>
+    <button class="tab" data-tab="logsearch">Log Search</button>
+    <button class="tab" data-tab="handbook">Handbook RAG</button>
     <button class="tab" data-tab="kb">Knowledge Base</button>
   </nav>
 
   <main>
     <section id="tab-analyse" class="panel active">
-      <form id="analyse-form">
-        <label>
-          HSD ID
-          <input id="hsd_id" type="text" placeholder="e.g. 1234567890" required />
-        </label>
-        <label>
-          Symptoms / failure signature
-          <textarea id="symptoms" rows="4" required
-            placeholder="e.g. system hung after UPI degradation; or: Windows 11 fails to enter S4 during DPMO"></textarea>
-        </label>
-        <label>
-          Attached log (optional) — paste serial / PythonSV / BMC SEL / kernel / RPT
-          <textarea id="log_text" rows="5"
-            placeholder="Paste log text here, or choose a file below. The tool scans it for MCE/CATERR/UPI/DDR/PCIe/boot-hang signatures."></textarea>
-        </label>
-        <label class="file-row">
-          <input id="log_file" type="file" accept=".txt,.log,.rpt,.out,.csv" />
-          <span class="hint">Load a log file into the box above (kept in your browser).</span>
-        </label>
-        <label class="file-row">
-          <input id="fetch_attachments" type="checkbox" checked />
-          <span class="hint">Auto-fetch &amp; analyze logs already attached to the ticket (downloads from HSDES).</span>
-        </label>
-        <button type="submit" id="run-btn">Analyse</button>
-      </form>
-
+      <div class="card">
+        <h2>HSD Root Cause Analysis</h2>
+        <form id="analyse-form" class="stack">
+          <label>
+            HSD ID
+            <input id="hsd_id" type="text" placeholder="Example: 16030948515" required />
+          </label>
+          <label>
+            Symptoms / Failure Signature
+            <textarea id="symptoms" rows="4" required placeholder="Describe symptom signatures, platform, stepping, and suspect domain"></textarea>
+          </label>
+          <label>
+            Attached Log Text (optional)
+            <textarea id="log_text" rows="6" placeholder="Paste serial, PythonSV, BMC SEL, OS, or RPT logs"></textarea>
+          </label>
+          <label class="inline">
+            <input id="log_file" type="file" accept=".txt,.log,.rpt,.out,.csv" />
+            <span>Load local log into text area</span>
+          </label>
+          <label class="inline">
+            <input id="fetch_attachments" type="checkbox" checked />
+            <span>Auto-fetch and analyze ticket attachments from HSDES</span>
+          </label>
+          <button type="submit" id="run-btn">Run Analysis</button>
+        </form>
+      </div>
       <div id="meta" class="meta hidden"></div>
       <div id="report" class="report"></div>
     </section>
 
+    <section id="tab-batchlearn" class="panel">
+      <div class="card">
+        <h2>Old Tool Batch Learning</h2>
+        <form id="batch-learn-form" class="stack three-col">
+          <label>
+            Product
+            <select id="bl_product">
+              <option value="">Select product...</option>
+            </select>
+          </label>
+          <label>
+            Saved Query ID (optional)
+            <input id="bl_query" type="text" placeholder="HSDES saved query id" />
+          </label>
+          <label>
+            Limit
+            <input id="bl_limit" type="number" min="1" max="1000" value="100" />
+          </label>
+          <label>
+            Specific HSD IDs (optional)
+            <input id="bl_ids" type="text" placeholder="comma separated ids" />
+          </label>
+          <button type="submit" id="bl-btn">Run Batch Learn</button>
+        </form>
+      </div>
+      <pre id="batch-learn-output" class="console"></pre>
+    </section>
+
+    <section id="tab-livedebug" class="panel">
+      <div class="card">
+        <h2>BugScout Live Debug Bootstrap</h2>
+        <form id="live-debug-form" class="stack two-col">
+          <label>
+            HSD ID
+            <input id="ld_hsd_id" type="text" placeholder="Example: 14027419708" required />
+          </label>
+          <label>
+            Execution Mode
+            <select id="ld_mode">
+              <option value="manual">manual</option>
+              <option value="local">local</option>
+              <option value="ssh">ssh</option>
+              <option value="auto">auto</option>
+            </select>
+          </label>
+          <label>
+            SSH Server (for ssh mode)
+            <input id="ld_server" type="text" placeholder="lab-host.intel.com" />
+          </label>
+          <label>
+            SSH User (optional)
+            <input id="ld_user" type="text" placeholder="intel_user" />
+          </label>
+          <label>
+            Max Iterations
+            <input id="ld_max" type="number" value="10" min="1" max="40" />
+          </label>
+          <label>
+            Initial Logs JSON Path (optional)
+            <input id="ld_logs" type="text" placeholder="Absolute path to live_debug_input.schema.json file" />
+          </label>
+          <button type="submit" id="ld-btn">Initialize Session</button>
+        </form>
+        <form id="live-debug-report-form" class="stack two-col">
+          <label>
+            Existing Session ID
+            <input id="ldr_session_id" type="text" placeholder="Example: 14027419708_20260710_111314" />
+          </label>
+          <button type="submit" id="ldr-btn">Render Session Reports</button>
+        </form>
+      </div>
+      <pre id="live-debug-output" class="console"></pre>
+    </section>
+
+    <section id="tab-bugbatch" class="panel">
+      <div class="card">
+        <h2>BugScout Prepare / Finalize / Report Pipeline</h2>
+        <form id="bb-prepare-form" class="stack two-col">
+          <label>
+            Input CSV for Prepare
+            <input id="bb_prepare_csv" type="text" placeholder="Absolute path to dmr_accelerator_full.csv" />
+          </label>
+          <button type="submit" id="bb-prepare-btn">Prepare Prompts</button>
+        </form>
+        <form id="bb-finalize-form" class="stack three-col">
+          <label>
+            Responses JSONL
+            <input id="bb_responses_jsonl" type="text" placeholder="Absolute path to responses.jsonl" />
+          </label>
+          <label>
+            Output Run Dir (optional)
+            <input id="bb_finalize_run" type="text" placeholder=".../option-d-copilot/src/output/run_YYYYMMDD_HHMMSS" />
+          </label>
+          <button type="submit" id="bb-finalize-btn">Finalize CSV</button>
+        </form>
+        <form id="bb-report-form" class="stack three-col">
+          <label>
+            Input CSV for Report
+            <input id="bb_report_csv" type="text" placeholder="Absolute path to triage_results.csv" />
+          </label>
+          <label>
+            Output Run Dir (optional)
+            <input id="bb_report_run" type="text" placeholder=".../option-d-copilot/src/output/run_YYYYMMDD_HHMMSS" />
+          </label>
+          <button type="submit" id="bb-report-btn">Generate HTML Report</button>
+        </form>
+        <div class="actions">
+          <button id="bb-refresh-runs" type="button">Refresh BugScout Runs</button>
+        </div>
+      </div>
+      <pre id="bugbatch-output" class="console"></pre>
+      <pre id="bugbatch-runs" class="console"></pre>
+    </section>
+
+    <section id="tab-crashdump" class="panel">
+      <div class="card">
+        <h2>Crashdump Router</h2>
+        <form id="crashdump-form" class="stack two-col">
+          <label>
+            Crashdump Input Path
+            <input id="cd_input" type="text" placeholder="Absolute path to crashdump json or text" required />
+          </label>
+          <label>
+            Output Directory (optional)
+            <input id="cd_output" type="text" placeholder="Optional explicit output directory" />
+          </label>
+          <button type="submit" id="cd-btn">Parse Crashdump</button>
+        </form>
+      </div>
+      <pre id="crashdump-output" class="console"></pre>
+    </section>
+
+    <section id="tab-logsearch" class="panel">
+      <div class="card">
+        <h2>Indexed Log Search</h2>
+        <form id="log-index-form" class="stack two-col">
+          <label>
+            Log File Path
+            <input id="ls_file" type="text" placeholder="Absolute path to log file" required />
+          </label>
+          <button type="submit" id="ls-index-btn">Index Log</button>
+        </form>
+        <form id="log-search-form" class="stack three-col">
+          <label>
+            Keywords (comma-separated)
+            <input id="ls_keys" type="text" placeholder="ierr, caterr, mca, timeout" required />
+          </label>
+          <label>
+            Context Lines
+            <input id="ls_lines" type="number" min="1" max="500" value="60" />
+          </label>
+          <label>
+            Section Filter (optional)
+            <input id="ls_section" type="text" placeholder="section name substring" />
+          </label>
+          <button type="submit" id="ls-search-btn">Search Indexed Log</button>
+        </form>
+      </div>
+      <pre id="logsearch-output" class="console"></pre>
+    </section>
+
+    <section id="tab-handbook" class="panel">
+      <div class="card">
+        <h2>Handbook Retrieval</h2>
+        <form id="handbook-form" class="stack two-col">
+          <label>
+            Query
+            <input id="hb_query" type="text" placeholder="Example: UPI link retrain timeout with MCA bank 8" required />
+          </label>
+          <label>
+            Top K
+            <input id="hb_topk" type="number" min="1" max="12" value="4" />
+          </label>
+          <button type="submit" id="hb-btn">Retrieve</button>
+        </form>
+      </div>
+      <div id="handbook-results" class="kb-list"></div>
+    </section>
+
     <section id="tab-kb" class="panel">
-      <button id="refresh-kb">Refresh</button>
+      <div class="card">
+        <h2>Learned Knowledge Base</h2>
+        <div class="actions">
+          <button id="refresh-kb">Refresh KB</button>
+          <button id="refresh-cache">Refresh Log Cache Registry</button>
+        </div>
+      </div>
       <div id="kb-list" class="kb-list"></div>
+      <pre id="cache-output" class="console"></pre>
     </section>
   </main>
 
-  <footer>Intel Internal Use Only — credentials are used only to authenticate to HSDES for your session.</footer>
+  <footer>
+    Intel Internal Use Only. This control center invokes HSDES analysis and BugScout-derived workflows from option-d-copilot.
+  </footer>
 
   <script src="/static/app.js"></script>
 </body>

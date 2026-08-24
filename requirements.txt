@@ -7,3 +7,4 @@ itsdangerous>=2.1
 # Kerberos SSO to HSDES (Windows/Intel domain) — enables HSDES_AUTH_MODE=auto (no password)
 requests>=2.31
 requests-kerberos>=0.14
+markdown>=3.7

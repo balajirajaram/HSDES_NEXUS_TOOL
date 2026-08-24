@@ -13,7 +13,7 @@ typing your domain password. Always serve over HTTPS in any shared deployment.
 import os
 import secrets
 import time
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse
@@ -23,11 +23,26 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from .analyzer import analyze, kb
 from .batch_learn import batch_learn
+from .bugscout_bridge import (
+    bugscout_finalize_batch,
+    bugscout_prepare_batch,
+    bugscout_render_live_debug_report,
+    bugscout_render_report,
+    cache_log_index,
+    cache_log_search,
+    feature_status,
+    handbook_search,
+    list_bugscout_runs,
+    list_cached_logs,
+    parse_crashdump_file,
+    start_live_debug_session,
+)
 from .config import config
 from .hsdes_client import HSDESClient
 from .llm_client import llm
+from .report_html import APP_NAME, render_report_html, render_structured_report_html
 
-app = FastAPI(title="Auto HSD Analyser")
+app = FastAPI(title="HSDES NEXUS")
 app.add_middleware(SessionMiddleware, secret_key=config.SESSION_SECRET)
 
 
@@ -42,13 +57,22 @@ _STATIC = os.path.join(os.path.dirname(__file__), "static")
 _OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
 
 
-def _save_report(hsd_id: str, markdown: str) -> str:
-    """Persist every analysis to output/hsd_<id>_<timestamp>.md."""
+def _save_report(hsd_id: str, markdown: str, result: Optional[Dict] = None) -> tuple[str, str]:
+    """Persist every analysis to output/hsd_<id>_<timestamp>.md and .html."""
     os.makedirs(_OUTPUT_DIR, exist_ok=True)
-    path = os.path.join(_OUTPUT_DIR, f"hsd_{hsd_id}_{time.strftime('%Y%m%d_%H%M%S')}.md")
-    with open(path, "w", encoding="utf-8") as f:
+    stem = f"hsd_{hsd_id}_{time.strftime('%Y%m%d_%H%M%S')}"
+    md_path = os.path.join(_OUTPUT_DIR, f"{stem}.md")
+    html_path = os.path.join(_OUTPUT_DIR, f"{stem}.html")
+    with open(md_path, "w", encoding="utf-8") as f:
         f.write(markdown)
-    return path
+    title = f"{APP_NAME} — HSD {hsd_id}"
+    if result:
+        html_doc = render_structured_report_html(result, title=title)
+    else:
+        html_doc = render_report_html(markdown, title=title)
+    with open(html_path, "w", encoding="utf-8") as f:
+        f.write(html_doc)
+    return md_path, html_path
 
 # Server-side credential store: session_id -> {"username","password"}.
 # In-memory only; cleared on logout and on process restart.
@@ -72,6 +96,54 @@ class BatchLearnRequest(BaseModel):
     product: Optional[str] = None
     hsd_ids: Optional[list] = None
     limit: int = 100
+
+
+class CrashdumpRequest(BaseModel):
+    input_path: str
+    output_dir: Optional[str] = None
+
+
+class HandbookSearchRequest(BaseModel):
+    query: str
+    top_k: int = 4
+
+
+class LogIndexRequest(BaseModel):
+    file_path: str
+
+
+class LogSearchRequest(BaseModel):
+    file_path: str
+    keywords: List[str]
+    lines: int = 60
+    section: Optional[str] = None
+
+
+class LiveDebugInitRequest(BaseModel):
+    hsd_id: str
+    execution_mode: str = "manual"
+    server: str = ""
+    ssh_user: str = ""
+    max_iterations: int = 10
+    initial_logs_json: Optional[str] = None
+
+
+class BugScoutPrepareRequest(BaseModel):
+    input_csv: str
+
+
+class BugScoutFinalizeRequest(BaseModel):
+    responses_jsonl: str
+    output_dir: Optional[str] = None
+
+
+class BugScoutReportRequest(BaseModel):
+    input_csv: str
+    output_dir: Optional[str] = None
+
+
+class LiveDebugReportRequest(BaseModel):
+    session_id: str
 
 
 def _creds(request: Request) -> Optional[Dict[str, str]]:
@@ -153,7 +225,9 @@ async def api_analyze(request: Request, req: AnalyzeRequest):
         fetch_attachments=req.fetch_attachments,
     )
     if result.get("report_markdown"):
-        result["saved_path"] = _save_report(req.hsd_id.strip(), result["report_markdown"])
+        md_path, html_path = _save_report(req.hsd_id.strip(), result["report_markdown"], result)
+        result["saved_path"] = md_path
+        result["saved_html_path"] = html_path
     return result
 
 
@@ -177,6 +251,164 @@ async def api_products():
     return {k: {"display": v.get("display", k),
                 "master_queries": v.get("master_queries", [])}
             for k, v in all_products().items()}
+
+
+@app.get("/api/kb")
+async def api_kb():
+    return {"entries": kb.all()}
+
+
+@app.get("/api/bugscout/features")
+async def api_bugscout_features():
+    return feature_status()
+
+
+@app.post("/api/bugscout/crashdump")
+async def api_bugscout_crashdump(body: CrashdumpRequest):
+    try:
+        return parse_crashdump_file(body.input_path.strip(), body.output_dir)
+    except FileNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"error": str(exc)})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/bugscout/handbook-search")
+async def api_bugscout_handbook_search(body: HandbookSearchRequest):
+    q = body.query.strip()
+    if not q:
+        return JSONResponse(status_code=400, content={"error": "query is required."})
+    try:
+        return {"query": q, "matches": handbook_search(q, top_k=max(1, min(12, body.top_k)))}
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/bugscout/log-index")
+async def api_bugscout_log_index(body: LogIndexRequest):
+    path = body.file_path.strip()
+    if not path:
+        return JSONResponse(status_code=400, content={"error": "file_path is required."})
+    try:
+        return cache_log_index(path)
+    except FileNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"error": str(exc)})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/bugscout/log-search")
+async def api_bugscout_log_search(body: LogSearchRequest):
+    path = body.file_path.strip()
+    keys = [k.strip() for k in (body.keywords or []) if k and k.strip()]
+    if not path:
+        return JSONResponse(status_code=400, content={"error": "file_path is required."})
+    if not keys:
+        return JSONResponse(status_code=400, content={"error": "At least one keyword is required."})
+    try:
+        return {
+            "file_path": path,
+            "keywords": keys,
+            "results": cache_log_search(path, keys, lines=max(1, min(500, body.lines)),
+                                         section=(body.section or "").strip() or None),
+        }
+    except FileNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"error": str(exc)})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.get("/api/bugscout/log-cache")
+async def api_bugscout_log_cache():
+    try:
+        return {"cache": list_cached_logs()}
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/bugscout/batch-prepare")
+async def api_bugscout_batch_prepare(body: BugScoutPrepareRequest):
+    src = body.input_csv.strip()
+    if not src:
+        return JSONResponse(status_code=400, content={"error": "input_csv is required."})
+    try:
+        return bugscout_prepare_batch(src)
+    except FileNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"error": str(exc)})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/bugscout/batch-finalize")
+async def api_bugscout_batch_finalize(body: BugScoutFinalizeRequest):
+    src = body.responses_jsonl.strip()
+    if not src:
+        return JSONResponse(status_code=400, content={"error": "responses_jsonl is required."})
+    try:
+        return bugscout_finalize_batch(src, (body.output_dir or "").strip() or None)
+    except FileNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"error": str(exc)})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/bugscout/batch-report")
+async def api_bugscout_batch_report(body: BugScoutReportRequest):
+    src = body.input_csv.strip()
+    if not src:
+        return JSONResponse(status_code=400, content={"error": "input_csv is required."})
+    try:
+        return bugscout_render_report(src, (body.output_dir or "").strip() or None)
+    except FileNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"error": str(exc)})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/bugscout/live-debug-report")
+async def api_bugscout_live_debug_report(body: LiveDebugReportRequest):
+    sid = body.session_id.strip()
+    if not sid:
+        return JSONResponse(status_code=400, content={"error": "session_id is required."})
+    try:
+        return bugscout_render_live_debug_report(sid)
+    except FileNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"error": str(exc)})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.get("/api/bugscout/runs")
+async def api_bugscout_runs():
+    try:
+        return list_bugscout_runs()
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/bugscout/live-debug-init")
+async def api_bugscout_live_debug_init(body: LiveDebugInitRequest):
+    hsd = body.hsd_id.strip()
+    if not hsd:
+        return JSONResponse(status_code=400, content={"error": "hsd_id is required."})
+    mode = body.execution_mode.strip().lower()
+    if mode not in {"manual", "local", "ssh", "auto"}:
+        return JSONResponse(status_code=400, content={"error": "execution_mode must be one of manual|local|ssh|auto."})
+    if mode == "ssh" and not body.server.strip():
+        return JSONResponse(status_code=400, content={"error": "server is required when execution_mode is ssh."})
+    try:
+        return start_live_debug_session(
+            hsd_id=hsd,
+            execution_mode=mode,
+            server=body.server.strip(),
+            ssh_user=body.ssh_user.strip(),
+            max_iterations=max(1, min(40, body.max_iterations)),
+            initial_logs_json=(body.initial_logs_json or "").strip() or None,
+        )
+    except FileNotFoundError as exc:
+        return JSONResponse(status_code=404, content={"error": str(exc)})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
 
 
 app.mount("/static", StaticFiles(directory=_STATIC), name="static")

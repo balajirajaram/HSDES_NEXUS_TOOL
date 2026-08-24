@@ -44,10 +44,11 @@ logger = logging.getLogger(__name__)
 # ─── Constants ────────────────────────────────────────────────────────────────
 
 SCRIPT_DIR = Path(__file__).parent.resolve()
-OUTPUT_BASE = SCRIPT_DIR / "output"
-TEMPLATE_PATH = SCRIPT_DIR / "report_template.html"
-TAXONOMY_PATH = SCRIPT_DIR / "log_taxonomy.md"
-HANDBOOK_PATH = SCRIPT_DIR.parent / "docs" / "handbooks"
+REPO_ROOT = SCRIPT_DIR.parent
+OUTPUT_BASE = REPO_ROOT / "output"
+TEMPLATE_PATH = REPO_ROOT / "templates" / "auto-hsd-report-template.html"
+TAXONOMY_PATH = REPO_ROOT / "docs" / "log_taxonomy.md"
+HANDBOOK_PATH = REPO_ROOT / "docs" / "handbooks"
 
 
 _CLEAN_MAP = str.maketrans({
@@ -944,7 +945,7 @@ def mode_live_debug(hsd_id: str, initial_logs: str, execution_mode: str,
     )
 
     print(f"\n{'═' * 60}")
-    print(f"  HSD Live Debug Session")
+    print(f"  HSDES NEXUS — Live-Debug Session")
     print(f"  HSD ID:          {hsd_id}")
     print(f"  Session ID:      {session_id}")
     print(f"  Execution mode:  {execution_mode}")

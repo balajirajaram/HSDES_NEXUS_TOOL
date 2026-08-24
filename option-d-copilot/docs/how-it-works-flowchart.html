@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Auto HSD Analyser — How It Works</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body {
+    font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #f4f6f8;
+    color: #1f2933;
+    margin: 0;
+    padding: 32px;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 1.7rem; margin: 0 0 6px; }
+  .subtitle { color: #52606d; margin: 0 0 28px; }
+  .card {
+    background: #fff;
+    border: 1px solid #d9e2ec;
+    border-radius: 14px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 24px rgba(15,23,42,0.06);
+  }
+  h2 {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #52606d;
+    margin: 0 0 16px;
+  }
+  .mermaid { display: flex; justify-content: center; }
+  footer { text-align: center; color: #52606d; font-size: 0.8rem; padding: 16px; }
+  .note {
+    background: #e8f5e9;
+    border-left: 5px solid #43a047;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    color: #1b5e20;
+    margin-bottom: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Auto HSD Analyser — How It Works</h1>
+  <p class="subtitle">Copilot-native HSD triage &amp; debug assistant for Intel GNR / SRF / CWF</p>
+
+  <div class="note">
+    An engineer enters an <strong>HSD ID</strong> plus a few <strong>symptom words</strong>,
+    and Copilot returns likely root cause and the <strong>exact next-step debug commands</strong> —
+    running locally with each engineer's own Intel access. No server, no shared token.
+  </div>
+
+  <div class="card">
+    <h2>End-to-End Flow</h2>
+    <div class="mermaid">
+flowchart TD
+    A["Engineer in VS Code<br/>Inputs: HSD ID + symptoms"] --> B{"Step 0: Recall<br/>Learned Knowledge Base"}
+    B -->|High confidence| C["Answer from KB<br/>spot-check vs HSDES"]
+    B -->|Low / none| D["Step 2: Fetch target HSD<br/>HSDTool (HSDES)"]
+    C --> E
+    D --> E["Find 3-5 similar past HSDs<br/>KB first, then HSDES"]
+    E --> F["Ground in domain handbooks<br/>+ command library"]
+    F --> G["Rank root-cause hypotheses<br/>confirmed vs hypothesis"]
+    G --> H["Produce EXACT next-step commands<br/>PythonSV / cscripts / OS / BMC"]
+    H --> I["Write case back to KB<br/>(self-learning)"]
+    I --> J["Emit reports<br/>A-H markdown + HTML"]
+    J --> K["Engineer runs commands<br/>on the target system"]
+
+    style A fill:#cfe2ff,stroke:#084298,color:#000
+    style B fill:#fff3cd,stroke:#856404,color:#000
+    style H fill:#d4edda,stroke:#155724,color:#000
+    style I fill:#e8f5e9,stroke:#1b5e20,color:#000
+    style J fill:#d4edda,stroke:#155724,color:#000
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Self-Learning Loop (gets better over time)</h2>
+    <div class="mermaid">
+flowchart LR
+    Q["New HSD"] --> R["Recall KB"]
+    R --> S["Investigate<br/>HSDES + handbooks"]
+    S --> T["Root cause +<br/>debug commands"]
+    T --> U["Store result in KB"]
+    U -. next case .-> R
+    style U fill:#e8f5e9,stroke:#1b5e20,color:#000
+    </div>
+  </div>
+
+  <footer>Intel Internal Use Only</footer>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+</script>
+</body>
+</html>

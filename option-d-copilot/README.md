@@ -1,143 +1,192 @@
-# Auto HSD Analyser — Option D (Run locally in GitHub Copilot)
+# Auto HSD Analyser (RDT and UPI) - Team Usage Guide
 
-The **zero-setup, zero-token** way to use the HSD Analyser. Every engineer runs it
-**inside VS Code with GitHub Copilot (GHCP)** on their own laptop. Because Copilot uses
-each person's **own** Intel MCP authentication, there is **nothing to share** — no
-tokens, no server, no deployment.
+Note: This folder is now integrated into the unified root tool.
 
-This is a **hybrid triage-and-debug** tool: the `/auto-hsd-analyser` prompt orchestrates a
-set of **BugScout-derived skills** to triage ANY reported HSD across **all GNR/SRF/CWF
-domains** (core, CHA/uncore, IMC/memory, mesh/fabric, UPI/KTI, IIO/PCIe/CXL, power/PM,
-accelerators, security, RDT, boot/RAS), suggest the possible root cause, and hand the
-engineer an **exact list of commands** to collect the next-step data. It emits both an
-A–H markdown report and a BugScout-style **HTML report**.
+Preferred entrypoint from repository root:
 
-```
-option-d-copilot/
-├─ .github/prompts/auto-hsd-analyser.prompt.md   ← auto-discovered orchestrator (hybrid)
-├─ auto-hsd-analyser.prompt.md                    ← same file, for easy viewing
-├─ .copilot/skills/                               ← BugScout skills, all GNR/SRF/CWF domains
-│   ├─ hsd-triage/        ← multi-phase triage + debug plan WITH commands + report emit
-│   ├─ handbook-rag/      ← self-learning KB recall + handbook & command grounding
-│   ├─ log-search/        ← index/grep RPT, .elog.gz, serial/PythonSV logs
-│   ├─ live-debug/        ← iterative hypothesis loop when you have live/PythonSV access
-│   └─ crash-parser/      ← normalize crashdump / MCE-MCA bank summaries
-├─ docs/
-│   ├─ command_library.md ← ALL-DOMAIN PythonSV/cscripts/OS/BMC command catalog
-│   └─ handbooks/         ← rdt_upi_debug_steps.md (+ acd_debug_steps.md) pattern grounding
-├─ templates/auto-hsd-report-template.html        ← BugScout HTML report template
-├─ src/                   ← OPTIONAL Python engine (large-log indexer, batch pipeline)
-├─ schemas/               ← live-debug input schema
-└─ README.md                                       ← you are here
-```
+    .\run_power_tool.ps1 --help
 
-### What's integrated from BugScout
-| BugScout piece | How it's used here |
-|---|---|
-| `hsd-triage` skill | Adapted to **all GNR/SRF/CWF domains**; **HSDTool/HSDIndexTool primary** (co-design `ask-hsd-agent` is fallback only — it cancels in some environments). Outputs root cause + exact next-step commands. |
-| `handbook-rag` + KB | Backed by the co-design debug **memory KB** (self-learning) + `docs/handbooks/` patterns + `docs/command_library.md` (all-domain commands). |
-| `log-search` | Copilot-native (`grep_search`/`read_file`) by default; optional Python `src/cache_log_search` for huge logs. |
-| `live-debug` | Iterative PythonSV debug loop with confirmation gates. |
-| `crash-parser` | MCE/MCA + crashdump normalization with an RDT/UPI bank map. |
-| HTML report template | `templates/auto-hsd-report-template.html`, filled per run. |
+Direct merged commands:
+
+    .\run_power_tool.ps1 serve --reload
+    .\run_power_tool.ps1 optiond prepare --input C:\path\to\input.csv
+    .\run_power_tool.ps1 optiond finalize --responses C:\path\to\responses.jsonl
+    .\run_power_tool.ps1 optiond report --input C:\path\to\triage_results.csv
+
+This keeps root workflows and OptionD workflows in one command surface.
+
+This repository helps validation and debug teams generate structured HSD analysis reports for faster triage, knowledge reuse, and management-ready communication.
+
+Default behavior now includes evidence-first analysis:
+- HSD attachments are always enumerated and extraction is attempted
+- AXON correlation is always attempted
+- Any fallback (metadata-only attachments, AXON unavailable) is explicitly called out in the report
+
+It supports two practical usage modes:
+- Prompt-first mode in VS Code Copilot (main product flow)
+- Local UI mode for browsing reports and demo assets
+
+## 1. What This Tool Delivers
+
+For each analyzed HSD, the workflow generates a session folder under output with:
+- session_report.html (shareable report)
+- analysis context and intermediate artifacts
+- optional knowledge-base memory entries for future reuse
+
+The report follows the A-H structure:
+- A: Ticket Summary
+- B: Prior Knowledge Recall
+- C: Similar HSD References
+- D: Root Cause Hypotheses
+- E: Exact Debug Steps and Commands
+- F: Command Block for Reuse
+- G: Learning Summary
+- H: Verdict and Next Action
+
+## 2. Repository Layout
+
+Key locations:
+- src: Python support scripts and orchestrators
+- docs: management flow, demo guide, handbooks
+- templates: HTML templates used for report generation
+- output: generated per-ticket analysis sessions
+
+Useful docs:
+- docs/management-overview.md
+- docs/demo-guide.md
+- docs/ui-mode.md
+- docs/how-it-works-flowchart.html
+- docs/how-it-works-flowchart.png
+
+## 3. Prerequisites
+
+- Windows environment (tested in VS Code)
+- Python 3.10+ recommended
+- Access to required Intel MCP tools for HSD retrieval (when running full live analysis)
+
+## 4. Setup
+
+From repository root:
+
+    python -m venv .venv
+    .venv\Scripts\activate
+    python -m pip install --upgrade pip
+
+If your team has a standard dependency file, install it here.
+If not, keep using the currently validated environment used in VS Code.
+
+## 5. Quick Start for Team Members
+
+### Option A: UI Mode (Easiest for Demos and Review)
+
+Run from repository root:
+
+    run_ui_mode.bat
+
+What opens:
+- Local dashboard in browser
+- One-click latest report
+- List of all generated reports
+- Links to flowchart and demo/management docs
+
+Stop with Ctrl+C in terminal.
+
+### Option B: Prompt-First Mode in VS Code (Default Analysis Mode)
+
+1. Open this repository in VS Code.
+2. Use the project prompt flow from:
+    - auto-hsd-analyser.prompt.md
+3. Provide HSD ticket id when asked.
+4. Review generated report in output folder.
+5. Confirm report includes:
+    - Attachment Evidence Summary
+    - AXON Correlation Summary
+    - Evidence Confidence Matrix
+
+## 6. Running a Fresh Analysis
+
+Recommended operational flow:
+
+1. Start from a clean ticket id.
+2. Run the analysis workflow (prompt-first path).
+3. Confirm the report is generated in output/hsd_<id>_<timestamp>/session_report.html.
+4. Open and validate sections A-H.
+5. Validate evidence sections for attachment/AXON status.
+6. Compare report conclusions with latest live HSD details if needed.
+7. Share the HTML report and key findings.
+
+## 7. Share With Management
+
+Use these assets directly:
+- docs/how-it-works-flowchart.png (slides-friendly)
+- docs/how-it-works-flowchart.html (interactive view)
+- docs/management-overview.md (narrative)
+- docs/demo-guide.md (step-by-step talk track)
+
+Recommended demo sequence:
+1. Explain workflow with flowchart.
+2. Show one completed report in output.
+3. Walk through A-H sections and verdict.
+4. Show how similar tickets and memory improve repeat debugging.
+
+## 8. Common Commands
+
+Start UI mode:
+
+    run_ui_mode.bat
+
+Direct UI mode with Python:
+
+    python src/ui_mode.py
+
+Custom port:
+
+    python src/ui_mode.py --port 9000 --host 127.0.0.1
+
+Compile check:
+
+    python -m compileall src
+
+## 9. Troubleshooting
+
+Issue: UI mode does not auto-open browser
+- Copy dashboard URL shown in terminal and open manually.
+
+Issue: No reports listed in UI
+- Ensure reports exist under output and include session_report.html.
+
+Issue: report-only rendering for old sessions
+- Use the updated runner logic that supports both output and legacy src/output session paths.
+
+Issue: MCP tool call failures or auth interruptions
+- Retry after re-authentication and run analysis steps sequentially.
+
+## 10. Team Operating Guidance
+
+- Treat generated report wording as draft debug intelligence unless HSD status is formally resolved.
+- Always verify final root-cause claims against the latest live ticket revision and comments.
+- Keep report language explicit:
+  - Cause identified, fix validation pending
+  - Or Root cause confirmed and closed
+
+## 11. Current Demo-Ready Outputs
+
+Sample ready reports:
+- output/hsd_16031306835_20260810_071240/session_report.html
+- output/hsd_16030937086_20260810_084011/session_report.html
+
+Flow and guide assets:
+- docs/management-overview.md
+- docs/demo-guide.md
+- docs/how-it-works-flowchart.png
+- docs/how-it-works-flowchart.svg
+
+## 12. Next Recommended Improvements
+
+- Add a small input form in UI mode to trigger new analysis directly.
+- Add a single command that creates report and opens it automatically.
+- Add a lightweight release checklist for team handoff quality.
 
 ---
 
-## What each user needs (one-time)
-
-1. **VS Code** (latest).
-2. **GitHub Copilot + Copilot Chat** extensions, signed in with an account that has
-   Copilot enabled at Intel.
-3. The **Intel MCP tools** that back the analysis, available in Copilot Chat:
-   - `HSDTool` / `HSDIndexTool` — **primary** HSDES access (keyword/SQL + semantic)
-   - `codesign-debug-search-in-memories` / `codesign-debug-store-memory` (the learning KB)
-   - `codesign-ask-hsd-agent-mcp` — optional fallback for HSD lookups
-
-   These come from the Intel Geni / co-design Copilot plugin. If a teammate doesn't
-   have them, they install the same plugin you use (see your team's Geni onboarding),
-   then run the `acquire-tokens` step once so `HSDIndexTool` can authenticate **as
-   them**.
-
-No HSDES token is copied or shared — each person authenticates through their own
-Copilot session.
-
----
-
-## Install the prompt (pick one)
-
-### Option 1 — Use this folder as the workspace (simplest)
-1. Open the `option-d-copilot` folder in VS Code (`File ▸ Open Folder…`).
-2. VS Code auto-discovers `.github/prompts/auto-hsd-analyser.prompt.md`.
-3. Done — skip to **Run it**.
-
-### Option 2 — Add it to your own project
-Copy the prompt into your repo's prompt folder:
-```powershell
-New-Item -ItemType Directory -Force .github\prompts | Out-Null
-Copy-Item path\to\option-d-copilot\.github\prompts\auto-hsd-analyser.prompt.md .github\prompts\
-```
-
-### Option 3 — Make it available in every workspace (personal)
-Copy it to your VS Code user prompts folder so it's always available:
-```powershell
-Copy-Item .github\prompts\auto-hsd-analyser.prompt.md "$env:APPDATA\Code\User\prompts\"
-```
-
----
-
-## Run it
-
-1. Open **Copilot Chat** (`Ctrl+Alt+I`).
-2. Set the chat mode to **Agent** (dropdown at the top of the chat box).
-3. Type:
-   ```
-   /auto-hsd-analyser
-   ```
-   (or open the `.prompt.md` file and press the ▶ **Run** button).
-4. Enter the two inputs when prompted:
-   - **HSD ID** — e.g. `1234567890`
-   - **Symptoms** — e.g. `UPI CRC error, MCE bank 5, GNR B0, bucket=upi_link_retrain`
-
-The agent produces the full A–H triage report (target-HSD summary, KB recall, similar
-HSDs, ranked root causes, PythonSV debug plan, data-to-collect, learning summary,
-known-issue verdict), writes the case back into the learning KB, and emits a filled
-HTML report to `output/hsd_<id>_<timestamp>/session_report.html`.
-
-### Other entry points (skills)
-- **Live debug:** `live-debug HSD <id> ... max 5 iterations` — iterative PythonSV loop.
-- **Log search:** `search logs in <path> for UPI CRC credit` — grep with context.
-- **Crash parse:** point crash-parser at a crashdump JSON / MCE text dump.
-
-### Optional Python engine
-For very large logs or batch runs, `src/` ships the BugScout pipeline
-(`cache_log_search` indexer, `parse_and_triage.py`, handbook builder). It is **optional** —
-the skills work without it. Requires a local Python 3 with the repo on `PYTHONPATH`.
-
----
-
-## Why this needs no shared token
-- Copilot's MCP servers run **locally, inside each user's VS Code**, authenticated as
-  that user.
-- The prompt calls those tools; every user's queries hit HSDES/KB **as themselves**.
-- Result: same capability as the hosted web tool, but nothing to distribute or secure.
-
----
-
-## Troubleshooting
-
-| Symptom | Fix |
-|---------|-----|
-| `/auto-hsd-analyser` doesn't appear | Ensure the file is in a discovered prompts location (Option 1/2/3). Reload VS Code. |
-| "Tool not found" / no HSDES data | The Intel Geni/co-design MCP plugin isn't installed or not authenticated. Install it and run the `acquire-tokens` step. |
-| Tool calls show **"cancelled"** (you didn't cancel) | Two causes: (a) MCP tools were called in a **parallel batch** and one failed input validation — the tool now calls them one at a time; (b) `codesign-ask-hsd-agent-mcp` cancels in some environments — the tool uses **`HSDTool` as primary** instead. |
-| KB tool error `cluster_stepping must not be empty` | The KB tools need a non-empty `cluster_stepping` + `bucket`; the tool derives these from the HSD first. Provide the stepping if the ticket lacks one. |
-| Auth errors on `HSDIndexTool` | Tokens expired — re-run `acquire-tokens`. |
-| Report has no similar HSDs | KB is empty and/or HSDES returned nothing; try richer symptom terms (unit, bucket, MCE bank, stepping). |
-
----
-
-## Sharing this with the team
-Just point teammates at this folder (or the repo) and this README. Each person installs
-Copilot + the Intel MCP plugin once, drops in the prompt, and runs `/auto-hsd-analyser`.
-
-Intel Internal Use Only.
+If you are sharing this with new team members, start with section 5 (Quick Start) and section 7 (Share With Management).
