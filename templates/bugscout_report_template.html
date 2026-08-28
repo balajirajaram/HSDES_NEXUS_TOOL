@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Debug Session — HSD {{HSD_ID}}</title>
+<!--
+  BugScout Report Template v1.0
+  ═══════════════════════════════════════════════════════════════════════════════
+  CANONICAL TEMPLATE for all BugScout live-debug triage reports.
+  Based on the first successfully verified report: HSD 22022566949 (QAT LM segfault, 2026-06-01)
+
+  HOW TO USE THIS TEMPLATE
+  ─────────────────────────
+  Replace every {{PLACEHOLDER}} below with the actual value for your session.
+  Placeholders wrapped in <!-- BLOCK_START: X --> / <!-- BLOCK_END: X --> are
+  repeating blocks — duplicate as many times as needed (or remove if not applicable).
+
+  PLACEHOLDER QUICK REFERENCE
+  ─────────────────────────────
+  {{HSD_ID}}                  e.g. 22022566949
+  {{HSD_URL}}                 e.g. https://hsdes.intel.com/appstore/article-one/#/article/22022566949
+  {{HSD_TITLE}}               e.g. [OKS][DMR][VT][X4][VV] Segfault on destination VM during QAT Live Migration
+  {{COMPONENT}}               e.g. QAT / VFIO Live Migration / VT-d Interrupt Remapping
+  {{SUBMITTED_DATE}}          e.g. 2026-06-01
+  {{OWNER}}                   e.g. vijayag1
+  {{ANALYSIS_DATE}}           e.g. 2026-06-01
+  {{STATUS_BADGE_CLASS}}      badge-found | badge-active | badge-medium  (found=RC confirmed, active=investigating)
+  {{STATUS_BADGE_TEXT}}       e.g. ✓ Root Cause Identified  |  🔍 Under Investigation
+  {{PRIORITY_BADGE_CLASS}}    badge-critical | badge-high | badge-medium | badge-low
+  {{PRIORITY_BADGE_TEXT}}     e.g. 🔴 P1 — Crash / Data Loss
+  {{NUM_ITERATIONS}}          e.g. 4
+  {{NUM_LOG_FILES}}           e.g. 4
+  {{FINAL_CONFIDENCE}}        e.g. 90%
+  {{FINAL_CONFIDENCE_CLASS}}  conf-high (≥75%) | conf-med (40–74%) | conf-low (<40%)
+  {{RELATED_HSD_COUNT}}       e.g. 113
+  {{CRASH_SIGNAL_COUNT}}      e.g. 1
+  {{CONTRIBUTING_FACTOR_COUNT}}  e.g. 3
+  {{LAST_ITER_NUM}}           number of the last iteration (auto-expanded), e.g. 4
+  {{HSD_MCP_CONVERSATION_ID}} UUID from HSD MCP search call
+  {{GENERATION_DATE}}         e.g. 2026-06-01
+  {{TENANT_SUBJECT}}          e.g. server_platf__bug
+  {{ACCURACY_2_SUMMARY}}      e.g. 9/9 claims PASSED
+  {{ACCURACY_3_SUMMARY}}      e.g. 6/7 claims PASS, 1 WARN
+  ═══════════════════════════════════════════════════════════════════════════════
+-->
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --primary: #0d6efd;
+    --success: #198754;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --info: #0dcaf0;
+    --tier1: #d4edda;
+    --tier2: #fff3cd;
+    --tier3: #f8d7da;
+    --expand-bg: #f1f3f5;
+    --conf-high: #198754;
+    --conf-med: #fd7e14;
+    --conf-low: #dc3545;
+    --timeline-line: #dee2e6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    line-height: 1.5;
+  }
+
+  .report-header {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-top: 4px solid var(--danger);
+  }
+  .report-header h1 { font-size: 1.6em; margin-bottom: 4px; }
+  .report-header h1 a { color: inherit; text-decoration: none; }
+  .report-header h1 a:hover { color: var(--primary); }
+  .report-header .subtitle { font-size: 1em; color: var(--text-muted); margin-bottom: 12px; }
+  .report-header .meta { color: var(--text-muted); font-size: 0.88em; margin-bottom: 16px; }
+  .header-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .pill { padding: 6px 16px; border-radius: 20px; font-size: 0.85em; font-weight: 600; white-space: nowrap; }
+  .pill-total    { background: #e9ecef; color: #495057; }
+  .pill-success  { background: var(--tier1); color: #155724; }
+  .pill-warning  { background: var(--tier2); color: #856404; }
+  .pill-danger   { background: var(--tier3); color: #721c24; }
+  .pill-info     { background: #d1ecf1; color: #0c5460; }
+
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.78em; font-weight: 700; white-space: nowrap; }
+  .badge-active     { background: #cfe2ff; color: #084298; }
+  .badge-found      { background: var(--tier1); color: #155724; }
+  .badge-critical   { background: var(--tier3); color: #721c24; }
+  .badge-high       { background: var(--tier3); color: #721c24; }
+  .badge-medium     { background: var(--tier2); color: #856404; }
+  .badge-low        { background: #d1ecf1; color: #0c5460; }
+
+  .metrics-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .metric-card { background: var(--card-bg); border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.05); }
+  .metric-card .value { font-size: 2em; font-weight: 700; color: var(--primary); }
+  .metric-card .label { font-size: 0.82em; color: var(--text-muted); margin-top: 4px; }
+  .metric-card .value.conf-high { color: var(--conf-high); }
+  .metric-card .value.conf-med  { color: var(--conf-med); }
+  .metric-card .value.conf-low  { color: var(--conf-low); }
+
+  .section-title { font-size: 1em; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
+
+  .timeline-card { background: var(--card-bg); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .timeline-table { width: 100%; border-collapse: collapse; font-size: 0.86em; }
+  .timeline-table th { background: #343a40; color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; white-space: nowrap; }
+  .timeline-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .timeline-table tr:last-child td { border-bottom: none; }
+  .timeline-table tr:hover td { background: var(--bg); }
+
+  .conf-bar-wrap { display: flex; align-items: center; gap: 10px; min-width: 180px; }
+  .conf-bar-track { flex: 1; height: 10px; background: #e9ecef; border-radius: 5px; overflow: hidden; }
+  .conf-bar-fill { height: 100%; border-radius: 5px; transition: width 0.6s ease; }
+  .conf-bar-fill.high { background: var(--conf-high); }
+  .conf-bar-fill.med  { background: var(--conf-med); }
+  .conf-bar-fill.low  { background: var(--conf-low); }
+  .conf-label { font-weight: 700; font-size: 0.85em; min-width: 40px; }
+
+  .iterations-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 24px; }
+  .iter-panel { border-bottom: 1px solid var(--border); }
+  .iter-panel:last-child { border-bottom: none; }
+  .iter-header { display: flex; align-items: center; gap: 12px; padding: 16px 20px; cursor: pointer; user-select: none; transition: background 0.15s; }
+  .iter-header:hover { background: var(--bg); }
+  .iter-num { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; background: #343a40; color: #fff; font-weight: 700; font-size: 0.88em; flex-shrink: 0; }
+  .iter-summary { flex: 1; font-size: 0.9em; }
+  .iter-summary strong { display: block; margin-bottom: 2px; }
+  .iter-summary .iter-meta { color: var(--text-muted); font-size: 0.82em; }
+  .iter-toggle { font-size: 1.2em; color: var(--primary); font-weight: 700; transition: transform 0.2s; flex-shrink: 0; }
+  .iter-toggle.open { transform: rotate(45deg); }
+  .iter-body { display: none; padding: 0 20px 20px 20px; background: var(--expand-bg); }
+  .iter-body.active { display: block; }
+  .iter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  .iter-section h4 { font-size: 0.8em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .iter-section p, .iter-section ul { font-size: 0.88em; line-height: 1.6; }
+  .iter-section ul { padding-left: 16px; }
+  .iter-section code { background: #1e1e1e; color: #9cdcfe; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+  .iter-section pre { background: #1e1e1e; color: #d4d4d4; padding: 10px 14px; border-radius: 6px; font-size: 0.8em; overflow-x: auto; white-space: pre-wrap; max-height: 280px; overflow-y: auto; margin-top: 6px; }
+
+  .hyp-table { width: 100%; border-collapse: collapse; font-size: 0.84em; margin-top: 6px; }
+  .hyp-table th { background: #495057; color: #fff; padding: 6px 10px; text-align: left; }
+  .hyp-table td { padding: 6px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .hyp-table tr:last-child td { border-bottom: none; }
+
+  .next-steps-list { list-style: none; padding: 0; margin-top: 6px; }
+  .next-steps-list li { display: flex; gap: 10px; margin-bottom: 10px; font-size: 0.88em; }
+  .step-num { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 0.75em; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .step-body .step-rationale { color: var(--text-muted); font-size: 0.9em; margin-top: 2px; }
+  .step-body code { font-size: 0.82em; }
+
+  .user-input-box { background: #fff; border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 6px; padding: 10px 14px; font-size: 0.88em; margin-top: 6px; line-height: 1.6; }
+
+  .corrections-card { background: #fff8e1; border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid #f59e0b; }
+  .corrections-card .section-title { color: #92400e; }
+
+  .accuracy-card { background: #e8f5e9; border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid #43a047; }
+  .accuracy-card .section-title { color: #1b5e20; }
+  .check-row { display: grid; grid-template-columns: 120px 1fr 100px; gap: 12px; align-items: start; padding: 10px 0; border-bottom: 1px solid #c8e6c9; font-size: 0.88em; }
+  .check-row:last-child { border-bottom: none; }
+  .check-label { font-weight: 700; color: #2e7d32; }
+  .check-pass { color: #2e7d32; font-weight: 700; }
+  .check-warn { color: #e65100; font-weight: 700; }
+
+  .rootcause-card { background: var(--card-bg); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-top: 4px solid var(--success); }
+  .rootcause-card.active { border-top-color: var(--warning); }
+  .rootcause-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 16px; }
+  .rc-section h4 { font-size: 0.82em; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+  .rc-section p { font-size: 0.9em; line-height: 1.6; }
+  .rc-section code { background: #1e1e1e; color: #9cdcfe; padding: 2px 6px; border-radius: 3px; font-size: 0.85em; }
+  .rc-section pre { background: #1e1e1e; color: #d4d4d4; padding: 10px 14px; border-radius: 6px; font-size: 0.8em; overflow-x: auto; white-space: pre-wrap; max-height: 220px; overflow-y: auto; margin-top: 6px; }
+
+  .evidence-chain { list-style: none; padding: 0; margin-top: 6px; }
+  .evidence-chain li { display: flex; gap: 10px; margin-bottom: 8px; font-size: 0.88em; align-items: flex-start; }
+  .ev-iter { display: inline-flex; align-items: center; justify-content: center; min-width: 28px; height: 22px; border-radius: 11px; background: #343a40; color: #fff; font-size: 0.72em; font-weight: 700; flex-shrink: 0; padding: 0 6px; }
+
+  .related-card { background: var(--card-bg); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .related-table { width: 100%; border-collapse: collapse; font-size: 0.85em; margin-top: 12px; }
+  .related-table th { background: #343a40; color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
+  .related-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .related-table tr:last-child td { border-bottom: none; }
+  .related-table tr:hover td { background: var(--bg); }
+
+  .platform-card { background: var(--card-bg); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .platform-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 12px; }
+  .platform-item { background: var(--bg); border-radius: 8px; padding: 14px; }
+  .platform-item .p-label { font-size: 0.75em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 4px; }
+  .platform-item .p-value { font-size: 0.9em; font-weight: 600; color: var(--text); font-family: monospace; }
+
+  .crash-evidence-card { background: #1e1e1e; border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .crash-evidence-card .section-title { color: #d4d4d4; border-bottom-color: #444; }
+  .crash-evidence-card pre { color: #d4d4d4; font-size: 0.82em; line-height: 1.6; white-space: pre-wrap; overflow-x: auto; }
+  .crash-evidence-card .crash-highlight { color: #f14c4c; font-weight: 700; }
+  .crash-evidence-card .warn-highlight  { color: #ffc107; font-weight: 700; }
+  .crash-evidence-card .info-highlight  { color: #9cdcfe; }
+
+  /* ── LOG RECOMMENDATIONS section ── */
+  .logrec-card { background: var(--card-bg); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid var(--primary); }
+  .logrec-card .section-title { color: #084298; }
+  .logrec-empty { margin-top: 12px; padding: 16px; background: var(--bg); border-radius: 8px; color: var(--text-muted); font-size: 0.88em; text-align: center; }
+  .logrec-item { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 0.88em; }
+  .logrec-item:last-child { border-bottom: none; }
+  .logrec-priority { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: #fff; font-size: 0.72em; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .logrec-priority.high { background: var(--danger); }
+  .logrec-priority.med  { background: var(--warning); color: #212529; }
+  .logrec-priority.low  { background: var(--success); }
+  .logrec-body strong { display: block; margin-bottom: 2px; }
+  .logrec-body .logrec-why { color: var(--text-muted); margin-bottom: 4px; }
+  .logrec-body code { background: #1e1e1e; color: #9cdcfe; padding: 2px 6px; border-radius: 3px; font-size: 0.82em; }
+
+  footer { text-align: center; color: var(--text-muted); font-size: 0.8em; margin-top: 24px; padding: 16px; }
+
+  @media (max-width: 768px) {
+    .iter-grid      { grid-template-columns: 1fr; }
+    .rootcause-grid { grid-template-columns: 1fr; }
+    .metrics-row    { grid-template-columns: 1fr 1fr; }
+    .check-row      { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     SESSION HEADER
+══════════════════════════════════════════════════════════ -->
+<div class="report-header">
+  <h1>
+    Live Debug Session —
+    <a href="{{HSD_URL}}" target="_blank">
+      HSD {{HSD_ID}}
+    </a>
+  </h1>
+  <div class="subtitle">{{HSD_TITLE}}</div>
+  <div class="meta">
+    Component: <strong>{{COMPONENT}}</strong> &nbsp;|&nbsp;
+    Submitted: {{SUBMITTED_DATE}} &nbsp;|&nbsp;
+    Owner: <strong>{{OWNER}}</strong> &nbsp;|&nbsp;
+    Analysis Generated: {{ANALYSIS_DATE}}
+  </div>
+  <div class="header-badges">
+    <span class="badge {{STATUS_BADGE_CLASS}}">{{STATUS_BADGE_TEXT}}</span>
+    <span class="badge {{PRIORITY_BADGE_CLASS}}">{{PRIORITY_BADGE_TEXT}}</span>
+    <span class="pill pill-total">{{NUM_ITERATIONS}} Debug Iterations</span>
+    <span class="pill" style="background:#cfe2ff;color:#084298">{{NUM_LOG_FILES}} Log Files Analyzed</span>
+    <span class="pill" style="background:#d4edda;color:#155724">{{FINAL_CONFIDENCE}} Confidence</span>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     METRIC CARDS
+══════════════════════════════════════════════════════════ -->
+<div class="metrics-row">
+  <div class="metric-card">
+    <div class="value">{{NUM_ITERATIONS}}</div>
+    <div class="label">Debug Iterations</div>
+  </div>
+  <div class="metric-card">
+    <div class="value {{FINAL_CONFIDENCE_CLASS}}">{{FINAL_CONFIDENCE}}</div>
+    <div class="label">Final Hypothesis Confidence</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">{{NUM_LOG_FILES}}</div>
+    <div class="label">Log Files Analyzed</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">{{RELATED_HSD_COUNT}}</div>
+    <div class="label">Related Past HSDs Found</div>
+  </div>
+  <div class="metric-card">
+    <div class="value" style="color:var(--danger)">{{CRASH_SIGNAL_COUNT}}</div>
+    <div class="label">Crash Signals Detected</div>
+  </div>
+  <div class="metric-card">
+    <div class="value" style="color:var(--warning)">{{CONTRIBUTING_FACTOR_COUNT}}</div>
+    <div class="label">Contributing Factors</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PLATFORM INFO
+     Add/remove .platform-item blocks as needed
+══════════════════════════════════════════════════════════ -->
+<div class="platform-card">
+  <div class="section-title">Platform &amp; Environment</div>
+  <div class="platform-grid">
+
+    <!-- BLOCK_START: PLATFORM_ITEM (repeat for each platform attribute) -->
+    <div class="platform-item">
+      <div class="p-label">{{PLATFORM_LABEL_1}}</div>
+      <div class="p-value">{{PLATFORM_VALUE_1}}</div>
+    </div>
+    <div class="platform-item">
+      <div class="p-label">{{PLATFORM_LABEL_2}}</div>
+      <div class="p-value">{{PLATFORM_VALUE_2}}</div>
+    </div>
+    <div class="platform-item">
+      <div class="p-label">{{PLATFORM_LABEL_3}}</div>
+      <div class="p-value">{{PLATFORM_VALUE_3}}</div>
+    </div>
+    <div class="platform-item">
+      <div class="p-label">{{PLATFORM_LABEL_4}}</div>
+      <div class="p-value">{{PLATFORM_VALUE_4}}</div>
+    </div>
+    <div class="platform-item">
+      <div class="p-label">{{PLATFORM_LABEL_5}}</div>
+      <div class="p-value">{{PLATFORM_VALUE_5}}</div>
+    </div>
+    <div class="platform-item">
+      <div class="p-label">{{PLATFORM_LABEL_6}}</div>
+      <div class="p-value">{{PLATFORM_VALUE_6}}</div>
+    </div>
+    <div class="platform-item">
+      <div class="p-label">{{PLATFORM_LABEL_7}}</div>
+      <div class="p-value">{{PLATFORM_VALUE_7}}</div>
+    </div>
+    <div class="platform-item">
+      <div class="p-label">{{PLATFORM_LABEL_8}}</div>
+      <div class="p-value">{{PLATFORM_VALUE_8}}</div>
+    </div>
+    <!-- BLOCK_END: PLATFORM_ITEM -->
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     PRIMARY CRASH EVIDENCE
+     Use crash-highlight, warn-highlight, info-highlight spans
+     to colour-code log lines in the dark code block.
+══════════════════════════════════════════════════════════ -->
+<div class="crash-evidence-card">
+  <div class="section-title">🔴 Primary Crash Evidence — {{CRASH_EVIDENCE_LOG_SOURCE}}</div>
+  <pre>
+<!-- BLOCK_START: CRASH_EVIDENCE_CONTENT
+     Replace the content below with the actual log lines.
+     Use spans for colour coding:
+       <span class="crash-highlight">...</span>   — red   (crash/fault line)
+       <span class="warn-highlight">...</span>    — amber (warning/secondary issue)
+       <span class="info-highlight">...</span>    — blue  (context/annotation)
+-->
+<span class="info-highlight"># {{CRASH_EVIDENCE_CONTEXT_COMMENT}}</span>
+
+<span class="crash-highlight">{{CRASH_LINE_1}}</span>
+<span class="crash-highlight">{{CRASH_LINE_2}}</span>
+
+<span class="info-highlight"># {{CRASH_ANNOTATION}}</span>
+
+<span class="warn-highlight">{{SECONDARY_WARNING_LINE}}</span>
+<!-- BLOCK_END: CRASH_EVIDENCE_CONTENT -->
+  </pre>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     HYPOTHESIS EVOLUTION TIMELINE
+══════════════════════════════════════════════════════════ -->
+<div class="timeline-card">
+  <div class="section-title">Hypothesis Evolution</div>
+  <table class="timeline-table">
+    <thead>
+      <tr>
+        <th>Iteration</th>
+        <th>Top Hypothesis</th>
+        <th>Confidence</th>
+        <th>Evidence Source</th>
+        <th>Log Sets</th>
+      </tr>
+    </thead>
+    <tbody>
+
+      <!-- BLOCK_START: TIMELINE_ROW (one per iteration — duplicate as needed) -->
+      <tr>
+        <td><strong>Iter 1</strong><br><span style="color:var(--text-muted);font-size:0.82em">{{ITER_1_DATE}}</span></td>
+        <td style="max-width:320px">{{ITER_1_HYPOTHESIS}}</td>
+        <td>
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-track"><div class="conf-bar-fill {{ITER_1_CONF_CLASS}}" style="width:{{ITER_1_CONF_PCT}}"></div></div>
+            <span class="conf-label" style="color:var(--{{ITER_1_CONF_COLOR}})">{{ITER_1_CONF_PCT}}</span>
+          </div>
+        </td>
+        <td>{{ITER_1_EVIDENCE_SOURCE}}</td>
+        <td>{{ITER_1_LOG_COUNT}}</td>
+      </tr>
+      <tr>
+        <td><strong>Iter 2</strong><br><span style="color:var(--text-muted);font-size:0.82em">{{ITER_2_DATE}}</span></td>
+        <td style="max-width:320px">{{ITER_2_HYPOTHESIS}}</td>
+        <td>
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-track"><div class="conf-bar-fill {{ITER_2_CONF_CLASS}}" style="width:{{ITER_2_CONF_PCT}}"></div></div>
+            <span class="conf-label" style="color:var(--{{ITER_2_CONF_COLOR}})">{{ITER_2_CONF_PCT}}</span>
+          </div>
+        </td>
+        <td>{{ITER_2_EVIDENCE_SOURCE}}</td>
+        <td>{{ITER_2_LOG_COUNT}}</td>
+      </tr>
+      <!-- Add more <tr> blocks for Iter 3, 4, ... as needed -->
+      <!-- BLOCK_END: TIMELINE_ROW -->
+
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ITERATION ACCORDION
+     Duplicate .iter-panel blocks for each iteration.
+     Set class="iter-body active" on the LAST iteration only.
+══════════════════════════════════════════════════════════ -->
+<div class="iterations-card">
+  <div style="padding:20px 24px 0"><div class="section-title">Debug Iterations — Detail</div></div>
+
+  <!-- BLOCK_START: ITER_PANEL (duplicate for each iteration; last one gets iter-body active) -->
+  <!-- ITER 1 -->
+  <div class="iter-panel">
+    <div class="iter-header" onclick="toggleIter(this)">
+      <span class="iter-num">1</span>
+      <div class="iter-summary">
+        <strong>{{ITER_1_TITLE}}</strong>
+        <span class="iter-meta">{{ITER_1_DATE}} · {{ITER_1_LOG_COUNT}} log set · Confidence: {{ITER_1_CONF_PCT}}</span>
+      </div>
+      <span class="iter-toggle">+</span>
+    </div>
+    <div class="iter-body">
+      <div class="iter-grid">
+        <div class="iter-section">
+          <h4>Logs Requested</h4>
+          <ul>
+            <li><strong>{{ITER_1_LOG_REQUESTED}}</strong> — {{ITER_1_LOG_REQUESTED_DESC}}</li>
+          </ul>
+        </div>
+        <div class="iter-section">
+          <h4>Logs Collected</h4>
+          <p><strong>{{ITER_1_LOG_COLLECTED}}</strong> <span style="color:var(--text-muted);font-size:0.82em">{{ITER_1_LOG_SIZE}}</span></p>
+          <pre>{{ITER_1_LOG_EXCERPT}}</pre>
+        </div>
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>Analysis</h4>
+          <p>{{ITER_1_ANALYSIS}}</p>
+        </div>
+        <div class="iter-section">
+          <h4>Hypothesis Ranking</h4>
+          <table class="hyp-table">
+            <thead><tr><th>#</th><th>Hypothesis</th><th>Confidence</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>{{ITER_1_HYP_1}}</td>
+                <td><div class="conf-bar-wrap" style="min-width:100px"><div class="conf-bar-track"><div class="conf-bar-fill {{ITER_1_CONF_CLASS}}" style="width:{{ITER_1_CONF_PCT}}"></div></div><span class="conf-label">{{ITER_1_CONF_PCT}}</span></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="iter-section">
+          <h4>Next Steps</h4>
+          <ul class="next-steps-list">
+            <li><span class="step-num">1</span><div class="step-body"><strong>{{ITER_1_NEXT_1}}</strong><div class="step-rationale">{{ITER_1_NEXT_1_RATIONALE}}</div></div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LAST ITER — note iter-body active (auto-expanded) -->
+  <div class="iter-panel">
+    <div class="iter-header" onclick="toggleIter(this)">
+      <span class="iter-num">{{LAST_ITER_NUM}}</span>
+      <div class="iter-summary">
+        <strong>{{LAST_ITER_TITLE}}</strong>
+        <span class="iter-meta">{{LAST_ITER_DATE}} · {{LAST_ITER_LOG_COUNT}} log set · Confidence: {{FINAL_CONFIDENCE}}</span>
+      </div>
+      <span class="iter-toggle">+</span>
+    </div>
+    <div class="iter-body active">
+      <div class="iter-grid">
+        <div class="iter-section">
+          <h4>Logs Requested</h4>
+          <ul>
+            <li><strong>{{LAST_ITER_LOG_REQUESTED}}</strong> — {{LAST_ITER_LOG_REQUESTED_DESC}}</li>
+          </ul>
+        </div>
+        <div class="iter-section">
+          <h4>Logs Collected</h4>
+          <p><strong>{{LAST_ITER_LOG_COLLECTED}}</strong> <span style="color:var(--text-muted);font-size:0.82em">{{LAST_ITER_LOG_SIZE}}</span></p>
+          <pre>{{LAST_ITER_LOG_EXCERPT}}</pre>
+        </div>
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>Final Analysis</h4>
+          <p>{{LAST_ITER_ANALYSIS}}</p>
+        </div>
+        <div class="iter-section">
+          <h4>Hypothesis Ranking (Final)</h4>
+          <table class="hyp-table">
+            <thead><tr><th>#</th><th>Hypothesis</th><th>Confidence</th></tr></thead>
+            <tbody>
+              <tr><td>1</td><td>{{LAST_ITER_HYP_1}}</td>
+                <td><div class="conf-bar-wrap" style="min-width:100px"><div class="conf-bar-track"><div class="conf-bar-fill high" style="width:{{FINAL_CONFIDENCE}}"></div></div><span class="conf-label">{{FINAL_CONFIDENCE}}</span></div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="iter-section">
+          <h4>Recommended Next Steps</h4>
+          <ul class="next-steps-list">
+            <li><span class="step-num">1</span><div class="step-body"><strong>{{LAST_ITER_NEXT_1}}</strong><div class="step-rationale">{{LAST_ITER_NEXT_1_RATIONALE}}</div><code>{{LAST_ITER_NEXT_1_CMD}}</code></div></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- BLOCK_END: ITER_PANEL -->
+
+</div><!-- /iterations-card -->
+
+<!-- ══════════════════════════════════════════════════════════
+     FINAL ROOT CAUSE
+     Use class="rootcause-card active" if RC is still a hypothesis
+     Use class="rootcause-card" (no active) if RC is confirmed
+══════════════════════════════════════════════════════════ -->
+<div class="rootcause-card">
+  <div class="section-title">✓ Confirmed Root Cause</div>
+
+  <div class="rootcause-grid">
+    <div class="rc-section" style="grid-column: 1 / -1">
+      <h4>Root Cause / Final Hypothesis</h4>
+      <p style="font-size:1em; font-weight:600; line-height:1.7">
+        {{ROOT_CAUSE_STATEMENT}}
+      </p>
+    </div>
+
+    <div class="rc-section">
+      <h4>Evidence Chain</h4>
+      <ul class="evidence-chain">
+        <!-- BLOCK_START: EVIDENCE_ITEM (duplicate for each evidence point) -->
+        <li><span class="ev-iter">Iter 1</span> <span>{{EVIDENCE_1}}</span></li>
+        <li><span class="ev-iter">Iter 2</span> <span>{{EVIDENCE_2}}</span></li>
+        <!-- add more li items as needed -->
+        <!-- BLOCK_END: EVIDENCE_ITEM -->
+      </ul>
+    </div>
+
+    <div class="rc-section">
+      <h4>Recommended Fix</h4>
+      <p>
+        <strong>Primary fix:</strong> {{FIX_PRIMARY}}
+      </p>
+      <p style="margin-top:10px">
+        <strong>Workaround (immediate):</strong> {{FIX_WORKAROUND}}
+      </p>
+      <p style="margin-top:10px">
+        <strong>Spec Reference:</strong> {{FIX_SPEC_REFERENCE}}
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOG RECOMMENDATIONS FOR NEXT PASS
+     Fill with logrec-item blocks if follow-up logs are needed.
+     Leave .logrec-empty visible if no new recommendations.
+══════════════════════════════════════════════════════════ -->
+<div class="logrec-card">
+  <div class="section-title">📋 Log Recommendations for Next Investigation Pass</div>
+  <p style="font-size:0.88em;color:#084298;margin-bottom:14px">
+    Logs that should be collected to further confirm the root cause or resolve any remaining WARNs from the accuracy checks.
+  </p>
+
+  <!-- OPTION A: No new recommendations — show this block -->
+  <div class="logrec-empty">
+    ℹ No additional log recommendations at this time. Root cause is confirmed with {{FINAL_CONFIDENCE}} confidence based on existing logs.
+  </div>
+
+  <!-- OPTION B: Replace the logrec-empty div above with logrec-item blocks like this:
+  <div class="logrec-item">
+    <span class="logrec-priority high">1</span>
+    <div class="logrec-body">
+      <strong>{{LOG_REC_1_NAME}}</strong>
+      <div class="logrec-why">{{LOG_REC_1_WHY}}</div>
+      <code>{{LOG_REC_1_COMMAND}}</code>
+    </div>
+  </div>
+  <div class="logrec-item">
+    <span class="logrec-priority med">2</span>
+    <div class="logrec-body">
+      <strong>{{LOG_REC_2_NAME}}</strong>
+      <div class="logrec-why">{{LOG_REC_2_WHY}}</div>
+      <code>{{LOG_REC_2_COMMAND}}</code>
+    </div>
+  </div>
+  -->
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     FIELD CORRECTIONS / TRIAGE NOTES
+══════════════════════════════════════════════════════════ -->
+<div class="corrections-card">
+  <div class="section-title">⚠ Triage Corrections &amp; Missing Field Recommendations</div>
+  <div style="margin-top:12px;font-size:0.9em;line-height:1.8">
+    <!-- BLOCK_START: CORRECTION_ITEM -->
+    <p><strong>HSD Component:</strong> {{CORRECTION_COMPONENT}}</p>
+    <p style="margin-top:8px"><strong>Root Cause field:</strong> {{CORRECTION_ROOT_CAUSE}}</p>
+    <p style="margin-top:8px"><strong>Fix field:</strong> {{CORRECTION_FIX}}</p>
+    <p style="margin-top:8px"><strong>Platform tags:</strong> {{CORRECTION_TAGS}}</p>
+    <p style="margin-top:8px"><strong>Related HSDs:</strong> {{CORRECTION_RELATED_HSDS}}</p>
+    <!-- BLOCK_END: CORRECTION_ITEM -->
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ACCURACY CHECK #2 — Log Evidence Cross-Validation
+     Add a check-row for each key claim in the report.
+══════════════════════════════════════════════════════════ -->
+<div class="accuracy-card">
+  <div class="section-title">✓ Accuracy Check #2 — Log Evidence Cross-Validation</div>
+  <p style="font-size:0.88em;color:#388e3c;margin-bottom:14px">Each finding below was cross-validated against the raw log files to confirm accuracy.</p>
+
+  <!-- BLOCK_START: CHECK_2_ROW (one per claim) -->
+  <div class="check-row">
+    <div class="check-label">{{CHECK_2_1_LABEL}}</div>
+    <div><strong>Claim:</strong> {{CHECK_2_1_CLAIM}}<br>
+    <strong>Log Evidence:</strong> {{CHECK_2_1_EVIDENCE}}<br>
+    <strong>Verdict:</strong> {{CHECK_2_1_VERDICT}}</div>
+    <div class="check-pass">PASS</div>
+  </div>
+
+  <div class="check-row">
+    <div class="check-label">{{CHECK_2_2_LABEL}}</div>
+    <div><strong>Claim:</strong> {{CHECK_2_2_CLAIM}}<br>
+    <strong>Log Evidence:</strong> {{CHECK_2_2_EVIDENCE}}<br>
+    <strong>Verdict:</strong> {{CHECK_2_2_VERDICT}}</div>
+    <div class="check-pass">PASS</div>
+  </div>
+  <!-- Add more check-row divs as needed. Change check-pass to check-warn for WARNs. -->
+  <!-- BLOCK_END: CHECK_2_ROW -->
+
+  <div style="margin-top:14px;padding:10px 14px;background:#c8e6c9;border-radius:6px;font-size:0.88em;font-weight:700;color:#1b5e20">
+    ✅ Accuracy Check #2 Result: {{ACCURACY_2_SUMMARY}}
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ACCURACY CHECK #3 — Architectural & Specification Cross-Validation
+══════════════════════════════════════════════════════════ -->
+<div class="accuracy-card" style="border-left-color: #1565c0; background: #e3f2fd;">
+  <div class="section-title" style="color:#0d47a1">✓ Accuracy Check #3 — Architectural &amp; Specification Cross-Validation</div>
+  <p style="font-size:0.88em;color:#1565c0;margin-bottom:14px">Findings cross-validated against architecture specifications, kernel documentation, and HSD database.</p>
+
+  <!-- BLOCK_START: CHECK_3_ROW (one per architectural claim) -->
+  <div class="check-row" style="border-bottom-color:#bbdefb">
+    <div class="check-label" style="color:#1565c0">{{CHECK_3_1_LABEL}}</div>
+    <div><strong>Claim:</strong> {{CHECK_3_1_CLAIM}}<br>
+    <strong>Arch Reference:</strong> {{CHECK_3_1_REFERENCE}}<br>
+    <strong>Verdict:</strong> {{CHECK_3_1_VERDICT}}</div>
+    <div class="check-pass">PASS</div>
+  </div>
+
+  <div class="check-row" style="border-bottom-color:#bbdefb">
+    <div class="check-label" style="color:#1565c0">{{CHECK_3_2_LABEL}}</div>
+    <div><strong>Claim:</strong> {{CHECK_3_2_CLAIM}}<br>
+    <strong>Arch Reference:</strong> {{CHECK_3_2_REFERENCE}}<br>
+    <strong>Verdict:</strong> {{CHECK_3_2_VERDICT}}</div>
+    <div class="check-pass">PASS</div>
+  </div>
+  <!-- Add more check-row divs as needed. Use check-warn class for WARNs. -->
+  <!-- BLOCK_END: CHECK_3_ROW -->
+
+  <div style="margin-top:14px;padding:10px 14px;background:#bbdefb;border-radius:6px;font-size:0.88em;font-weight:700;color:#0d47a1">
+    ✅ Accuracy Check #3 Result: {{ACCURACY_3_SUMMARY}}
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     RELATED PAST HSDs
+══════════════════════════════════════════════════════════ -->
+<div class="related-card">
+  <div class="section-title">Related Past HSDs ({{RELATED_HSD_COUNT}} total — top 5 shown)</div>
+  <p style="font-size:0.82em;color:var(--text-muted);margin-top:4px;margin-bottom:8px">
+    Source: Co-Design HSD MCP search · tenant: {{TENANT_SUBJECT}} ·
+    Query: "{{HSD_SEARCH_QUERY}}"
+  </p>
+  <table class="related-table">
+    <thead>
+      <tr>
+        <th>HSD ID</th>
+        <th>Platform</th>
+        <th>Symptom</th>
+        <th>Relationship</th>
+        <th>Link</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- BLOCK_START: RELATED_HSD_ROW (duplicate for each related HSD, top 5) -->
+      <tr>
+        <td><strong>{{REL_HSD_1_ID}}</strong></td>
+        <td>{{REL_HSD_1_PLATFORM}}</td>
+        <td>{{REL_HSD_1_SYMPTOM}}</td>
+        <td>{{REL_HSD_1_RELATIONSHIP}}</td>
+        <td><a href="https://hsdes.intel.com/appstore/article/#/{{REL_HSD_1_ID}}" target="_blank">View</a></td>
+      </tr>
+      <tr>
+        <td><strong>{{REL_HSD_2_ID}}</strong></td>
+        <td>{{REL_HSD_2_PLATFORM}}</td>
+        <td>{{REL_HSD_2_SYMPTOM}}</td>
+        <td>{{REL_HSD_2_RELATIONSHIP}}</td>
+        <td><a href="https://hsdes.intel.com/appstore/article/#/{{REL_HSD_2_ID}}" target="_blank">View</a></td>
+      </tr>
+      <!-- BLOCK_END: RELATED_HSD_ROW -->
+    </tbody>
+  </table>
+  <p style="font-size:0.8em;color:var(--text-muted);margin-top:12px">
+    ⓘ Full list of {{RELATED_HSD_COUNT}} related tickets available via HSD MCP query with conversation_id: {{HSD_MCP_CONVERSATION_ID}}
+  </p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════ -->
+<footer>
+  Generated by BugScout Live Debug Agent (GitHub Copilot CLI) &nbsp;·&nbsp;
+  Skills: <strong>hsd-triage</strong> + <strong>live-debug</strong> &nbsp;·&nbsp;
+  Powered by Co-Design HSD MCP + GENI + NGA &nbsp;·&nbsp;
+  {{GENERATION_DATE}}
+  <br>
+  Repository: intel-sandbox/BugScout &nbsp;·&nbsp;
+  Template: bugscout_report_template.html v1.0 &nbsp;·&nbsp;
+  2nd &amp; 3rd accuracy checks: {{ACCURACY_2_SUMMARY}} log evidence, {{ACCURACY_3_SUMMARY}} arch spec
+  <br><br>
+  <em>The question was answered based on the following tenant_subject: {{TENANT_SUBJECT}}</em><br>
+  <a href="mailto:Co-Design-MCPs@intel.com?subject=Co-Design%20HSD%20MCP%20Tools%20Feedback%20{{HSD_MCP_CONVERSATION_ID}}">Click here to provide Co-Design HSD MCP Feedback</a>
+</footer>
+
+<script>
+function toggleIter(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.iter-toggle');
+  const isOpen = body.classList.contains('active');
+  body.classList.toggle('active');
+  toggle.classList.toggle('open');
+  toggle.textContent = isOpen ? '+' : '×';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  const fills = document.querySelectorAll('.conf-bar-fill');
+  fills.forEach(function (el) {
+    const target = el.style.width;
+    el.style.width = '0%';
+    requestAnimationFrame(function () {
+      setTimeout(function () { el.style.width = target; }, 80);
+    });
+  });
+
+  // Auto-expand the last iteration
+  const panels = document.querySelectorAll('.iter-panel');
+  if (panels.length > 0) {
+    const lastHeader = panels[panels.length - 1].querySelector('.iter-header');
+    if (lastHeader) toggleIter(lastHeader);
+  }
+});
+</script>
+</body>
+</html>

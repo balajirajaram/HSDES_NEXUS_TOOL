@@ -45,3 +45,9 @@ output/
 *.pem
 *.key
 credentials*
+
+# BugScout legacy artifacts
+ignore_info/
+src/output/
+Axon_Records/
+HSD_Logs_Details/

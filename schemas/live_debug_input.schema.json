@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "LiveDebugInput",
+  "description": "Schema for the --initial-logs input file passed to parse_and_triage.py --mode live-debug. Provides the initial context already gathered before the live debug session starts.",
+  "type": "object",
+  "required": ["hsd_id"],
+  "properties": {
+    "hsd_id": {
+      "type": "string",
+      "description": "HSD article ID to debug (e.g. '14027419708')"
+    },
+    "initial_symptom": {
+      "type": "string",
+      "description": "Free-text description of the observed failure. If omitted, extracted from the HSD description via Co-Design HSD MCP."
+    },
+    "testcase_name": {
+      "type": "string",
+      "description": "Name of the testcase that triggered the failure (e.g. 'dsa_focus_tests', 'cpm_variant_dmr'). If omitted, resolved via NGA MCP."
+    },
+    "testcase_command": {
+      "type": "string",
+      "description": "Full command used to run the testcase (rocket/atlas invocation, custom tool command, python script invocation, etc.)."
+    },
+    "testcase_type": {
+      "type": "string",
+      "enum": ["pythonsv", "rocket", "atlas", "python-script", "shell", "custom-tool", "unknown"],
+      "description": "Type of testcase runner. Controls how the agent infers log enablement steps.",
+      "default": "unknown"
+    },
+    "server": {
+      "type": "string",
+      "description": "Hostname or IP of the test server (used when --execution-mode ssh). Overrides the --server CLI flag if provided."
+    },
+    "initial_logs_collected": {
+      "type": "array",
+      "description": "Logs already collected before the live debug session starts. The agent will not re-request these unless a re-run is explicitly needed.",
+      "items": {
+        "type": "object",
+        "required": ["category"],
+        "properties": {
+          "category": {
+            "type": "string",
+            "description": "Log category name matching log_taxonomy.md (e.g. 'register_dump', 'dmesg_kernel', 'swerror_dump') or a free-form name for custom logs."
+          },
+          "content": {
+            "type": "string",
+            "description": "Full text content of the collected log. Either 'content' or 'file_path' must be provided."
+          },
+          "file_path": {
+            "type": "string",
+            "description": "Absolute path to the log file on the local machine or accessible share. Either 'content' or 'file_path' must be provided."
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the log was collected (e.g. '2026-05-06T10:15:00')."
+          },
+          "collection_command": {
+            "type": "string",
+            "description": "The command that was run to collect this log. Useful for the agent to understand what was already attempted."
+          },
+          "notes": {
+            "type": "string",
+            "description": "Any engineer notes about this log (e.g. 'collected after first hang', 'partial output — device reset mid-run')."
+          }
+        },
+        "oneOf": [
+          {"required": ["content"]},
+          {"required": ["file_path"]}
+        ]
+      },
+      "default": []
+    },
+    "additional_context": {
+      "type": "string",
+      "description": "Any other relevant context the engineer wants to provide (e.g. recent code changes, platform config, workarounds tried)."
+    }
+  },
+  "examples": [
+    {
+      "hsd_id": "14027419708",
+      "initial_symptom": "DSA hangs indefinitely under multi-source reduce workload with 4 engines active",
+      "testcase_name": "dsa_focus_tests",
+      "testcase_command": "rocket -v dsa_focus_tests --hw dram,dsa [reduce_multi_src]",
+      "testcase_type": "rocket",
+      "server": "mylab-dmr-01.intel.com",
+      "initial_logs_collected": [
+        {
+          "category": "dmesg_kernel",
+          "file_path": "/tmp/dmesg_20260506.log",
+          "collected_at": "2026-05-06T09:30:00",
+          "collection_command": "dmesg -T > /tmp/dmesg_20260506.log",
+          "notes": "Collected immediately after hang was observed"
+        },
+        {
+          "category": "register_dump",
+          "content": "GENSTS: 0x1\nGENCFG: 0x8\nARBCFG: 0x0",
+          "collected_at": "2026-05-06T09:35:00",
+          "collection_command": "sv.socket0.imh0.acc.acc_0.dsa.show()"
+        }
+      ],
+      "additional_context": "Issue first appeared after upgrading to BIOS 0x45. Passes on single-engine runs."
+    }
+  ]
+}

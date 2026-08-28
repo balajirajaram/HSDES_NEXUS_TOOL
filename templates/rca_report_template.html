@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HSD {{ hsd_id }} RCA Report</title>
+  <style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; background: #f8f9fa; color: #212529; }
+
+  /* ── Header ── */
+  .header-bar { background: #0d6efd; color: white; padding: 24px 32px; }
+  .header-bar h1 { margin: 0 0 6px; font-size: 1.45rem; font-weight: 700; }
+  .header-bar .hsd-title { margin: 0 0 14px; opacity: 0.92; font-size: 0.97rem; }
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 14px; font-size: 0.77rem; font-weight: 700; border: 1.5px solid rgba(255,255,255,0.35); color: white; }
+  .badge-component  { background: transparent; }
+  .badge-priority-1 { background: #dc3545; border-color: #dc3545; }
+  .badge-priority-2 { background: #fd7e14; border-color: #fd7e14; }
+  .badge-priority-3 { background: #ffc107; color: #212529; border-color: #ffc107; }
+  .badge-priority-4 { background: #6c757d; border-color: #6c757d; }
+  .badge-agree    { background: #198754; border-color: #198754; }
+  .badge-disagree { background: #dc3545; border-color: #dc3545; }
+  .badge-na       { background: rgba(0,0,0,0.25); border-color: rgba(255,255,255,0.2); }
+
+  /* ── Layout ── */
+  .container { max-width: 1120px; margin: 0 auto; padding: 24px 32px; }
+
+  /* ── Key Takeaways card ── */
+  .takeaways {
+    background: #fff;
+    padding: 16px 20px;
+    margin-bottom: 18px;
+    border-radius: 7px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    border-left: 5px solid #0d6efd;
+  }
+  .takeaways h3 { margin: 0 0 10px; font-size: 0.97rem; font-weight: 700; color: #0d6efd; }
+  .takeaways ul { margin: 0; padding-left: 20px; }
+  .takeaways li { margin-bottom: 5px; line-height: 1.55; font-size: 0.95rem; }
+
+  /* ── Collapsible sections (details/summary) ── */
+  details {
+    background: #fff;
+    border-radius: 7px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    margin-bottom: 13px;
+    overflow: hidden;
+  }
+  summary {
+    background: #f1f3f5;
+    padding: 13px 18px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #343a40;
+    list-style: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #dee2e6;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: '\25BC'; font-size: 0.7rem; color: #6c757d; }
+  details[open] summary::after { content: '\25B2'; }
+
+  /* ── Section body ── */
+  .section-body { padding: 20px; }
+  .section-body p { margin: 0 0 10px; line-height: 1.65; font-size: 0.95rem; }
+  .section-body h3 { margin: 14px 0 8px; font-size: 0.95rem; color: #343a40; }
+  .section-body h4 { margin: 12px 0 6px; font-size: 0.88rem; color: #495057; text-transform: uppercase; letter-spacing: .4px; }
+
+  /* ── Metadata table ── */
+  table { width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 0.92rem; }
+  th, td { padding: 9px 13px; border: 1px solid #dee2e6; vertical-align: top; }
+  th { background: #f8f9fa; font-weight: 600; color: #495057; }
+  .meta-label { font-weight: 600; color: #495057; width: 200px; }
+
+  /* ── Tiered log recommendation table ── */
+  .tier-table th { background: #343a40; color: #fff; }
+  .tier-1 td:first-child { font-weight: 700; color: #155724; }
+  .tier-2 td:first-child { font-weight: 700; color: #856404; }
+  .tier-3 td:first-child { font-weight: 700; color: #721c24; }
+  .tier-beyond td:first-child { font-weight: 700; color: #0c5460; }
+
+  /* ── Prior run comparison grid ── */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .compare-grid { grid-template-columns: 1fr; } }
+  .compare-box { background: #f8f9fa; border-radius: 6px; padding: 16px; font-size: 0.92rem; line-height: 1.6; }
+  .compare-box h4 { margin: 0 0 8px; font-size: 0.8rem; text-transform: uppercase; color: #6c757d; letter-spacing: .5px; }
+  .compare-new { border-left: 4px solid #0d6efd; }
+  .compare-prior { border-left: 4px solid #6c757d; }
+
+  /* ── Agree/Disagree pill ── */
+  .agree-pill { display: inline-block; padding: 6px 18px; border-radius: 20px; font-weight: 700; font-size: 0.88rem; margin-top: 14px; }
+  .agree-pill-agree    { background: #198754; color: white; }
+  .agree-pill-disagree { background: #dc3545; color: white; }
+  .agree-pill-na       { background: #6c757d; color: white; }
+
+  /* ── Accuracy row ── */
+  .accuracy-row { display: flex; gap: 16px; margin-top: 14px; flex-wrap: wrap; }
+  .accuracy-item { background: #f8f9fa; border-radius: 6px; padding: 10px 16px; flex: 1; min-width: 140px; }
+  .accuracy-item label { font-size: 0.75rem; color: #6c757d; text-transform: uppercase; display: block; margin-bottom: 3px; letter-spacing: .4px; }
+  .accuracy-item span { font-weight: 700; font-size: 1.05rem; color: #343a40; }
+
+  /* ── Code / evidence block ── */
+  .code-box {
+    background: #e9ecef;
+    border-left: 3px solid #0d6efd;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 0.87rem;
+    padding: 12px 16px;
+    border-radius: 5px;
+    white-space: pre-wrap;
+    word-break: break-word;
+    line-height: 1.55;
+    margin: 8px 0 12px;
+  }
+
+  /* ── NGA test case block ── */
+  .nga-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 10px; }
+  .nga-card { background: #f8f9fa; border-radius: 6px; padding: 12px 14px; font-size: 0.88rem; }
+  .nga-card label { font-size: 0.75rem; color: #6c757d; text-transform: uppercase; display: block; margin-bottom: 3px; letter-spacing: .4px; }
+  .nga-card span { font-weight: 600; color: #212529; word-break: break-all; }
+
+  /* ── Step list (NGA flow) ── */
+  .step-list { margin: 0; padding-left: 18px; font-size: 0.88rem; }
+  .step-list li { margin-bottom: 4px; line-height: 1.55; }
+  .step-type { display: inline-block; padding: 1px 7px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; margin-left: 5px; vertical-align: middle; }
+  .step-type-pretest  { background: #d1ecf1; color: #0c5460; }
+  .step-type-test     { background: #d4edda; color: #155724; }
+  .step-type-posttest { background: #fff3cd; color: #856404; }
+  .step-type-cleanup  { background: #f8d7da; color: #721c24; }
+
+  /* ── Footer ── */
+  footer { text-align: center; padding: 22px; color: #6c757d; font-size: 0.8rem; border-top: 1px solid #dee2e6; margin-top: 8px; }
+  </style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     HEADER
+     ══════════════════════════════════════════════════════════ -->
+<div class="header-bar">
+  <h1>HSD Triage RCA Report: {{ hsd_id }}</h1>
+  <p class="hsd-title">{{ hsd_title }}</p>
+  <div class="badges">
+    <span class="badge badge-component">{{ component }}</span>
+    <span class="badge badge-priority-{{ priority_num }}">{{ priority }}</span>
+    <span class="badge" style="background:rgba(0,0,0,0.18);">{{ status }}</span>
+    <!-- agree_disagree: AGREE | DISAGREE | N/A -->
+    <span class="badge badge-{{ agree_class }}">{{ agree_disagree }}</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ════════════════════ KEY TAKEAWAYS ════════════════════ -->
+  <div class="takeaways">
+    <h3>&#128161; Key Takeaways</h3>
+    <ul>
+      {% for item in key_takeaways %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+
+  <!-- ════════════════════ METADATA ════════════════════ -->
+  <details open>
+    <summary>&#128203; Metadata</summary>
+    <div class="section-body">
+      <table>
+        <tr><td class="meta-label">HSD ID</td><td><strong><a href="https://hsdes.intel.com/appstore/article-one/#/article/{{ hsd_id }}" target="_blank">{{ hsd_id }}</a></strong></td></tr>
+        <tr><td class="meta-label">Title</td><td>{{ hsd_title }}</td></tr>
+        <tr><td class="meta-label">Component</td><td><span style="background:#0d6efd;color:white;padding:2px 9px;border-radius:10px;font-size:0.8rem;font-weight:600;">{{ component }}</span></td></tr>
+        <tr><td class="meta-label">Priority</td><td><span style="font-weight:700;">{{ priority }}</span></td></tr>
+        <tr><td class="meta-label">Status</td><td>{{ status }}</td></tr>
+        <tr><td class="meta-label">Release</td><td>{{ release }}</td></tr>
+        <tr><td class="meta-label">Owner</td><td>{{ owner }}</td></tr>
+        <tr><td class="meta-label">Submitted Date</td><td>{{ submitted_date }}</td></tr>
+        <tr><td class="meta-label">Bug / Clone IDs</td><td>{{ related_bug_ids }}</td></tr>
+        <tr><td class="meta-label">NGA Test Result</td><td>{% if nga_tr_url %}<a href="{{ nga_tr_url }}" target="_blank">{{ nga_tr_url }}</a>{% else %}N/A{% endif %}</td></tr>
+        <tr><td class="meta-label">Analysis Date</td><td>{{ analysis_date }}</td></tr>
+        <tr><td class="meta-label">Run ID</td><td>{{ run_id }}</td></tr>
+      </table>
+    </div>
+  </details>
+
+  <!-- ════════════════════ INITIAL SYMPTOM ════════════════════ -->
+  <details open>
+    <summary>&#128308; Initial Symptom</summary>
+    <div class="section-body">
+      <p>{{ initial_symptom }}</p>
+      {% if error_output %}
+      <h3>Error / Log Output</h3>
+      <div class="code-box">{{ error_output }}</div>
+      {% endif %}
+      {% if failing_commands %}
+      <h3>Failing Command(s)</h3>
+      <div class="code-box">{{ failing_commands }}</div>
+      {% endif %}
+    </div>
+  </details>
+
+  <!-- ════════════════════ PHASE 2: TEST CASE DETAILS ════════════════════ -->
+  <details open>
+    <summary>&#9654; Phase 2: Test Case Details (NGA)</summary>
+    <div class="section-body">
+      <div class="nga-grid">
+        <div class="nga-card"><label>Test Case Name</label><span>{{ testcase_name }}</span></div>
+        <div class="nga-card"><label>Domain Focus</label><span>{{ testcase_domain_focus }}</span></div>
+        <div class="nga-card"><label>NGA TestLine ID</label><span>{{ nga_testline_id }}</span></div>
+        <div class="nga-card"><label>TestLine Name</label><span>{{ nga_testline_name }}</span></div>
+        <div class="nga-card"><label>Test Suite</label><span>{{ nga_testsuite_name }}</span></div>
+        <div class="nga-card"><label>Test Group</label><span>{{ nga_testgroup_name }}</span></div>
+        <div class="nga-card"><label>Config</label><span>{{ nga_config }}</span></div>
+        <div class="nga-card"><label>OS</label><span>{{ nga_os }}</span></div>
+        <div class="nga-card"><label>Run Result</label><span>{{ nga_run_result }}</span></div>
+        <div class="nga-card"><label>Submitted By</label><span>{{ nga_run_submitted_by }}</span></div>
+      </div>
+
+      <h3>Test Command</h3>
+      <div class="code-box">{{ testcase_command }}</div>
+
+      {% if testcase_parameters %}
+      <h3>Parameters / Notes</h3>
+      <p>{{ testcase_parameters }}</p>
+      {% endif %}
+
+      {% if nga_header_steps %}
+      <h3>NGA Flow — Setup Steps (PreTest)</h3>
+      <ul class="step-list">
+        {% for step in nga_header_steps %}
+        <li>{{ step }}<span class="step-type step-type-pretest">PreTest</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if nga_test_steps %}
+      <h3>NGA Flow — Test Steps</h3>
+      <ul class="step-list">
+        {% for step in nga_test_steps %}
+        <li>{{ step }}<span class="step-type step-type-test">Test</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if nga_footer_steps %}
+      <h3>NGA Flow — Teardown Steps (PostTest / Cleanup)</h3>
+      <ul class="step-list">
+        {% for step in nga_footer_steps %}
+        <li>{{ step }}<span class="step-type step-type-cleanup">PostTest</span></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      <h3>How Test Case Encounters Defect</h3>
+      <p>{{ how_testcase_encounters_defect }}</p>
+    </div>
+  </details>
+
+  <!-- ════════════════════ PHASE 3: GROUND TRUTH VERIFICATION ════════════════════ -->
+  <details open>
+    <summary>&#128300; Phase 3: Ground Truth Verification (GENI + Co-Design)</summary>
+    <div class="section-body">
+
+      <h3>Problem Statement</h3>
+      <p>{{ verified_problem_statement }}</p>
+
+      <h3>Verified Root Cause</h3>
+      <p>{{ verified_root_cause }}</p>
+
+      <h3>Key Evidence</h3>
+      <div class="code-box">{{ key_evidence }}</div>
+
+      <h3>Fix / Workaround</h3>
+      <p>{{ verified_fix }}</p>
+
+      <h3>Architectural Element</h3>
+      <p>{{ architectural_element }}</p>
+
+      {% if spec_reference %}
+      <h3>Spec Reference</h3>
+      <p>{{ spec_reference }}</p>
+      {% endif %}
+
+      {% if failure_registers %}
+      <h3>Registers Showing Failure State</h3>
+      <ul>
+        {% for reg in failure_registers %}
+        <li><code style="background:#e9ecef;padding:1px 5px;border-radius:3px;font-size:0.87em;">{{ reg }}</code></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+
+      {% if adjacent_subsystems %}
+      <h3>Adjacent Subsystems</h3>
+      <ul>{% for s in adjacent_subsystems %}<li>{{ s }}</li>{% endfor %}</ul>
+      {% endif %}
+
+      {% if related_hsds %}
+      <h3>Related Past HSDs</h3>
+      <ul>
+        {% for id in related_hsds %}
+        <li><a href="https://hsdes.intel.com/appstore/article-one/#/article/{{ id }}" target="_blank">{{ id }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+  </details>
+
+  <!-- ════════════════════ PHASE 4: LOG RECOMMENDATIONS ════════════════════ -->
+  <details open>
+    <summary>&#128203; Phase 4: Log Recommendations (First-Pass Debug)</summary>
+    <div class="section-body">
+      <table class="tier-table">
+        <thead>
+          <tr>
+            <th>Tier</th>
+            <th>Category</th>
+            <th>Specific Commands</th>
+            <th>What It Reveals</th>
+            <th>Why Relevant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in tier1_logs %}
+          <tr class="tier-1">
+            <td>Tier 1 — Critical</td>
+            <td>{{ item.category }}</td>
+            <td><code style="background:#e9ecef;padding:2px 5px;border-radius:3px;font-size:0.83em;white-space:pre-wrap;">{{ item.commands | join('\n') }}</code></td>
+            <td>{{ item.reveals }}</td>
+            <td>{{ item.relevance }}</td>
+          </tr>
+          {% endfor %}
+          {% for item in tier2_logs %}
+          <tr class="tier-2">
+            <td>Tier 2 — Likely Needed</td>
+            <td>{{ item.category }}</td>
+            <td><code style="background:#e9ecef;padding:2px 5px;border-radius:3px;font-size:0.83em;white-space:pre-wrap;">{{ item.commands | join('\n') }}</code></td>
+            <td>{{ item.reveals }}</td>
+            <td>{{ item.relevance }}</td>
+          </tr>
+          {% endfor %}
+          {% for item in tier3_logs %}
+          <tr class="tier-3">
+            <td>Tier 3 — Extended</td>
+            <td>{{ item.category }}</td>
+            <td><code style="background:#e9ecef;padding:2px 5px;border-radius:3px;font-size:0.83em;white-space:pre-wrap;">{{ item.commands | join('\n') }}</code></td>
+            <td>{{ item.reveals }}</td>
+            <td>{{ item.relevance }}</td>
+          </tr>
+          {% endfor %}
+          {% for item in beyond_sme_logs %}
+          <tr class="tier-beyond">
+            <td>Beyond-SME (GENI)</td>
+            <td>{{ item.description }}</td>
+            <td><code style="background:#e9ecef;padding:2px 5px;border-radius:3px;font-size:0.83em;white-space:pre-wrap;">{{ item.commands | join('\n') }}</code></td>
+            <td colspan="2">{{ item.why }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h3>Actual Logs Collected (Ground Truth)</h3>
+      <p>{{ actual_logs_collected }}</p>
+    </div>
+  </details>
+
+  <!-- ════════════════════ PHASE 5: CROSS-DOMAIN VALIDATION ════════════════════ -->
+  <details open>
+    <summary>&#127758; Phase 5: Cross-Domain Validation</summary>
+    <div class="section-body">
+      <h3>Domain Analysis</h3>
+      <p>{{ domain_analysis }}</p>
+
+      <h3>Recommendation Rationale</h3>
+      <p>{{ recommendation_rationale }}</p>
+
+      <div class="accuracy-row">
+        <div class="accuracy-item">
+          <label>Root Cause Domain</label>
+          <span>{{ root_cause_domain }}</span>
+        </div>
+        <div class="accuracy-item">
+          <label>Domain Relationship</label>
+          <span>{{ domain_relationship }}</span>
+        </div>
+        <div class="accuracy-item">
+          <label>Recommendation Accuracy</label>
+          <span>{{ recommendation_accuracy }}</span>
+        </div>
+        <div class="accuracy-item">
+          <label>Estimated Iteration Savings</label>
+          <span>{{ iteration_savings }}</span>
+        </div>
+      </div>
+    </div>
+  </details>
+
+  <!-- ════════════════════ COMPARISON WITH PRIOR RUN ════════════════════ -->
+  <details open>
+    <summary>&#128202; Comparison with Prior Run ({{ prior_run_id }})</summary>
+    <div class="section-body">
+      {% if prior_run_id and prior_run_id != 'N/A' %}
+      <div class="compare-grid">
+        <div class="compare-box compare-prior">
+          <h4>Prior Run Root Cause</h4>
+          <p>{{ prior_root_cause }}</p>
+        </div>
+        <div class="compare-box compare-new">
+          <h4>New Analysis Root Cause</h4>
+          <p>{{ verified_root_cause }}</p>
+        </div>
+      </div>
+      <div>
+        <span class="agree-pill agree-pill-{{ agree_class }}">{{ agree_disagree }}</span>
+      </div>
+      <h3>Delta Analysis</h3>
+      <p>{{ delta_analysis }}</p>
+      {% else %}
+      <p style="color:#6c757d;font-style:italic;">No prior run available — this is the first analysis for this HSD.</p>
+      {% endif %}
+    </div>
+  </details>
+
+  <!-- ════════════════════ KEY REGISTERS & DEBUG EVIDENCE ════════════════════ -->
+  <details>
+    <summary>&#128295; Key Registers &amp; Debug Evidence</summary>
+    <div class="section-body">
+      <div class="code-box">{{ key_registers_evidence }}</div>
+      {% if register_table %}
+      <table style="margin-top:12px;">
+        <thead><tr><th>Register</th><th>Field</th><th>Value</th><th>Meaning</th></tr></thead>
+        <tbody>
+          {% for row in register_table %}
+          <tr>
+            <td><code style="font-size:0.85em;">{{ row.register }}</code></td>
+            <td><code style="font-size:0.85em;">{{ row.field }}</code></td>
+            <td><code style="font-size:0.85em;">{{ row.value }}</code></td>
+            <td>{{ row.meaning }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+    </div>
+  </details>
+
+  <!-- ════════════════════ REFERENCES ════════════════════ -->
+  <details>
+    <summary>&#128218; References</summary>
+    <div class="section-body">
+      <ul>
+        {% for ref in references %}
+        <li>{% if ref.url %}<a href="{{ ref.url }}" target="_blank">{{ ref.label }}</a>{% else %}{{ ref.label }}{% endif %}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </details>
+
+</div><!-- /container -->
+
+<footer>
+  Generated by HSD Triage Automation Pipeline &bull; {{ analysis_date }} &bull; Run: {{ run_id }}
+  &nbsp;&middot;&nbsp; Template: rca_report_template.html v2.0
+  &nbsp;&middot;&nbsp; Framework: project-c3/hsd-triage
+</footer>
+
+</body>
+</html>

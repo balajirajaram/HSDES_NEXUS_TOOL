@@ -1,0 +1,78 @@
+{
+  "handbook_root": "docs/handbooks",
+  "section_count": 9,
+  "built_at": "2026-06-10",
+  "source": "Oak_Stream_RAS_PAS.md (v1.2), GNR_DMR_Reset_blocking.md (v0.95), DMR-AI_RAS_Specification_0.md",
+  "entries": [
+    {
+      "source_file": "acd_debug_steps.md",
+      "title": "Overview",
+      "keywords": ["acd", "autonomous", "crash", "dump", "bmc", "caterr", "pre-awr", "ierr", "mcerr", "crash-log"],
+      "causes": []
+    },
+    {
+      "source_file": "acd_debug_steps.md",
+      "title": "ACD Trigger Flow",
+      "keywords": ["caterr", "hold", "pulse", "bmc", "cpld", "trigger", "ierr", "mcerr", "clip", "err2", "oobmsm", "acd"],
+      "causes": [
+        "CATERR# hold triggers BMC ACD collection via OOBMSM",
+        "CATERR# pulse does not trigger ACD — Crash Log only"
+      ]
+    },
+    {
+      "source_file": "acd_debug_steps.md",
+      "title": "Reset Blocking",
+      "keywords": ["reset", "block", "pltrst", "gbl_rst_warn", "acd", "error", "harvesting", "wdt", "watchdog"],
+      "causes": [
+        "Unexpected platform reset interrupts ACD/Crashlog collection",
+        "OS warm reset during CATERR# hold ignored by design"
+      ]
+    },
+    {
+      "source_file": "acd_debug_steps.md",
+      "title": "Error Register Collection",
+      "keywords": ["mca", "bank", "imc", "upi", "iio", "pcie", "mci_status", "oobmsm", "dmr", "correrrorstatus"],
+      "causes": []
+    },
+    {
+      "source_file": "acd_debug_steps.md",
+      "title": "Debug Steps — ACD Triage",
+      "keywords": ["triage", "debug", "uc", "pcc", "fatal", "uncorrected", "corrected", "bank", "subsystem", "signature", "ierr", "mcerr"],
+      "causes": []
+    },
+    {
+      "source_file": "acd_debug_steps.md",
+      "title": "DSA Hang — Translation Queue Arbitration Deadlock",
+      "keywords": ["dsa", "hang", "translation", "queue", "deadlock", "reduce", "src1", "src2", "448kb", "arbiter", "opcfg", "iaa"],
+      "causes": [
+        "Src1 fills all 112 translation queue entries; Src2 blocked; Reduce requires both → deadlock",
+        "Translation queue arbitration starvation above 448KB threshold"
+      ]
+    },
+    {
+      "source_file": "acd_debug_steps.md",
+      "title": "UBR VN0 Credit Loss",
+      "keywords": ["ubr", "vn0", "credit", "loss", "hamvf", "timeout", "mce", "cascade", "upi", "vncredit"],
+      "causes": [
+        "VN credit counters wrap; HAMVF timeout cascade into MCE",
+        "UBR VN0 credit counter overflow triggers uncorrected error"
+      ]
+    },
+    {
+      "source_file": "acd_debug_steps.md",
+      "title": "SFI Poison Passthrough",
+      "keywords": ["sfi", "poison", "passthrough", "64b", "chunk", "detection", "silent", "scf"],
+      "causes": [
+        "SFI poison detection only checks first 64B chunk; remainder passes silently"
+      ]
+    },
+    {
+      "source_file": "acd_debug_steps.md",
+      "title": "DSA Gather Copy Completion Buffer Exhaustion",
+      "keywords": ["dsa", "gather", "copy", "completion", "buffer", "exhaustion", "sglsize", "a0", "erratum", "descriptor"],
+      "causes": [
+        "Completion buffer fills with no descriptor completion — hang without MCA"
+      ]
+    }
+  ]
+}

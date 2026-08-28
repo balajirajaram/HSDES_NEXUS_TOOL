@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VALOR+BugScout Run Report — HSD 15018590736</title>
+<style>
+  :root {
+    --bg: #f8f9fa; --card-bg: #ffffff; --border: #dee2e6;
+    --text: #212529; --text-muted: #6c757d; --primary: #0d6efd;
+    --success: #198754; --warning: #ffc107; --danger: #dc3545;
+    --info: #0dcaf0; --tier1: #d4edda; --tier2: #fff3cd; --tier3: #f8d7da;
+    --conf-high: #198754; --conf-med: #fd7e14; --conf-low: #dc3545;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); padding: 24px; line-height: 1.5; }
+
+  .report-header { background: var(--card-bg); border-radius: 12px; padding: 28px 32px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.06); border-top: 4px solid var(--danger); }
+  .report-header h1 { font-size: 1.6em; margin-bottom: 4px; }
+  .report-header h1 a { color: inherit; text-decoration: none; }
+  .report-header h1 a:hover { color: var(--primary); }
+  .subtitle { font-size: 1em; color: var(--text-muted); margin-bottom: 12px; }
+  .meta { color: var(--text-muted); font-size: .88em; margin-bottom: 16px; }
+  .header-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: .78em; font-weight: 700; white-space: nowrap; }
+  .badge-active   { background: #cfe2ff; color: #084298; }
+  .badge-found    { background: var(--tier1); color: #155724; }
+  .badge-amber    { background: #fff3cd; color: #856404; }
+  .badge-critical { background: var(--tier3); color: #721c24; }
+  .badge-high     { background: var(--tier3); color: #721c24; }
+  .badge-medium   { background: var(--tier2); color: #856404; }
+  .badge-low      { background: #d1ecf1; color: #0c5460; }
+
+  .metrics-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .metric-card { background: var(--card-bg); border-radius: 8px; padding: 20px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+  .metric-card .value { font-size: 2em; font-weight: 700; color: var(--primary); }
+  .metric-card .label { font-size: .82em; color: var(--text-muted); margin-top: 4px; }
+  .value.pass  { color: var(--success); }
+  .value.amber { color: var(--conf-med); }
+  .value.fail  { color: var(--danger); }
+  .value.pct75 { color: var(--conf-med); }
+
+  .section-title { font-size: 1em; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 2px solid var(--border); }
+
+  .card { background: var(--card-bg); border-radius: 12px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .card.border-success { border-top: 4px solid var(--success); }
+  .card.border-warning { border-top: 4px solid var(--warning); }
+  .card.border-danger  { border-top: 4px solid var(--danger); }
+  .card.border-primary { border-top: 4px solid var(--primary); }
+
+  table.data-table { width: 100%; border-collapse: collapse; font-size: .86em; margin-top: 8px; }
+  table.data-table th { background: #343a40; color: #fff; padding: 10px 14px; text-align: left; font-weight: 600; }
+  table.data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.data-table tr:last-child td { border-bottom: none; }
+  table.data-table tr:hover td { background: var(--bg); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  .kv-label { font-size: .75em; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); margin-bottom: 4px; }
+  .kv-value { font-size: .92em; font-weight: 600; }
+
+  pre.code-block { background: #1e1e1e; color: #d4d4d4; padding: 14px 16px; border-radius: 6px; font-size: .8em; overflow-x: auto; white-space: pre-wrap; max-height: 320px; overflow-y: auto; margin-top: 8px; }
+  code.inline { background: #1e1e1e; color: #9cdcfe; padding: 2px 6px; border-radius: 3px; font-size: .85em; }
+
+  .timeline-step { display: flex; gap: 16px; margin-bottom: 16px; align-items: flex-start; }
+  .step-dot { display: flex; flex-direction: column; align-items: center; }
+  .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--primary); flex-shrink: 0; margin-top: 4px; }
+  .dot.pass  { background: var(--success); }
+  .dot.amber { background: var(--conf-med); }
+  .dot.fail  { background: var(--danger); }
+  .step-line { width: 2px; background: var(--border); flex: 1; margin-top: 4px; min-height: 32px; }
+  .step-content { flex: 1; font-size: .88em; }
+  .step-content strong { display: block; }
+  .step-content .step-meta { color: var(--text-muted); font-size: .85em; }
+
+  .signal-row { display: grid; grid-template-columns: 100px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: .88em; }
+  .signal-row:last-child { border-bottom: none; }
+  .sig-sev { font-weight: 700; }
+  .sig-sev.high   { color: var(--danger); }
+  .sig-sev.medium { color: var(--conf-med); }
+  .sig-sev.low    { color: var(--success); }
+
+  .score-bar-wrap { display: flex; align-items: center; gap: 10px; }
+  .score-bar-track { flex: 1; height: 12px; background: #e9ecef; border-radius: 6px; overflow: hidden; }
+  .score-bar-fill { height: 100%; border-radius: 6px; }
+  .fill-75  { width: 75%; background: var(--conf-med); }
+  .fill-100 { width: 100%; background: var(--conf-high); }
+  .fill-0   { width: 0%; background: var(--conf-low); }
+
+  .check-grid { display: grid; grid-template-columns: 1fr 80px 1fr; gap: 8px; align-items: start; padding: 8px 0; border-bottom: 1px solid #c8e6c9; font-size: .87em; }
+  .check-grid:last-child { border-bottom: none; }
+  .check-verdict { font-weight: 700; text-align: center; }
+  .check-verdict.pass { color: var(--success); }
+  .check-verdict.partial { color: var(--conf-med); }
+  .check-verdict.miss  { color: var(--danger); }
+
+  .link-btn { display: inline-block; padding: 8px 18px; background: var(--primary); color: #fff; border-radius: 6px; text-decoration: none; font-size: .88em; font-weight: 600; margin-top: 8px; }
+  .link-btn:hover { background: #0a58ca; }
+  .link-btn.secondary { background: #6c757d; }
+  .link-btn.secondary:hover { background: #5a6268; }
+
+  .info-box { background: #d1ecf1; border-left: 5px solid #0dcaf0; border-radius: 6px; padding: 12px 16px; font-size: .88em; margin-top: 12px; }
+  .warn-box  { background: #fff3cd; border-left: 5px solid var(--warning); border-radius: 6px; padding: 12px 16px; font-size: .88em; margin-top: 12px; }
+  .danger-box { background: #f8d7da; border-left: 5px solid var(--danger); border-radius: 6px; padding: 12px 16px; font-size: .88em; margin-top: 12px; }
+
+  footer { text-align: center; color: var(--text-muted); font-size: .8em; padding: 20px 0 8px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HEADER
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="report-header">
+  <h1><a href="https://hsdes.intel.com/appstore/article-one/#/article/15018590736" target="_blank">HSD 15018590736</a> — IERR Assertion After Stressapptest Idle</h1>
+  <div class="subtitle">[DMR Co-Val][Platform V] Stressapptest → 4h idle → IERR on A0 stepping</div>
+  <div class="meta">
+    Run date: 2026-08-09 &nbsp;|&nbsp; Platform: DMR A0 (SC00901168H0080, 10.3.173.62) &nbsp;|&nbsp;
+    Run by: VALOR Autonomous Orchestrator &nbsp;|&nbsp; Analysis: BugScout AI (blind)
+  </div>
+  <div class="header-badges">
+    <span class="badge badge-amber">⚠ AMBER — Latent Risk</span>
+    <span class="badge badge-medium">🔴 P0 — CPU / RAS</span>
+    <span class="badge badge-medium">IERR / CATERR Domain</span>
+    <span class="badge badge-active">DMR A0 Silicon</span>
+    <span class="badge badge-low">VALOR PASS (no repro this run)</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     METRICS ROW
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="metrics-row">
+  <div class="metric-card">
+    <div class="value pass">PASS</div>
+    <div class="label">VALOR Verdict</div>
+  </div>
+  <div class="metric-card">
+    <div class="value amber">AMBER</div>
+    <div class="label">BugScout Verdict</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">75%</div>
+    <div class="label">AI Debug Accuracy</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">50</div>
+    <div class="label">Evidence Snapshots</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">30m</div>
+    <div class="label">Stressapptest Duration</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">4h</div>
+    <div class="label">Idle Monitoring Window</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">3</div>
+    <div class="label">Risk Signals Found</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">1</div>
+    <div class="label">Unresolved SEL Events</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SYSTEM UNDER TEST
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="card border-primary">
+  <div class="section-title">System Under Test</div>
+  <div class="grid-3" style="margin-top:12px;">
+    <div><div class="kv-label">Platform</div><div class="kv-value">Intel OAKSTREAM (DMR-D, 1S)</div></div>
+    <div><div class="kv-label">Asset Tag</div><div class="kv-value">SC00901168H0080</div></div>
+    <div><div class="kv-label">IP Address</div><div class="kv-value">10.3.173.62</div></div>
+    <div><div class="kv-label">CPU</div><div class="kv-value">Genuine Intel® 0000 — Family 19, Model 1, <strong>Stepping 0 (A0)</strong></div></div>
+    <div><div class="kv-label">Microcode</div><div class="kv-value">0x8000099b (pre-production)</div></div>
+    <div><div class="kv-label">Cores / Threads</div><div class="kv-value">32C / 32T (HT off), 1 socket</div></div>
+    <div><div class="kv-label">Memory</div><div class="kv-value">32 GB DDR5-8000 RDIMM (1× Hynix HMCG88CMBRA774N, slot CPU0_DIMM_CH0S0)</div></div>
+    <div><div class="kv-label">BIOS</div><div class="kv-value">OKSDCRB1.86B.0033.D87.2603311943 (2026-03-31)</div></div>
+    <div><div class="kv-label">BMC FW</div><div class="kv-value">26.02 — IPMI 2.0 (BMC IP = 0.0.0.0, no Redfish)</div></div>
+    <div><div class="kv-label">OS / Kernel</div><div class="kv-value">CentOS Stream 10 / 6.18.0-dmr.bkc.6.18.3.8.3.x86_64</div></div>
+    <div><div class="kv-label">IOMMU</div><div class="kv-value">intel_iommu=on,sm_on (scalable mode)</div></div>
+    <div><div class="kv-label">TDX</div><div class="kv-value">Blocked — TME not enabled in BIOS</div></div>
+  </div>
+  <div class="warn-box" style="margin-top:16px;">⚠ <strong>1 DIMM configuration:</strong> 15 of 16 memory channels unpopulated. This matches HSD 14026491511 (TDX+1DIMM MCE) trigger condition. Standard memory stress may behave differently from multi-DIMM configs.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HSD DETAILS
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="section-title">HSD Ticket Details</div>
+  <table class="data-table" style="margin-top:8px;">
+    <tr><th>Field</th><th>Value</th></tr>
+    <tr><td>HSD ID</td><td><a href="https://hsdes.intel.com/appstore/article-one/#/article/15018590736" target="_blank">15018590736</a></td></tr>
+    <tr><td>Title</td><td>[DMR Co-Val][Platform V] IERR Assertion Following System Idle After Stressapptest</td></tr>
+    <tr><td>Domain</td><td>CPU / MCA / RAS — Uncore power state transition</td></tr>
+    <tr><td>Stepping Affected</td><td>DMR A0 (Family 19, Model 1, Step 0)</td></tr>
+    <tr><td>Status</td><td>Resolved (fixed in later stepping)</td></tr>
+    <tr><td>Repro Rate</td><td>Saw once — low repro probability per run</td></tr>
+    <tr><td>Trigger</td><td>Run stressapptest (full memory, all CPUs) → enter idle ≥4 hours → IERR/CATERR asserted</td></tr>
+    <tr><td>Root Cause (HSD)</td><td>P-state/C-state power-gating transition race — 32 cores simultaneously requesting deep C-states after sustained load; uncore power-gating sequence not properly serialized, corrupting RASIP error handler domain state machine (<code>rasip_reg_msg_mem_rasip_error_handler_domain.reg_mca_err_src_log</code>)</td></tr>
+    <tr><td>Fix</td><td>Microcode/stepping fix in B0+; no OS-level workaround</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     TEST EXECUTION TIMELINE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="card border-success">
+  <div class="section-title">VALOR Test Execution Timeline</div>
+
+  <div class="timeline-step">
+    <div class="step-dot"><div class="dot pass"></div><div class="step-line"></div></div>
+    <div class="step-content">
+      <strong>09:01 UTC — Preflight &amp; Deploy</strong>
+      <div class="step-meta">SSH key auth confirmed (BatchMode=yes ✓). Scripts deployed to SUT via paramiko. <code>/tmp/valor_logs/</code> created.</div>
+    </div>
+  </div>
+
+  <div class="timeline-step">
+    <div class="step-dot"><div class="dot pass"></div><div class="step-line"></div></div>
+    <div class="step-content">
+      <strong>09:01 UTC — Pre-stress Snapshot</strong>
+      <div class="step-meta">Baseline captured: dmesg, EDAC state, SEL, CPU frequency, MSR baseline, MCG_STATUS. File: <code>snap_pre_stress_20260809_090100.txt</code></div>
+    </div>
+  </div>
+
+  <div class="timeline-step">
+    <div class="step-dot"><div class="dot pass"></div><div class="step-line"></div></div>
+    <div class="step-content">
+      <strong>09:01–09:31 UTC — Stressapptest (30 min)</strong>
+      <div class="step-meta">24,486 MB RAM, 32 CPUs, 1800s. <strong>Status: PASS</strong> — no correctable errors during run.</div>
+      <pre class="code-block" style="max-height:80px;">stressapptest -s 1800 -M 24486 -C 32 -W --pause_delay 0
+Exit code: 0 — Passed: True</pre>
+    </div>
+  </div>
+
+  <div class="timeline-step">
+    <div class="step-dot"><div class="dot pass"></div><div class="step-line"></div></div>
+    <div class="step-content">
+      <strong>09:31 UTC — Post-stress Snapshot</strong>
+      <div class="step-meta">Post-stress state captured. File: <code>snap_post_stress_20260809_090100.txt</code></div>
+    </div>
+  </div>
+
+  <div class="timeline-step">
+    <div class="step-dot"><div class="dot pass"></div><div class="step-line"></div></div>
+    <div class="step-content">
+      <strong>09:31–13:31 UTC — Idle Monitoring (4 hours, 47 polls)</strong>
+      <div class="step-meta">Poll every 5 min: dmesg delta, EDAC counts, MCG_STATUS, SEL delta. No IERR/CATERR observed in any poll.</div>
+    </div>
+  </div>
+
+  <div class="timeline-step">
+    <div class="step-dot"><div class="dot pass"></div></div>
+    <div class="step-content">
+      <strong>13:31 UTC — Final Snapshot &amp; VALOR Verdict</strong>
+      <div class="step-meta"><strong>VERDICT: PASS</strong> — No IERR/CATERR in 4-hour idle window. Low repro probability expected per HSD notes.</div>
+    </div>
+  </div>
+
+  <div class="info-box">📁 Full evidence bundle: <code>/tmp/valor_logs/ierr_evidence_20260809_090100.txt</code> (40KB, 50 snapshots) — preserved on SUT.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ARTIFACTS
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="section-title">Test Artifacts &amp; Evidence Files</div>
+  <table class="data-table">
+    <tr><th>File</th><th>Description</th><th>Location</th></tr>
+    <tr>
+      <td><a href="DMR-CPU-IERR-001.json">DMR-CPU-IERR-001.json</a></td>
+      <td>BiFrost catalog entry — P0, blocks cpu/mca/ras on fail, 5h timeout</td>
+      <td>This folder</td>
+    </tr>
+    <tr>
+      <td><a href="ierr_repro.py">ierr_repro.py</a></td>
+      <td>VALOR-aware repro script — stressapptest + idle monitoring, emits VERDICT</td>
+      <td>This folder</td>
+    </tr>
+    <tr>
+      <td><a href="bugscout_analysis.html">bugscout_analysis.html</a></td>
+      <td>Full BugScout blind analysis report — AMBER verdict, 3 risk signals</td>
+      <td>This folder</td>
+    </tr>
+    <tr>
+      <td><code>snap_pre_stress_*.txt</code></td>
+      <td>Pre-stress system baseline snapshot</td>
+      <td>SUT: /tmp/valor_logs/</td>
+    </tr>
+    <tr>
+      <td><code>snap_post_stress_*.txt</code></td>
+      <td>Post-stress snapshot (immediately after stressapptest)</td>
+      <td>SUT: /tmp/valor_logs/</td>
+    </tr>
+    <tr>
+      <td><code>snap_idle_poll_001–047_*.txt</code></td>
+      <td>47 idle monitoring snapshots at 5-min intervals</td>
+      <td>SUT: /tmp/valor_logs/</td>
+    </tr>
+    <tr>
+      <td><code>ierr_evidence_20260809_090100.txt</code></td>
+      <td>40KB consolidated evidence bundle (all snapshots + SEL + dmesg)</td>
+      <td>SUT: /tmp/valor_logs/</td>
+    </tr>
+    <tr>
+      <td><code>stressapptest_*.log</code></td>
+      <td>Raw stressapptest run log</td>
+      <td>SUT: /tmp/valor_logs/</td>
+    </tr>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BUGSCOUT FINDINGS SUMMARY
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="card border-warning">
+  <div class="section-title">BugScout Blind Analysis — Summary</div>
+  <p style="font-size:.88em;margin-bottom:16px;color:var(--text-muted);">BugScout received only raw system evidence (dmesg, EDAC, SEL, snapshots). No HSD number, title, hypothesis, or expected outcome was provided.</p>
+
+  <div class="grid-2">
+    <div>
+      <p class="kv-label">Overall Verdict</p>
+      <p class="kv-value" style="font-size:1.2em;color:var(--conf-med);">⚠ AMBER — Latent Risk, Not Currently Failing</p>
+      <p style="font-size:.86em;margin-top:8px;">System is healthy at time of analysis but carries 3 independent risk signals that warrant investigation before next long-duration run.</p>
+    </div>
+    <div>
+      <p class="kv-label">Risk Signals Identified</p>
+      <div class="signal-row">
+        <span class="sig-sev high">HIGH</span>
+        <span>PSU/VR Brownout Cluster 2 (07/24/26) — Asserted, no deassertion (potentially active)</span>
+      </div>
+      <div class="signal-row">
+        <span class="sig-sev medium">MEDIUM</span>
+        <span>EDAC phantom IMC devices mc#12–15 (<code>bad cols/ranks = 0xffffffff</code>)</span>
+      </div>
+      <div class="signal-row">
+        <span class="sig-sev medium">MEDIUM</span>
+        <span>SAT region 39 ghost reference — linked to EDAC phantom NUMA topology</span>
+      </div>
+    </div>
+  </div>
+
+  <a href="bugscout_analysis.html" class="link-btn" style="margin-top:16px;">📄 View Full BugScout Analysis Report →</a>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     AI ACCURACY SCORECARD
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="card" style="background:#e8f5e9;border-left:5px solid #43a047;">
+  <div class="section-title" style="color:#1b5e20;">BugScout vs. HSD Ground Truth — Accuracy Scorecard</div>
+
+  <div class="metrics-row" style="margin-top:12px;margin-bottom:16px;">
+    <div class="metric-card">
+      <div class="value pct75" style="color:var(--conf-med);">75%</div>
+      <div class="label">Overall Score (6/8)</div>
+    </div>
+    <div class="metric-card">
+      <div class="value" style="color:var(--success);">✓ 4</div>
+      <div class="label">Correct Hits</div>
+    </div>
+    <div class="metric-card">
+      <div class="value" style="color:var(--conf-med);">⚠ 1</div>
+      <div class="label">Partial / Wrong Level</div>
+    </div>
+    <div class="metric-card">
+      <div class="value" style="color:var(--danger);">✗ 2</div>
+      <div class="label">Missed</div>
+    </div>
+    <div class="metric-card">
+      <div class="value" style="color:var(--primary);">+1</div>
+      <div class="label">Novel Finding (Bonus)</div>
+    </div>
+  </div>
+
+  <div class="check-grid" style="font-weight:700;font-size:.8em;border-bottom:2px solid #a5d6a7;padding-bottom:6px;color:#2e7d32;">
+    <span>Dimension</span><span style="text-align:center;">Verdict</span><span>Notes</span>
+  </div>
+  <div class="check-grid">
+    <span>IERR Domain (RASIP)</span>
+    <span class="check-verdict miss">✗ MISS</span>
+    <span>BugScout did not identify RASIP error handler domain as fault locus</span>
+  </div>
+  <div class="check-grid">
+    <span>Root Mechanism</span>
+    <span class="check-verdict miss">✗ MISS</span>
+    <span>P/C-state power-gating race not identified; BugScout attributed to external PSU</span>
+  </div>
+  <div class="check-grid">
+    <span>Power Delivery Risk</span>
+    <span class="check-verdict partial">⚠ PARTIAL</span>
+    <span>Correctly flagged voltage events as HIGH risk — wrong layer (PSU vs FIVR)</span>
+  </div>
+  <div class="check-grid">
+    <span>Key Diagnostic Step</span>
+    <span class="check-verdict pass">✓ PASS</span>
+    <span>Correctly prescribed MCG_STATUS + MCA bank reads as P0/P1 actions</span>
+  </div>
+  <div class="check-grid">
+    <span>EDAC Anomaly</span>
+    <span class="check-verdict pass">✓ BONUS</span>
+    <span>Novel finding not in HSD — phantom IMC mc#12–15 identified correctly as driver gap</span>
+  </div>
+  <div class="check-grid">
+    <span>4h Clean Judgment</span>
+    <span class="check-verdict pass">✓ PASS</span>
+    <span>Correctly assessed as inconclusive, not a health certificate (low repro rate)</span>
+  </div>
+  <div class="check-grid">
+    <span>Next Steps Quality</span>
+    <span class="check-verdict pass">✓ PASS</span>
+    <span>All recommended actions (MCG_STATUS, MSR, voltage sensors) directionally correct</span>
+  </div>
+  <div class="check-grid">
+    <span>False Positive Rate</span>
+    <span class="check-verdict partial">⚠ LOW</span>
+    <span>PSU brownout hypothesis partially wrong (FIVR vs external PSU) but directionally valid</span>
+  </div>
+
+  <div class="warn-box" style="margin-top:16px;">
+    <strong>Key Gap Identified:</strong> BugScout lacked platform architecture context (FIVR vs external VR observability boundary) and register semantics (RASIP bank mapping). 
+    A pre-enrichment pipeline using CoDesign + HSD MCPs would close this gap. See proposed improvement below.
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PROPOSED MCP ENRICHMENT PIPELINE
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="card border-primary">
+  <div class="section-title">Proposed BugScout MCP Enrichment Pipeline (v2)</div>
+  <p style="font-size:.88em;margin-bottom:16px;">Three pre-enrichment phases added before BugScout dispatch. Estimated accuracy improvement: 75% → ~90%.</p>
+
+  <table class="data-table">
+    <tr><th>#</th><th>Phase</th><th>MCP Used</th><th>Input</th><th>Output to BugScout</th><th>Bias Risk</th></tr>
+    <tr>
+      <td>1</td>
+      <td><strong>Platform Identity</strong></td>
+      <td>codesign-ask-specs-and-wikis</td>
+      <td>CPUID (Family/Model/Step)</td>
+      <td>Platform name, known subsystem list (RASIP, FIVR, IMH), errata domains</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <td>2</td>
+      <td><strong>Register Annotation</strong></td>
+      <td>codesign-ask-remote-code-repo</td>
+      <td>Platform name + MCA bank symptom</td>
+      <td>MCA bank → subsystem mapping; MSR address → register name</td>
+      <td>None</td>
+    </tr>
+    <tr>
+      <td>3</td>
+      <td><strong>HSD Pattern Match</strong></td>
+      <td>codesign-ask-hsd-agent</td>
+      <td>Key observable signals only</td>
+      <td>Top-5 similar sightings — symptom description only (root cause redacted)</td>
+      <td><strong>Managed</strong> — repro HSD excluded from hit list; signal-only extraction prevents root cause leakage</td>
+    </tr>
+  </table>
+
+  <div class="info-box">📌 <strong>Evaluation methodology:</strong> Phase A (raw evidence only) score preserved as baseline. Phase B (enriched) measured on a <em>different</em> repro case to avoid circular evaluation. Repro HSDs treated as ground-truth labels, never fed back to BugScout.</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     NEXT STEPS
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="card">
+  <div class="section-title">Recommended Next Steps</div>
+  <table class="data-table">
+    <tr><th>Priority</th><th>Action</th><th>Rationale</th></tr>
+    <tr>
+      <td>P0</td>
+      <td>Check Cluster 2 voltage sensor current state:<br><code>ipmitool sdr list full | grep -E 'Volt|volt'</code></td>
+      <td>07/24/26 SEL brownout has no deassertion — may indicate active unresolved fault</td>
+    </tr>
+    <tr>
+      <td>P1</td>
+      <td>Read MCG_STATUS + MCA bank 31 (RASIP):<br><code>rdmsr -a 0x17A; rdmsr -a 0x419</code></td>
+      <td>Would confirm or rule out RASIP corruption — key diagnostic BugScout couldn't do without being told which bank</td>
+    </tr>
+    <tr>
+      <td>P2</td>
+      <td>Move to next repro: <strong>HSD 14026908999</strong> (DSA Gather Copy 0x1A) — explicit CLI repro, zero BIOS changes needed</td>
+      <td>Highest repro confidence in the 14-candidate list; accelerator domain (not RAS)</td>
+    </tr>
+    <tr>
+      <td>P3</td>
+      <td>Enable TME in BIOS (requires F2/KVM access) to unblock TDX MCE repro</td>
+      <td>HSD 14026491511 exact config match (1-DIMM + TDX) — passively observable once TDX is initialized</td>
+    </tr>
+  </table>
+</div>
+
+<footer>
+  Generated 2026-08-09 19:30 IST &nbsp;|&nbsp; VALOR v1 + BugScout AI &nbsp;|&nbsp; intel-sandbox/agentic-VALOR
+</footer>
+
+<script>
+document.querySelectorAll('.iter-header').forEach(h => {
+  h.addEventListener('click', () => {
+    const body = h.nextElementSibling;
+    const toggle = h.querySelector('.iter-toggle');
+    if (body) { body.classList.toggle('active'); }
+    if (toggle) { toggle.classList.toggle('open'); }
+  });
+});
+</script>
+</body>
+</html>

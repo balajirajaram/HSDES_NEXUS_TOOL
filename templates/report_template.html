@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HSD Triage &amp; Log Recommendation Report</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --primary: #0d6efd;
+    --success: #198754;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --info: #0dcaf0;
+    --tier1: #d4edda;
+    --tier2: #fff3cd;
+    --tier3: #f8d7da;
+    --expand-bg: #f1f3f5;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    line-height: 1.5;
+  }
+
+  /* Header */
+  .report-header {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .report-header h1 { font-size: 1.6em; margin-bottom: 4px; }
+  .report-header .meta { color: var(--text-muted); font-size: 0.88em; margin-bottom: 16px; }
+
+  /* Summary pills */
+  .summary-bar {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .pill {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pill-total { background: #e9ecef; color: #495057; }
+  .pill-success { background: var(--tier1); color: #155724; }
+  .pill-warning { background: var(--tier2); color: #856404; }
+  .pill-danger { background: var(--tier3); color: #721c24; }
+  .pill-info { background: #d1ecf1; color: #0c5460; }
+
+  /* Metrics cards */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .metric-card .value { font-size: 2em; font-weight: 700; color: var(--primary); }
+  .metric-card .label { font-size: 0.82em; color: var(--text-muted); margin-top: 4px; }
+
+  /* Filters */
+  .filter-bar {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .filter-bar label { font-size: 0.82em; font-weight: 600; color: var(--text-muted); }
+  .filter-bar select, .filter-bar input {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.88em;
+    background: var(--bg);
+  }
+  .filter-bar input[type="text"] { min-width: 200px; }
+
+  /* Table */
+  .table-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+  }
+  thead th {
+    background: #343a40;
+    color: #fff;
+    padding: 12px 14px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  thead th:hover { background: #495057; }
+  thead th .sort-arrow { margin-left: 4px; opacity: 0.5; }
+  tbody td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tbody tr:hover { background: #f8f9fa; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* Expandable row */
+  .expand-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: 0.8em;
+    color: var(--primary);
+    transition: all 0.2s;
+  }
+  .expand-btn:hover { background: var(--primary); color: #fff; }
+  .detail-row { display: none; }
+  .detail-row.active { display: table-row; }
+  .detail-cell {
+    padding: 16px 24px;
+    background: var(--expand-bg);
+    border-bottom: 2px solid var(--border);
+  }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .detail-section h4 {
+    font-size: 0.82em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .detail-section p, .detail-section ul {
+    font-size: 0.88em;
+    line-height: 1.6;
+  }
+  .detail-section ul { padding-left: 16px; }
+  .detail-section code {
+    background: #1e1e1e;
+    color: #9cdcfe;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .detail-section pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge-same { background: var(--tier1); color: #155724; }
+  .badge-adjacent { background: var(--tier2); color: #856404; }
+  .badge-cross { background: var(--tier3); color: #721c24; }
+  .badge-high { background: var(--tier3); color: #721c24; }
+  .badge-medium { background: var(--tier2); color: #856404; }
+  .badge-low { background: #d1ecf1; color: #0c5460; }
+
+  /* Iteration savings indicator */
+  .iter-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 700;
+  }
+  .iter-1 { background: var(--tier1); color: #155724; }
+  .iter-2 { background: var(--tier2); color: #856404; }
+  .iter-3 { background: var(--tier3); color: #721c24; }
+
+  /* Footer */
+  footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8em;
+    margin-top: 24px;
+    padding: 16px;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .detail-grid { grid-template-columns: 1fr; }
+    .filter-bar { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+
+<!-- REPORT HEADER -->
+<div class="report-header">
+  <h1>HSD Triage &amp; Log Recommendation Report</h1>
+  <div class="meta">
+    Generated: {{ generated_timestamp }} &nbsp;|&nbsp;
+    Input: {{ input_file }} &nbsp;|&nbsp;
+    Domain: {{ domain_label }}
+  </div>
+  <div class="summary-bar">
+    <span class="pill pill-total">Total HSDs: {{ total_hsds }}</span>
+    <span class="pill pill-success">Tier 1 Sufficient: {{ tier1_sufficient_count }} ({{ tier1_sufficient_pct }}%)</span>
+    <span class="pill pill-warning">Tier 1+2 Needed: {{ tier12_needed_count }}</span>
+    <span class="pill pill-danger">Cross-Domain: {{ cross_domain_count }}</span>
+    <span class="pill pill-info">Avg Iterations Saved: {{ avg_iteration_savings }}</span>
+  </div>
+</div>
+
+<!-- ACCURACY METRICS -->
+<div class="metrics-row">
+  <div class="metric-card">
+    <div class="value">{{ tier1_accuracy_pct }}%</div>
+    <div class="label">Tier 1 Logs → Root Cause</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">{{ tier12_accuracy_pct }}%</div>
+    <div class="label">Tier 1+2 → Root Cause</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">{{ cross_domain_detected_pct }}%</div>
+    <div class="label">Cross-Domain Correctly Identified</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">{{ avg_iteration_savings }}</div>
+    <div class="label">Avg Iterations Saved</div>
+  </div>
+</div>
+
+<!-- FILTERS -->
+<div class="filter-bar">
+  <div>
+    <label>Component:</label>
+    <select id="filter-component" onchange="applyFilters()">
+      <option value="">All</option>
+      {% for comp in unique_components %}
+      <option value="{{ comp }}">{{ comp }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label>Priority:</label>
+    <select id="filter-priority" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="1-showstopper">1-showstopper</option>
+      <option value="2-high">2-high</option>
+      <option value="3-medium">3-medium</option>
+      <option value="4-low">4-low</option>
+    </select>
+  </div>
+  <div>
+    <label>Domain Relationship:</label>
+    <select id="filter-domain-rel" onchange="applyFilters()">
+      <option value="">All</option>
+      <option value="same-domain">Same Domain</option>
+      <option value="adjacent">Adjacent</option>
+      <option value="cross-domain">Cross-Domain</option>
+    </select>
+  </div>
+  <div>
+    <label>Search:</label>
+    <input type="text" id="filter-search" placeholder="Search title, symptom, root cause..." oninput="applyFilters()">
+  </div>
+</div>
+
+<!-- DATA TABLE -->
+<div class="table-card">
+  <table id="triage-table">
+    <thead>
+      <tr>
+        <th onclick="sortTable(0)"><!-- expand --></th>
+        <th onclick="sortTable(1)">HSD ID <span class="sort-arrow">⇅</span></th>
+        <th onclick="sortTable(2)">Title <span class="sort-arrow">⇅</span></th>
+        <th onclick="sortTable(3)">Component <span class="sort-arrow">⇅</span></th>
+        <th onclick="sortTable(4)">Priority <span class="sort-arrow">⇅</span></th>
+        <th onclick="sortTable(5)">Test Case <span class="sort-arrow">⇅</span></th>
+        <th onclick="sortTable(6)">Domain Rel. <span class="sort-arrow">⇅</span></th>
+        <th onclick="sortTable(7)">Iterations Saved <span class="sort-arrow">⇅</span></th>
+        <th onclick="sortTable(8)">Accuracy <span class="sort-arrow">⇅</span></th>
+        <th onclick="sortTable(9)">Actual Logs Collected <span class="sort-arrow">⇅</span></th>
+        <th onclick="sortTable(10)">Recommended Logs <span class="sort-arrow">⇅</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr class="data-row"
+          data-component="{{ row.component }}"
+          data-priority="{{ row.priority }}"
+          data-domain-rel="{{ row.domain_relationship }}"
+          data-searchable="{{ row.title|lower }} {{ row.initial_symptom|lower }} {{ row.verified_root_cause|lower }}">
+        <td><button class="expand-btn" onclick="toggleDetail(this)">+</button></td>
+        <td><a href="https://hsdes.intel.com/appstore/article/#/{{ row.hsd_id }}" target="_blank">{{ row.hsd_id }}</a></td>
+        <td style="max-width:300px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ row.title }}">{{ row.title }}</td>
+        <td>{{ row.component }}</td>
+        <td>
+          {% if '1-' in row.priority %}<span class="badge badge-high">{{ row.priority }}</span>
+          {% elif '2-' in row.priority %}<span class="badge badge-high">{{ row.priority }}</span>
+          {% elif '3-' in row.priority %}<span class="badge badge-medium">{{ row.priority }}</span>
+          {% else %}<span class="badge badge-low">{{ row.priority }}</span>{% endif %}
+        </td>
+        <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ row.testcase_name }}">{{ row.testcase_name }}</td>
+        <td>
+          {% if row.domain_relationship == 'same-domain' %}<span class="badge badge-same">Same</span>
+          {% elif row.domain_relationship == 'adjacent' %}<span class="badge badge-adjacent">Adjacent</span>
+          {% else %}<span class="badge badge-cross">Cross</span>{% endif %}
+        </td>
+        <td>
+          {% if row.iteration_savings|int <= 1 %}<span class="iter-badge iter-1">{{ row.iteration_savings }}</span>
+          {% elif row.iteration_savings|int == 2 %}<span class="iter-badge iter-2">{{ row.iteration_savings }}</span>
+          {% else %}<span class="iter-badge iter-3">{{ row.iteration_savings }}</span>{% endif %}
+        </td>
+        <td>{{ row.recommendation_accuracy }}</td>
+        <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ row.actual_logs_collected }}">{{ row.actual_logs_collected }}</td>
+        <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="{{ row.recommended_log_categories }}">{{ row.recommended_log_categories }}</td>
+      </tr>
+      <!-- Expandable detail row -->
+      <tr class="detail-row">
+        <td colspan="11" class="detail-cell">
+          <div class="detail-grid">
+            <div class="detail-section">
+              <h4>Initial Symptom</h4>
+              <p>{{ row.initial_symptom }}</p>
+            </div>
+            <div class="detail-section">
+              <h4>Test Case Details</h4>
+              <p><strong>Name:</strong> {{ row.testcase_name }}</p>
+              <p><strong>Command:</strong> <code>{{ row.testcase_command }}</code></p>
+              <p><strong>Domain Focus:</strong> {{ row.testcase_domain_focus }}</p>
+              <p><strong>How TC Encounters Defect:</strong> {{ row.how_testcase_encounters_defect }}</p>
+            </div>
+            <div class="detail-section">
+              <h4>Verified Ground Truth</h4>
+              <p><strong>Problem:</strong> {{ row.verified_problem_statement }}</p>
+              <p><strong>Root Cause:</strong> {{ row.verified_root_cause }}</p>
+              <p><strong>Fix:</strong> {{ row.verified_fix }}</p>
+            </div>
+            <div class="detail-section">
+              <h4>Log Recommendations</h4>
+              <p><strong>Tier 1 (Critical):</strong></p>
+              <ul>
+                {% for log in row.recommended_log_categories.split(',') %}
+                <li>{{ log|trim }}</li>
+                {% endfor %}
+              </ul>
+              <p><strong>Specific Commands:</strong></p>
+              <pre>{{ row.recommended_commands }}</pre>
+              {% if row.beyond_sme_recommendations %}
+              <p><strong>Beyond-SME (GENI):</strong> {{ row.beyond_sme_recommendations }}</p>
+              {% endif %}
+            </div>
+            <div class="detail-section">
+              <h4>Actual Logs Collected</h4>
+              <p>{{ row.actual_logs_collected }}</p>
+            </div>
+            <div class="detail-section">
+              <h4>Recommendation Rationale</h4>
+              <p>{{ row.recommendation_rationale }}</p>
+              <p><strong>Root Cause Domain:</strong> {{ row.root_cause_domain }}</p>
+              <p><strong>Domain Relationship:</strong> {{ row.domain_relationship }}</p>
+            </div>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  Generated by HSD Triage Agent &nbsp;·&nbsp;
+  Powered by GENI + Co-Design + NGA MCP &nbsp;·&nbsp;
+  {{ generated_timestamp }}
+  <br>
+  Template: report_template.html v1.0 &nbsp;·&nbsp;
+  Framework: project-c3/hsd-triage
+</footer>
+
+<!-- JAVASCRIPT: Filtering, Sorting, Expand/Collapse -->
+<script>
+function toggleDetail(btn) {
+  const dataRow = btn.closest('tr');
+  const detailRow = dataRow.nextElementSibling;
+  if (detailRow.classList.contains('active')) {
+    detailRow.classList.remove('active');
+    btn.textContent = '+';
+  } else {
+    detailRow.classList.add('active');
+    btn.textContent = '−';
+  }
+}
+
+function applyFilters() {
+  const component = document.getElementById('filter-component').value.toLowerCase();
+  const priority = document.getElementById('filter-priority').value.toLowerCase();
+  const domainRel = document.getElementById('filter-domain-rel').value.toLowerCase();
+  const search = document.getElementById('filter-search').value.toLowerCase();
+
+  const rows = document.querySelectorAll('#triage-table tbody .data-row');
+  rows.forEach(row => {
+    const detailRow = row.nextElementSibling;
+    let show = true;
+
+    if (component && row.dataset.component.toLowerCase() !== component) show = false;
+    if (priority && row.dataset.priority.toLowerCase() !== priority) show = false;
+    if (domainRel && row.dataset.domainRel.toLowerCase() !== domainRel) show = false;
+    if (search && !row.dataset.searchable.includes(search)) show = false;
+
+    row.style.display = show ? '' : 'none';
+    if (detailRow && detailRow.classList.contains('detail-row')) {
+      if (!show) {
+        detailRow.style.display = 'none';
+        detailRow.classList.remove('active');
+      } else {
+        detailRow.style.display = '';
+      }
+    }
+  });
+}
+
+function sortTable(colIdx) {
+  const table = document.getElementById('triage-table');
+  const tbody = table.querySelector('tbody');
+  const rowPairs = [];
+
+  // Collect data-row + detail-row pairs
+  const allRows = Array.from(tbody.querySelectorAll('tr'));
+  for (let i = 0; i < allRows.length; i += 2) {
+    rowPairs.push([allRows[i], allRows[i+1]]);
+  }
+
+  // Determine sort direction
+  const th = table.querySelectorAll('thead th')[colIdx];
+  const asc = th.dataset.sortDir !== 'asc';
+  th.dataset.sortDir = asc ? 'asc' : 'desc';
+
+  rowPairs.sort((a, b) => {
+    const cellA = a[0].querySelectorAll('td')[colIdx]?.textContent.trim() || '';
+    const cellB = b[0].querySelectorAll('td')[colIdx]?.textContent.trim() || '';
+    const numA = parseFloat(cellA);
+    const numB = parseFloat(cellB);
+    if (!isNaN(numA) && !isNaN(numB)) {
+      return asc ? numA - numB : numB - numA;
+    }
+    return asc ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+  });
+
+  // Re-append in sorted order
+  rowPairs.forEach(([dataRow, detailRow]) => {
+    tbody.appendChild(dataRow);
+    if (detailRow) tbody.appendChild(detailRow);
+  });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1762 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Live Debug Session — HSD 22022566949</title>
+<style>
+  :root {
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --border: #dee2e6;
+    --text: #212529;
+    --text-muted: #6c757d;
+    --primary: #0d6efd;
+    --success: #198754;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --info: #0dcaf0;
+    --tier1: #d4edda;
+    --tier2: #fff3cd;
+    --tier3: #f8d7da;
+    --expand-bg: #f1f3f5;
+    --conf-high: #198754;
+    --conf-med: #fd7e14;
+    --conf-low: #dc3545;
+    --timeline-line: #dee2e6;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    line-height: 1.5;
+  }
+
+  /* ── Header ───────────────────────────────────────────────────────── */
+  .report-header {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .report-header h1 { font-size: 1.6em; margin-bottom: 4px; }
+  .report-header h1 a { color: inherit; text-decoration: none; }
+  .report-header h1 a:hover { color: var(--primary); }
+  .report-header .subtitle { font-size: 1em; color: var(--text-muted); margin-bottom: 12px; }
+  .report-header .meta { color: var(--text-muted); font-size: 0.88em; margin-bottom: 16px; }
+  .header-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  /* ── Pills & Badges ───────────────────────────────────────────────── */
+  .pill {
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 0.85em;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .pill-total    { background: #e9ecef; color: #495057; }
+  .pill-success  { background: var(--tier1); color: #155724; }
+  .pill-warning  { background: var(--tier2); color: #856404; }
+  .pill-danger   { background: var(--tier3); color: #721c24; }
+  .pill-info     { background: #d1ecf1; color: #0c5460; }
+
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .badge-active        { background: #cfe2ff; color: #084298; }
+  .badge-found         { background: var(--tier1); color: #155724; }
+  .badge-abandoned     { background: #e9ecef; color: #495057; }
+  .badge-manual        { background: #e9ecef; color: #495057; }
+  .badge-local         { background: #cfe2ff; color: #084298; }
+  .badge-ssh           { background: #d1ecf1; color: #0c5460; }
+  .badge-auto          { background: var(--tier2); color: #856404; }
+  .badge-high          { background: var(--tier3); color: #721c24; }
+  .badge-medium        { background: var(--tier2); color: #856404; }
+  .badge-low           { background: #d1ecf1; color: #0c5460; }
+
+  /* ── Metric Cards ─────────────────────────────────────────────────── */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .metric-card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  }
+  .metric-card .value { font-size: 2em; font-weight: 700; color: var(--primary); }
+  .metric-card .label { font-size: 0.82em; color: var(--text-muted); margin-top: 4px; }
+  .metric-card .value.conf-high { color: var(--conf-high); }
+  .metric-card .value.conf-med  { color: var(--conf-med); }
+  .metric-card .value.conf-low  { color: var(--conf-low); }
+
+  /* ── Section Titles ───────────────────────────────────────────────── */
+  .section-title {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  /* ── Hypothesis Evolution Timeline ───────────────────────────────── */
+  .timeline-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .timeline-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86em;
+  }
+  .timeline-table th {
+    background: #343a40;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .timeline-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .timeline-table tr:last-child td { border-bottom: none; }
+  .timeline-table tr:hover td { background: var(--bg); }
+  .conf-bar-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 180px;
+  }
+  .conf-bar-track {
+    flex: 1;
+    height: 10px;
+    background: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .conf-bar-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 0.6s ease;
+  }
+  .conf-bar-fill.high { background: var(--conf-high); }
+  .conf-bar-fill.med  { background: var(--conf-med); }
+  .conf-bar-fill.low  { background: var(--conf-low); }
+  .conf-label { font-weight: 700; font-size: 0.85em; min-width: 40px; }
+
+  /* ── Iteration Accordion ─────────────────────────────────────────── */
+  .iterations-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    margin-bottom: 24px;
+  }
+  .iter-panel {
+    border-bottom: 1px solid var(--border);
+  }
+  .iter-panel:last-child { border-bottom: none; }
+
+  .iter-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+  }
+  .iter-header:hover { background: var(--bg); }
+  .iter-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #343a40;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.88em;
+    flex-shrink: 0;
+  }
+  .iter-summary { flex: 1; font-size: 0.9em; }
+  .iter-summary strong { display: block; margin-bottom: 2px; }
+  .iter-summary .iter-meta { color: var(--text-muted); font-size: 0.82em; }
+  .iter-toggle {
+    font-size: 1.2em;
+    color: var(--primary);
+    font-weight: 700;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .iter-toggle.open { transform: rotate(45deg); }
+
+  .iter-body {
+    display: none;
+    padding: 0 20px 20px 20px;
+    background: var(--expand-bg);
+  }
+  .iter-body.active { display: block; }
+
+  .iter-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 16px;
+  }
+  .iter-section h4 {
+    font-size: 0.8em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .iter-section p, .iter-section ul {
+    font-size: 0.88em;
+    line-height: 1.6;
+  }
+  .iter-section ul { padding-left: 16px; }
+  .iter-section code {
+    background: #1e1e1e;
+    color: #9cdcfe;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+  .iter-section pre {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 0.8em;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    max-height: 220px;
+    overflow-y: auto;
+    margin-top: 6px;
+  }
+
+  /* Hypothesis table inside iteration */
+  .hyp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.84em;
+    margin-top: 6px;
+  }
+  .hyp-table th {
+    background: #495057;
+    color: #fff;
+    padding: 6px 10px;
+    text-align: left;
+  }
+  .hyp-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+  .hyp-table tr:last-child td { border-bottom: none; }
+
+  /* Next-steps list */
+  .next-steps-list { list-style: none; padding: 0; margin-top: 6px; }
+  .next-steps-list li {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 0.88em;
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .step-body .step-rationale {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    margin-top: 2px;
+  }
+  .step-body code { font-size: 0.82em; }
+
+  /* User input box */
+  .user-input-box {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--primary);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 0.88em;
+    margin-top: 6px;
+    line-height: 1.6;
+  }
+
+  /* ── Field Feedback & Corrections ────────────────────────────────── */
+  .corrections-card {
+    background: #fff8e1;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-left: 5px solid #f59e0b;
+  }
+  .corrections-card .section-title { color: #92400e; }
+  .corrections-card .corr-badge {
+    display: inline-block;
+    background: #f59e0b;
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 8px;
+  }
+  .corrections-card .corr-unchanged {
+    display: inline-block;
+    background: #10b981;
+    color: #fff;
+    font-size: 0.75em;
+    font-weight: 700;
+    padding: 2px 10px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  .corrections-card .corr-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 16px;
+  }
+  .corrections-card .corr-section h4 {
+    font-size: 0.82em;
+    color: #92400e;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .corrections-card .corr-section p,
+  .corrections-card .corr-section li { font-size: 0.9em; line-height: 1.6; }
+
+  /* ── Final Root Cause ─────────────────────────────────────────────── */
+  .rootcause-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    border-top: 4px solid var(--success);
+  }
+  .rootcause-card.abandoned { border-top-color: var(--text-muted); }
+  .rootcause-card.active    { border-top-color: var(--warning); }
+
+  .rootcause-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 16px;
+  }
+  .rc-section h4 {
+    font-size: 0.82em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .rc-section p { font-size: 0.9em; line-height: 1.6; }
+  .rc-section code {
+    background: #1e1e1e;
+    color: #9cdcfe;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.85em;
+  }
+
+  /* Evidence chain */
+  .evidence-chain { list-style: none; padding: 0; margin-top: 6px; }
+  .evidence-chain li {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 0.88em;
+    align-items: flex-start;
+  }
+  .evidence-chain .ev-iter {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 22px;
+    border-radius: 11px;
+    background: #343a40;
+    color: #fff;
+    font-size: 0.72em;
+    font-weight: 700;
+    flex-shrink: 0;
+    padding: 0 6px;
+  }
+
+  /* ── Related HSDs ─────────────────────────────────────────────────── */
+  .related-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .related-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+    margin-top: 12px;
+  }
+  .related-table th {
+    background: #343a40;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+  }
+  .related-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .related-table tr:last-child td { border-bottom: none; }
+  .related-table tr:hover td { background: var(--bg); }
+
+  /* ── Footer ───────────────────────────────────────────────────────── */
+  footer {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.8em;
+    margin-top: 24px;
+    padding: 16px;
+  }
+
+  /* ── Responsive ───────────────────────────────────────────────────── */
+  @media (max-width: 768px) {
+    .iter-grid     { grid-template-columns: 1fr; }
+    .rootcause-grid { grid-template-columns: 1fr; }
+    .metrics-row   { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SESSION HEADER
+═══════════════════════════════════════════════════════════════ -->
+<div class="report-header">
+  <h1>
+    Live Debug Session —
+    <a href="https://hsdes.intel.com/appstore/article/#/22022566949" target="_blank">
+      HSD 22022566949
+    </a>
+  </h1>
+  <div class="subtitle">[OKS][DMR][VT][X4][VV] Segfault observed while performing QAT LM to Dest VM with cpa_sample_code running</div>
+  <div class="meta">
+    Component: <strong>QAT / VFIO Live Migration / KVM (kernel regression)</strong> &nbsp;|&nbsp;
+    Started: 2026-06-01 &nbsp;|&nbsp;
+    Completed: 2026-06-10 &nbsp;|&nbsp;
+    Generated: 2026-06-10T17:48:43
+  </div>
+  <div class="header-badges">
+    
+      <span class="badge badge-active">● In Progress</span>
+    
+
+    
+      <span class="badge badge-manual">Manual Execution</span>
+    
+
+    <span class="pill pill-total">5 Iterations</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SUMMARY METRIC CARDS
+═══════════════════════════════════════════════════════════════ -->
+<div class="metrics-row">
+  <div class="metric-card">
+    <div class="value">5</div>
+    <div class="label">Debug Iterations</div>
+  </div>
+  <div class="metric-card">
+    
+    <div class="value conf-high">85%</div>
+    <div class="label">Final Hypothesis Confidence</div>
+  </div>
+  <div class="metric-card">
+    
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+    <div class="value">7</div>
+    <div class="label">Log Sets Collected</div>
+  </div>
+  <div class="metric-card">
+    
+      <div class="value">6</div>
+    
+    <div class="label">Related Past HSDs</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FIELD FEEDBACK & TRIAGE CORRECTIONS
+═══════════════════════════════════════════════════════════════ -->
+
+<div class="corrections-card">
+  <div class="section-title">⚠ Field Feedback &amp; Triage Corrections</div>
+  <p><strong>⚠ Engineer Correction (2026-06-09, vijayag1):</strong> The warning <code>vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0</code> cited in Iter 4 (90% confidence) <strong>also appears in the passing scenario</strong>. It is a cosmetic QEMU VT-d diagnostic — not a root cause indicator.</p><p style='margin-top:8px'><strong>DISCARDED indicators (all present in PASS):</strong></p><ul style='margin-left:16px'><li>❌ vtd_interrupt_remap_msi (PASS dest L1424, PASS source L2028)</li><li>❌ IOMMU_IOAS_MAP failed: Bad address (PASS source L8/L11/L12/L493-495)</li><li>❌ TSC skew as contributing factor (PASS: −139ms, FAIL: −11ms — 12× in PASS)</li><li>❌ vfio-pci FLR absent in FAIL — CORRECTED: reset done present at [52.69s]+[60.18s]</li></ul><p style='margin-top:8px'><strong>Recommended HSD field updates:</strong><br>Component: platform.operating_system.vmm.kvm | Regression: yes | Workaround: downgrade to kernel 6.18.5.2.5 (DMR BKC WW14)</p>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     HYPOTHESIS EVOLUTION TIMELINE
+═══════════════════════════════════════════════════════════════ -->
+<div class="timeline-card">
+  <div class="section-title">Hypothesis Evolution</div>
+  <table class="timeline-table">
+    <thead>
+      <tr>
+        <th>Iteration</th>
+        <th>Top Hypothesis</th>
+        <th>Confidence</th>
+        <th>Key Evidence</th>
+        <th>Logs Collected</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      
+      
+      <tr>
+        <td><strong>Iter 1</strong><br><span style="color:var(--text-muted);font-size:0.82em">2026-06-01</span></td>
+        <td style="max-width:320px">QAT VF migration state not properly restored on destination — system characterization only</td>
+        <td>
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-track">
+              <div class="conf-bar-fill low"
+                style="width:40%"></div>
+            </div>
+            <span class="conf-label" style="color:var(--conf-low)">40%</span>
+          </div>
+        </td>
+        <td style="font-size:0.85em; max-width:200px">
+          
+            host_terminal_log.rtf
+          
+        </td>
+        <td style="font-size:0.85em">1 set</td>
+      </tr>
+      
+      
+      
+      <tr>
+        <td><strong>Iter 2</strong><br><span style="color:var(--text-muted);font-size:0.82em">2026-06-01</span></td>
+        <td style="max-width:320px">Crash at [98.8s] — NULL function pointer in libc.so.6 (error 44) after QAT migration [CONFIRMED STILL VALID]</td>
+        <td>
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-track">
+              <div class="conf-bar-fill high"
+                style="width:100%"></div>
+            </div>
+            <span class="conf-label" style="color:var(--conf-high)">100%</span>
+          </div>
+        </td>
+        <td style="font-size:0.85em; max-width:200px">
+          
+            host_dmesg_log.rtf
+          
+        </td>
+        <td style="font-size:0.85em">1 set</td>
+      </tr>
+      
+      
+      
+      <tr>
+        <td><strong>Iter 3</strong><br><span style="color:var(--text-muted);font-size:0.82em">2026-06-01</span></td>
+        <td style="max-width:320px">cpa_sample_code active with in-flight ops at migration time — QAT VF busy during handoff (VALID)</td>
+        <td>
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-track">
+              <div class="conf-bar-fill high"
+                style="width:90%"></div>
+            </div>
+            <span class="conf-label" style="color:var(--conf-high)">90%</span>
+          </div>
+        </td>
+        <td style="font-size:0.85em; max-width:200px">
+          
+            source_VM_terminal_logsrtf.rtf
+          
+        </td>
+        <td style="font-size:0.85em">1 set</td>
+      </tr>
+      
+      
+      
+      <tr>
+        <td><strong>Iter 4</strong><br><span style="color:var(--text-muted);font-size:0.82em">2026-06-01</span></td>
+        <td style="max-width:320px">qat_vfio_pci correctly bound on both VFs; dest domain 0001 vs source 0000 — secondary variable (VALID)</td>
+        <td>
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-track">
+              <div class="conf-bar-fill med"
+                style="width:70%"></div>
+            </div>
+            <span class="conf-label" style="color:var(--conf-med)">70%</span>
+          </div>
+        </td>
+        <td style="font-size:0.85em; max-width:200px">
+          
+            MobaXterm_10.49.152.143_20260601_055012.rtf
+          
+        </td>
+        <td style="font-size:0.85em">1 set</td>
+      </tr>
+      
+      
+      
+      <tr>
+        <td><strong>Iter 5</strong><br><span style="color:var(--text-muted);font-size:0.82em">2026-06-10</span></td>
+        <td style="max-width:320px">Kernel 6.18.8.4.9 regression in post-FLR VFIO/KVM VF state-restore — hardware FLR completes on both kernels but subsequent IRQ vector/MSI-X/callback-pointer restoration broken in 6.18.8.4.9; crash at first QAT completion IRQ post-migration</td>
+        <td>
+          <div class="conf-bar-wrap">
+            <div class="conf-bar-track">
+              <div class="conf-bar-fill high"
+                style="width:85%"></div>
+            </div>
+            <span class="conf-label" style="color:var(--conf-high)">85%</span>
+          </div>
+        </td>
+        <td style="font-size:0.85em; max-width:200px">
+          
+            Destination_VM_terminal_dmesg.rtf (PASS · 6.18.5.2.5), Source_VM_terminal_logs.rtf (PASS · 6.18.5.2.5), host_dmesg_terminal)log.rtf (PASS · 6.18.5.2.5)
+          
+        </td>
+        <td style="font-size:0.85em">3 sets</td>
+      </tr>
+      
+    </tbody>
+  </table>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     ITERATION ACCORDION
+═══════════════════════════════════════════════════════════════ -->
+<div class="iterations-card">
+  <div style="padding:20px 24px 0"><div class="section-title">Debug Iterations</div></div>
+
+  
+  
+  
+  <div class="iter-panel">
+    <div class="iter-header" onclick="toggleIter(this)">
+      <span class="iter-num">1</span>
+      <div class="iter-summary">
+        <strong>QAT VF migration state not properly restored on destination — system...</strong>
+        <span class="iter-meta">
+          2026-06-01
+          &nbsp;·&nbsp;
+          1 log set collected
+          &nbsp;·&nbsp;
+          Confidence: 40%
+        </span>
+      </div>
+      <span class="iter-toggle">+</span>
+    </div>
+
+    <div class="iter-body">
+      <div class="iter-grid">
+
+        <!-- Logs Requested -->
+        <div class="iter-section">
+          <h4>Logs Requested</h4>
+          
+            <ul>
+              
+              <li>
+                <strong>host_terminal</strong>
+                
+                  <pre>uname -r
+yum info qatlib
+nproc</pre>
+                
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- Logs Collected -->
+        <div class="iter-section">
+          <h4>Logs Collected</h4>
+          
+            
+            <p><strong>host_terminal_log.rtf</strong>
+              
+                &nbsp;<span style="color:var(--text-muted);font-size:0.82em">QAT_LM_segfault_logs/host_terminal_log.rtf (4,818 bytes)</span>
+              
+            </p>
+            
+              <pre>[root@cs16ca101ds0506 ~]# yum info qatlib
+qatlib.x86_64  25.08-0.9.5  installed
+[root@cs16ca101ds0506 ~]# uname -r
+6.18.0-dmr.bkc.6.18.8.4.9.x86_64
+[root@cs16ca101ds0506 ~]# nproc
+160</pre>
+            
+            
+          
+        </div>
+
+        <!-- GENI Analysis -->
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>GENI Analysis</h4>
+          <p>Host confirmed as DMR bare metal (Oak Stream AP A0) with BKC kernel 6.18.8.4.9 and QAT library 25.08/0.9.5. 160 CPU threads available. Preliminary hypothesis: segfault is migration-induced from driver or interrupt remapping state not properly restored on destination. Additional logs needed to characterize crash signature.</p>
+        </div>
+
+        <!-- Hypothesis Ranking -->
+        <div class="iter-section">
+          <h4>Hypothesis Ranking</h4>
+          
+            <table class="hyp-table">
+              <thead><tr><th>#</th><th>Hypothesis</th><th>Confidence</th></tr></thead>
+              <tbody>
+                
+                
+                <tr>
+                  <td>1</td>
+                  <td>QAT VF migration state not properly restored on destination — system characterization only</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill low"
+                          style="width:40%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-low)">40%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+              </tbody>
+            </table>
+          
+        </div>
+
+        <!-- Next Steps -->
+        <div class="iter-section">
+          <h4>Recommended Next Steps</h4>
+          
+            <ul class="next-steps-list">
+              
+              <li>
+                <span class="step-num">1</span>
+                <div class="step-body">
+                  <strong>Read host_dmesg_log.rtf</strong>
+                  
+                    <div class="step-rationale">Crash signature and error code will be in host dmesg</div>
+                  
+                  
+                </div>
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- User Input -->
+        
+
+      </div><!-- /iter-grid -->
+    </div><!-- /iter-body -->
+  </div><!-- /iter-panel -->
+  
+  
+  
+  <div class="iter-panel">
+    <div class="iter-header" onclick="toggleIter(this)">
+      <span class="iter-num">2</span>
+      <div class="iter-summary">
+        <strong>Crash at [98.8s] — NULL function pointer in libc.so.6 (error 44) after QAT...</strong>
+        <span class="iter-meta">
+          2026-06-01
+          &nbsp;·&nbsp;
+          1 log set collected
+          &nbsp;·&nbsp;
+          Confidence: 100%
+        </span>
+      </div>
+      <span class="iter-toggle">+</span>
+    </div>
+
+    <div class="iter-body">
+      <div class="iter-grid">
+
+        <!-- Logs Requested -->
+        <div class="iter-section">
+          <h4>Logs Requested</h4>
+          
+            <ul>
+              
+              <li>
+                <strong>host_dmesg</strong>
+                
+                  <pre>dmesg | grep -E 'segfault|vtd|vfio|qat|cpa'</pre>
+                
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- Logs Collected -->
+        <div class="iter-section">
+          <h4>Logs Collected</h4>
+          
+            
+            <p><strong>host_dmesg_log.rtf</strong>
+              
+                &nbsp;<span style="color:var(--text-muted);font-size:0.82em">QAT_LM_segfault_logs/host_dmesg_log.rtf (90,189 bytes)</span>
+              
+            </p>
+            
+              <pre># CRASH (L793):
+[   98.836781] cpa_sample_code[1213]: segfault at 0 ip 00007f8a95d71623
+               error 44 in libc.so.6  ← PFEC 0x2C: I+U+~P = NULL fn ptr
+# FLR also present in FAIL (L790-L792):
+[   52.692337] vfio-pci 0000:00:03.0: reset done  ← FLR 1 completed
+[   60.179925] vfio-pci 0000:00:03.0: reset done  ← FLR 2 completed
+# DISCARDED (L16 — also in PASS):
+qemu-kvm: vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0
+Segmentation fault (core dumped)</pre>
+            
+            
+          
+        </div>
+
+        <!-- GENI Analysis -->
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>GENI Analysis</h4>
+          <p>CRASH SIGNATURE CONFIRMED: segfault at address 0, error 44 (0x2C = PFEC: I-bit=1, U-bit=1, P-bit=0) — instruction fetch from unmapped user-mode page, i.e., a NULL function pointer call in libc.so.6.
+
+ENGINEER CORRECTION (2026-06-09): vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0 — engineer confirmed this warning ALSO appears in the passing scenario. Verified from PASS logs: Destination_VM_terminal_dmesg.rtf L1424 and Source_VM_terminal_logs.rtf L2028. DISCARDED as non-causal.
+
+FLR PRESENT IN FAIL (v2 correction): host_dmesg_log.rtf L790-L792 confirms reset done at [52.69s] and [60.18s]. Regression is post-FLR, not in FLR itself.</p>
+        </div>
+
+        <!-- Hypothesis Ranking -->
+        <div class="iter-section">
+          <h4>Hypothesis Ranking</h4>
+          
+            <table class="hyp-table">
+              <thead><tr><th>#</th><th>Hypothesis</th><th>Confidence</th></tr></thead>
+              <tbody>
+                
+                
+                <tr>
+                  <td>1</td>
+                  <td>Crash at [98.8s] — NULL function pointer in libc.so.6 (error 44) after QAT migration [CONFIRMED STILL VALID]</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill high"
+                          style="width:100%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-high)">100%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+                
+                <tr>
+                  <td>2</td>
+                  <td>vtd_interrupt_remap_msi: MSI address=0x0 as root cause trigger [DISCARDED — appears in PASS too]</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill low"
+                          style="width:0%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-low)">0%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+              </tbody>
+            </table>
+          
+        </div>
+
+        <!-- Next Steps -->
+        <div class="iter-section">
+          <h4>Recommended Next Steps</h4>
+          
+            <ul class="next-steps-list">
+              
+              <li>
+                <span class="step-num">1</span>
+                <div class="step-body">
+                  <strong>Read source VM logs for QEMU flags and workload state</strong>
+                  
+                    <div class="step-rationale">Need to confirm QAT workload was active during migration and check QEMU configuration differences</div>
+                  
+                  
+                </div>
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- User Input -->
+        
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>User Input / Confirmation</h4>
+          <div class="user-input-box">Engineer feedback (vijayag1, 2026-06-09): "earlier analysis pointed to the warning vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0. Actually this is the warning even comes in the passing scenario also. Need to ignore this warning."</div>
+        </div>
+        
+
+      </div><!-- /iter-grid -->
+    </div><!-- /iter-body -->
+  </div><!-- /iter-panel -->
+  
+  
+  
+  <div class="iter-panel">
+    <div class="iter-header" onclick="toggleIter(this)">
+      <span class="iter-num">3</span>
+      <div class="iter-summary">
+        <strong>cpa_sample_code active with in-flight ops at migration time — QAT VF busy...</strong>
+        <span class="iter-meta">
+          2026-06-01
+          &nbsp;·&nbsp;
+          1 log set collected
+          &nbsp;·&nbsp;
+          Confidence: 90%
+        </span>
+      </div>
+      <span class="iter-toggle">+</span>
+    </div>
+
+    <div class="iter-body">
+      <div class="iter-grid">
+
+        <!-- Logs Requested -->
+        <div class="iter-section">
+          <h4>Logs Requested</h4>
+          
+            <ul>
+              
+              <li>
+                <strong>source_VM_terminal</strong>
+                
+                  <pre>dmesg | grep -E 'IOMMU|vfio|cpa|qat'</pre>
+                
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- Logs Collected -->
+        <div class="iter-section">
+          <h4>Logs Collected</h4>
+          
+            
+            <p><strong>source_VM_terminal_logsrtf.rtf</strong>
+              
+                &nbsp;<span style="color:var(--text-muted);font-size:0.82em">QAT_LM_segfault_logs/source_VM_terminal_logsrtf.rtf (226,569 bytes)</span>
+              
+            </p>
+            
+              <pre>qemu-kvm: warning: IOMMU_IOAS_MAP failed: Bad address, PCI BAR?
+  ← DISCARDED: same lines at L8, L11, L12, L493-495 in PASS source VM
+# cpa_sample_code active on source (591/864 Mbps before migration):
+Cipher AES128-XTS Encrypt 64B: 200000 subm, 200000 resp, 591 Mbps
+Cipher AES256-XTS Encrypt 256B: 200000 subm, 200000 resp, 864 Mbps
+# Source FLR (comparable to PASS source at [72.47s]/[85.47s]):
+[52.336437] vfio-pci 0000:00:03.0: resetting
+[52.692337] vfio-pci 0000:00:03.0: reset done  ← source FLR 1
+[59.818125] vfio-pci 0000:00:03.0: resetting
+[60.179925] vfio-pci 0000:00:03.0: reset done  ← source FLR 2</pre>
+            
+            
+          
+        </div>
+
+        <!-- GENI Analysis -->
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>GENI Analysis</h4>
+          <p>cpa_sample_code running with high throughput (200K/200K ops) at migration trigger — QAT VF has in-flight operations. This remains valid.
+
+IOMMU_IOAS_MAP warnings DISCARDED: 2nd regression passing logs (Source_VM_terminal_logs.rtf L8, L11, L12, L493-495) show identical IOMMU_IOAS_MAP pattern. Known iommufd PCI BAR mapping limitation for QAT 6xxx device 4949 — non-fatal, present in all configurations.
+
+Source-side FLR completes normally at [52.69s]/[60.18s], comparable to PASS source FLR at [72.47s]/[85.47s]. Migration timing differs by ~20s but FLR sequence is structurally identical.</p>
+        </div>
+
+        <!-- Hypothesis Ranking -->
+        <div class="iter-section">
+          <h4>Hypothesis Ranking</h4>
+          
+            <table class="hyp-table">
+              <thead><tr><th>#</th><th>Hypothesis</th><th>Confidence</th></tr></thead>
+              <tbody>
+                
+                
+                <tr>
+                  <td>1</td>
+                  <td>cpa_sample_code active with in-flight ops at migration time — QAT VF busy during handoff (VALID)</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill high"
+                          style="width:90%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-high)">90%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+                
+                <tr>
+                  <td>2</td>
+                  <td>IOMMU_IOAS_MAP BAR mapping failures as root cause [DISCARDED — identical pattern in PASS source VM]</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill low"
+                          style="width:0%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-low)">0%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+              </tbody>
+            </table>
+          
+        </div>
+
+        <!-- Next Steps -->
+        <div class="iter-section">
+          <h4>Recommended Next Steps</h4>
+          
+            <ul class="next-steps-list">
+              
+              <li>
+                <span class="step-num">1</span>
+                <div class="step-body">
+                  <strong>Examine MobaXterm host session for qat_vfio_pci binding and QEMU flags</strong>
+                  
+                    <div class="step-rationale">Confirm driver binding, destination VF PCI domain, and QEMU command line differences</div>
+                  
+                  
+                </div>
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- User Input -->
+        
+
+      </div><!-- /iter-grid -->
+    </div><!-- /iter-body -->
+  </div><!-- /iter-panel -->
+  
+  
+  
+  <div class="iter-panel">
+    <div class="iter-header" onclick="toggleIter(this)">
+      <span class="iter-num">4</span>
+      <div class="iter-summary">
+        <strong>qat_vfio_pci correctly bound on both VFs; dest domain 0001 vs source 0000 —...</strong>
+        <span class="iter-meta">
+          2026-06-01
+          &nbsp;·&nbsp;
+          1 log set collected
+          &nbsp;·&nbsp;
+          Confidence: 70%
+        </span>
+      </div>
+      <span class="iter-toggle">+</span>
+    </div>
+
+    <div class="iter-body">
+      <div class="iter-grid">
+
+        <!-- Logs Requested -->
+        <div class="iter-section">
+          <h4>Logs Requested</h4>
+          
+            <ul>
+              
+              <li>
+                <strong>host_session_MobaXterm</strong>
+                
+                  <pre>dmesg | grep qat_vfio_pci</pre>
+                
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- Logs Collected -->
+        <div class="iter-section">
+          <h4>Logs Collected</h4>
+          
+            
+            <p><strong>MobaXterm_10.49.152.143_20260601_055012.rtf</strong>
+              
+                &nbsp;<span style="color:var(--text-muted);font-size:0.82em">QAT_LM_segfault_logs/MobaXterm_10.49.152.143_20260601_055012.rtf (369,344 bytes)</span>
+              
+            </p>
+            
+              <pre>[ 1089.405937] qat_vfio_pci 0000:0f:00.1: enabling device (0000 -> 0002)
+[ 1089.416108] qat_vfio_pci 0000:0f:00.1: resetting
+[ 1092.403753] qat_vfio_pci 0000:0f:00.1: resetting
+[ 1113.899971] qat_vfio_pci 0001:0f:00.1: enabling device (0000 -> 0002)
+[ 1113.907280] qat_vfio_pci 0001:0f:00.1: resetting
+# QEMU dest command includes: -global kvm-apic.vapic=false
+#   (NEW discriminator — PASS dest does NOT have this flag)
+# Dest sysfsdev: /sys/bus/pci/devices/0001:0f:00.1 (domain 0001)</pre>
+            
+            
+          
+        </div>
+
+        <!-- GENI Analysis -->
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>GENI Analysis</h4>
+          <p>qat_vfio_pci correctly bound and FLR triggered on both source (0000:0f:00.1) and destination (0001:0f:00.1). Driver setup is correct.
+
+INVALIDATED ROOT CAUSE: Original Iter 4 stated qat_vfio_pci save/restore does not include MSI-X table entries, leaving VT-d IRTE address=0x0. This was based on vtd_interrupt_remap_msi as trigger — now confirmed benign.
+
+NEW DISCRIMINATOR FOUND (2026-06-10): FAIL QEMU destination command includes -global kvm-apic.vapic=false (vAPIC disabled). PASS destination QEMU command does NOT include this flag. vAPIC disablement forces all LAPIC accesses through MMIO emulation rather than the virtualized APIC page, potentially altering MSI-X re-arm behavior post-migration when combined with the kernel regression.</p>
+        </div>
+
+        <!-- Hypothesis Ranking -->
+        <div class="iter-section">
+          <h4>Hypothesis Ranking</h4>
+          
+            <table class="hyp-table">
+              <thead><tr><th>#</th><th>Hypothesis</th><th>Confidence</th></tr></thead>
+              <tbody>
+                
+                
+                <tr>
+                  <td>1</td>
+                  <td>qat_vfio_pci correctly bound on both VFs; dest domain 0001 vs source 0000 — secondary variable (VALID)</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill med"
+                          style="width:70%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-med)">70%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+                
+                <tr>
+                  <td>2</td>
+                  <td>qat_vfio_pci save/restore does not include MSI-X table entries — VT-d IRTE address=0x0 [INVALIDATED by engineer]</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill low"
+                          style="width:0%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-low)">0%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+              </tbody>
+            </table>
+          
+        </div>
+
+        <!-- Next Steps -->
+        <div class="iter-section">
+          <h4>Recommended Next Steps</h4>
+          
+            <ul class="next-steps-list">
+              
+              <li>
+                <span class="step-num">1</span>
+                <div class="step-body">
+                  <strong>Compare pass vs fail destination dmesg for all configuration deltas</strong>
+                  
+                    <div class="step-rationale">Need pass logs to establish full pass/fail differential</div>
+                  
+                  
+                </div>
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- User Input -->
+        
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>User Input / Confirmation</h4>
+          <div class="user-input-box">Engineer: vtd_interrupt_remap_msi warning also appears in passing scenario — need to ignore.</div>
+        </div>
+        
+
+      </div><!-- /iter-grid -->
+    </div><!-- /iter-body -->
+  </div><!-- /iter-panel -->
+  
+  
+  
+  <div class="iter-panel">
+    <div class="iter-header" onclick="toggleIter(this)">
+      <span class="iter-num">5</span>
+      <div class="iter-summary">
+        <strong>Kernel 6.18.8.4.9 regression in post-FLR VFIO/KVM VF state-restore —...</strong>
+        <span class="iter-meta">
+          2026-06-10
+          &nbsp;·&nbsp;
+          3 log sets collected
+          &nbsp;·&nbsp;
+          Confidence: 85%
+        </span>
+      </div>
+      <span class="iter-toggle">+</span>
+    </div>
+
+    <div class="iter-body">
+      <div class="iter-grid">
+
+        <!-- Logs Requested -->
+        <div class="iter-section">
+          <h4>Logs Requested</h4>
+          
+            <ul>
+              
+              <li>
+                <strong>passing_dest_dmesg</strong>
+                
+                  <pre>dmesg > Destination_VM_terminal_dmesg.rtf</pre>
+                
+              </li>
+              
+              <li>
+                <strong>passing_source_logs</strong>
+                
+                  <pre>dmesg > Source_VM_terminal_logs.rtf</pre>
+                
+              </li>
+              
+              <li>
+                <strong>passing_host_dmesg</strong>
+                
+                  <pre>dmesg > host_dmesg_terminal_log.rtf</pre>
+                
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- Logs Collected -->
+        <div class="iter-section">
+          <h4>Logs Collected</h4>
+          
+            
+            <p><strong>Destination_VM_terminal_dmesg.rtf (PASS · 6.18.5.2.5)</strong>
+              
+                &nbsp;<span style="color:var(--text-muted);font-size:0.82em">QAT_LM_Passing_logs_6.18.5.2.5_kernel/Destination_VM_terminal_dmesg.rtf (180,553 bytes)</span>
+              
+            </p>
+            
+              <pre>QEMU dest cmd: sysfsdev=.../0000:0f:00.2  (NO -global kvm-apic.vapic=false)
+# FLR on PASS dest:
+[   72.115616] vfio-pci 0000:00:03.0: resetting
+[   72.469061] vfio-pci 0000:00:03.0: reset done  ← FLR 1 (+353ms)
+[   85.115966] vfio-pci 0000:00:03.0: resetting
+[   85.468760] vfio-pci 0000:00:03.0: reset done  ← FLR 2 (+353ms)
+# TSC skew (L11) — 12x FAIL value, NO crash:
+[  131.067230] clocksource: 'tsc' skewed -139066744 ns (-139 ms)
+# vtd warning (L1424) — same as FAIL, confirms benign:
+qemu-kvm: vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0
+# cpa_sample_code PASSES post-migration:
+Cipher AES256-XTS  → Throughput(Mbps)  1342 / 1857 / 1331
+Cipher AES128-CTR  → Throughput(Mbps)  414 → 680 → 943 → ... → 1821</pre>
+            
+            
+            <p><strong>Source_VM_terminal_logs.rtf (PASS · 6.18.5.2.5)</strong>
+              
+                &nbsp;<span style="color:var(--text-muted);font-size:0.82em">QAT_LM_Passing_logs_6.18.5.2.5_kernel/Source_VM_terminal_logs.rtf (247,491 bytes)</span>
+              
+            </p>
+            
+              <pre># IOMMU_IOAS_MAP (L8, L11, L12, L493-495) — IDENTICAL to FAIL:
+qemu-kvm: warning: IOMMU_IOAS_MAP failed: Bad address, PCI BAR?
+# vtd warning (L2028) — also in PASS:
+qemu-kvm: vtd_interrupt_remap_msi: MSI address low 32 bit invalid: 0x0
+# Source FLR on PASS (comparable timing to FAIL):
+[   72.469061] vfio-pci 0000:00:03.0: reset done</pre>
+            
+            
+            <p><strong>host_dmesg_terminal)log.rtf (PASS · 6.18.5.2.5)</strong>
+              
+                &nbsp;<span style="color:var(--text-muted);font-size:0.82em">QAT_LM_Passing_logs_6.18.5.2.5_kernel/host_dmesg_terminal)log.rtf (341,963 bytes)</span>
+              
+            </p>
+            
+              <pre>Linux version 6.18.0-dmr.bkc.6.18.5.2.5.x86_64 — no crash, qat_vfio_pci setup OK</pre>
+            
+            
+          
+        </div>
+
+        <!-- GENI Analysis -->
+        <div class="iter-section" style="grid-column: 1 / -1">
+          <h4>GENI Analysis</h4>
+          <p>PASS/FAIL COMPARISON — KEY FINDINGS:
+
+1. vtd_interrupt_remap_msi DISCARDED (engineer-confirmed + log-verified):
+   Present at L1424 (PASS dest) and L2028 (PASS source). Non-causal QEMU    warn_report() during VF re-initialization.
+
+2. TSC skew DISCARDED (log-verified): PASS = -139ms (L11), FAIL = -11ms (L13).
+   12x larger skew in PASS with no crash. TSC instability is a side-effect    of imprecise offset migration; kvm-clock takes over in both cases.
+
+3. IOMMU_IOAS_MAP DISCARDED (log-verified): Identical at L8/L11/L12/L493-495
+   in both PASS and FAIL source VMs. Known iommufd/QAT BAR limitation.
+
+4. FLR CORRECTION (v2): FAIL also has vfio-pci reset done at [52.69s]+[60.18s]
+   (host_dmesg_log.rtf L790-L792). Regression is post-FLR state restoration,
+   not in the FLR sequence itself.
+
+5. NEW DISCRIMINATOR: FAIL QEMU dest has -global kvm-apic.vapic=false;
+   PASS does NOT. vAPIC disablement alters LAPIC MMIO path — possible
+   interaction with kernel regression in MSI-X vector re-arm.
+
+6. KEY DISCRIMINATORS SUMMARY:
+   FAIL: kernel 6.18.8.4.9 | VF domain 0001 | vapic=false | crash [98.8s]
+   PASS: kernel 6.18.5.2.5 | VF domain 0000 | vapic enabled | 1342-1857 Mbps
+
+CONCLUSION: Kernel regression between 6.18.5.2.5 and 6.18.8.4.9 in the VFIO/KVM post-FLR state restoration path. After hardware FLR completes, the 6.18.8.4.9 kernel fails to properly reinstate the QAT VF's IRQ vectors, MSI-X entries, or VFIO eventfd bindings. When cpa_sample_code fires its first completion callback at [98.8s], it calls through an uninitialized function pointer at address 0x0 — fatal segfault (PFEC error 44).</p>
+        </div>
+
+        <!-- Hypothesis Ranking -->
+        <div class="iter-section">
+          <h4>Hypothesis Ranking</h4>
+          
+            <table class="hyp-table">
+              <thead><tr><th>#</th><th>Hypothesis</th><th>Confidence</th></tr></thead>
+              <tbody>
+                
+                
+                <tr>
+                  <td>1</td>
+                  <td>Kernel 6.18.8.4.9 regression in post-FLR VFIO/KVM VF state-restore — hardware FLR completes on both kernels but subsequent IRQ vector/MSI-X/callback-pointer restoration broken in 6.18.8.4.9; crash at first QAT completion IRQ post-migration</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill high"
+                          style="width:85%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-high)">85%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+                
+                <tr>
+                  <td>2</td>
+                  <td>PCI domain 0001 (FAIL) vs 0000 (PASS) triggers domain-specific IOMMU group handling defect in kernel 6.18.8.4.9 — secondary variable</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill med"
+                          style="width:55%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-med)">55%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+                
+                <tr>
+                  <td>3</td>
+                  <td>-global kvm-apic.vapic=false (FAIL only) + kernel regression = specific combination that breaks MSI-X re-arm on destination VM</td>
+                  <td>
+                    <div class="conf-bar-wrap" style="min-width:120px">
+                      <div class="conf-bar-track">
+                        <div class="conf-bar-fill low"
+                          style="width:35%"></div>
+                      </div>
+                      <span class="conf-label" style="color:var(--conf-low)">35%</span>
+                    </div>
+                  </td>
+                </tr>
+                
+              </tbody>
+            </table>
+          
+        </div>
+
+        <!-- Next Steps -->
+        <div class="iter-section">
+          <h4>Recommended Next Steps</h4>
+          
+            <ul class="next-steps-list">
+              
+              <li>
+                <span class="step-num">1</span>
+                <div class="step-body">
+                  <strong>A/B isolation: kernel 6.18.8.4.9 with PASS topology (VF 0000:0f:00.2, vapic enabled)</strong>
+                  
+                    <div class="step-rationale">Isolates kernel as primary variable independent of PCI domain and vapic flag</div>
+                  
+                  
+                    <pre># Modify dest QEMU: sysfsdev=.../0000:0f:00.2, remove -global kvm-apic.vapic=false</pre>
+                  
+                </div>
+              </li>
+              
+              <li>
+                <span class="step-num">2</span>
+                <div class="step-body">
+                  <strong>A/B: kernel 6.18.5.2.5 with -global kvm-apic.vapic=false added</strong>
+                  
+                    <div class="step-rationale">Determines whether vapic=false alone (on passing kernel) triggers the crash</div>
+                  
+                  
+                    <pre># Add -global kvm-apic.vapic=false to PASS dest QEMU command</pre>
+                  
+                </div>
+              </li>
+              
+              <li>
+                <span class="step-num">3</span>
+                <div class="step-body">
+                  <strong>Enable vfio_pci dynamic debug on failing kernel (post-FLR trace)</strong>
+                  
+                    <div class="step-rationale">Reveals what happens after reset done — IRQ vector and MSI-X re-arm details</div>
+                  
+                  
+                    <pre>echo 'module vfio_pci +p' > /sys/kernel/debug/dynamic_debug/control && dmesg -w | grep -i 'vfio\|msi\|irq\|0001:0f'</pre>
+                  
+                </div>
+              </li>
+              
+              <li>
+                <span class="step-num">4</span>
+                <div class="step-body">
+                  <strong>Kernel git log delta 6.18.5.2.5 → 6.18.8.4.9 (VFIO/KVM/iommufd paths)</strong>
+                  
+                    <div class="step-rationale">Direct commit-level evidence of the regression — focus on FLR, MSI-X, migration callbacks</div>
+                  
+                  
+                    <pre>git log --oneline v6.18.5.2.5..v6.18.8.4.9 drivers/vfio/pci/ virt/kvm/ | grep -i 'reset\|msi\|migrat\|flr\|irq'</pre>
+                  
+                </div>
+              </li>
+              
+            </ul>
+          
+        </div>
+
+        <!-- User Input -->
+        
+
+      </div><!-- /iter-grid -->
+    </div><!-- /iter-body -->
+  </div><!-- /iter-panel -->
+  
+</div><!-- /iterations-card -->
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FINAL ROOT CAUSE
+═══════════════════════════════════════════════════════════════ -->
+<div class="rootcause-card active">
+  <div class="section-title">
+    ● Current Best Hypothesis (Session In Progress)
+    
+  </div>
+
+  <div class="rootcause-grid">
+
+    <div class="rc-section" style="grid-column: 1 / -1">
+      <h4>Root Cause / Final Hypothesis</h4>
+      <p style="font-size:1em; font-weight:600">Kernel 6.18.8.4.9 regression in post-FLR VFIO/KVM VF state-restore — hardware FLR completes on both kernels but subsequent IRQ vector/MSI-X/callback-pointer restoration broken in 6.18.8.4.9; crash at first QAT completion IRQ post-migration</p>
+    </div>
+
+    <div class="rc-section">
+      <h4>Evidence Chain</h4>
+      
+        <ul class="evidence-chain">
+          
+          <li>
+            <span class="ev-iter">Iter 1</span>
+            <span>QAT qatlib 25.08/0.9.5 + BKC kernel 6.18.8.4.9 on DMR host confirmed</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 2</span>
+            <span>segfault at 0, error 44 in libc.so.6 at [98.8s] — NULL function pointer confirmed</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 2</span>
+            <span>vtd_interrupt_remap_msi DISCARDED: verified in PASS logs L1424 (dest) + L2028 (source)</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 2</span>
+            <span>FLR present in FAIL (host_dmesg L790-L792): reset done at [52.69s]+[60.18s] — v2 correction</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 3</span>
+            <span>cpa_sample_code active (591/864 Mbps) at migration trigger — VF busy during handoff</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 3</span>
+            <span>IOMMU_IOAS_MAP DISCARDED: identical at L8/L11/L12/L493-495 in PASS source VM</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 4</span>
+            <span>qat_vfio_pci correctly bound on both VFs — driver setup valid</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 4</span>
+            <span>NEW: FAIL QEMU has -global kvm-apic.vapic=false; PASS does NOT — additional config delta</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 5</span>
+            <span>PASS FLR at [72.47s]+[85.47s]; cpa throughput 1342-1857 Mbps — full success on 6.18.5.2.5</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 5</span>
+            <span>TSC skew DISCARDED: PASS −139ms (12×), FAIL −11ms — larger in PASS with no crash</span>
+          </li>
+          
+          <li>
+            <span class="ev-iter">Iter 5</span>
+            <span>Kernel regression confirmed: 6.18.5.2.5 passes, 6.18.8.4.9 fails; LFE 22022566950 assigned to Linux KVM team</span>
+          </li>
+          
+        </ul>
+      
+    </div>
+
+    <div class="rc-section">
+      <h4>Recommended Fix</h4>
+      <p>Primary fix (kernel/LFE 22022566950): Linux KVM team to identify the regressing commit between 6.18.5.2.5 and 6.18.8.4.9 in the VFIO/KVM post-FLR state restoration path for migrated QAT SR-IOV VFs. Focus: drivers/vfio/pci/, virt/kvm/, drivers/iommu/ — specifically VF MSI-X vector reinstatement, VFIO IRQ eventfd re-binding, or IOMMU domain reattachment ordering after FLR.
+
+Immediate workaround: downgrade to kernel 6.18.5.2.5 (DMR BKC WW14). Confirmed passing by engineer on multiple systems.
+
+Isolation tests needed:
+  ① 6.18.8.4.9 + dest VF 0000:0f:00.2 + vapic enabled → kernel is primary variable
+  ② 6.18.5.2.5 + -global kvm-apic.vapic=false → vapic flag alone causal?</p>
+      
+        <p style="margin-top:8px"><strong>Spec Reference:</strong> PCIe Base Spec §6.6.2 — FLR completes within 100ms (confirmed: ~354ms in both cases). VFIO kernel docs (Documentation/driver-api/vfio.rst) — post-reset device state must be fully re-established before guest access resumes. Intel SDM Vol 3 §6.15 Table 6-7 — PFEC 0x2C = I+U+~P = NULL function pointer call.</p>
+      
+    </div>
+
+    
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     RELATED PAST HSDs
+═══════════════════════════════════════════════════════════════ -->
+
+<div class="related-card">
+  <div class="section-title">Related Past HSDs</div>
+  <table class="related-table">
+    <thead>
+      <tr>
+        <th>HSD ID</th>
+        <th>Component</th>
+        <th>Symptom</th>
+        <th>Root Cause</th>
+        <th>Fix Pattern</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+      <tr>
+        <td>
+          <a href="https://hsdes.intel.com/appstore/article/#/22022566950" target="_blank">
+            22022566950
+          </a>
+        </td>
+        <td>QAT/KVM/DMR</td>
+        <td style="max-width:220px">LFE for 22022566949 — QAT LM segfault kernel regression</td>
+        <td style="max-width:220px">Kernel regression 6.18.5.2.5→6.18.8.4.9 in VFIO/KVM path</td>
+        <td style="max-width:200px">Assigned to Linux KVM team</td>
+      </tr>
+      
+      <tr>
+        <td>
+          <a href="https://hsdes.intel.com/appstore/article/#/22022297974" target="_blank">
+            22022297974
+          </a>
+        </td>
+        <td>QAT/VFIO/DMR</td>
+        <td style="max-width:220px">QAT VF live migration — interrupt state not restored on destination</td>
+        <td style="max-width:220px">VFIO IRQ state not re-established post-migration</td>
+        <td style="max-width:200px">IRQ eventfd rebind after migration</td>
+      </tr>
+      
+      <tr>
+        <td>
+          <a href="https://hsdes.intel.com/appstore/article/#/22022530567" target="_blank">
+            22022530567
+          </a>
+        </td>
+        <td>VFIO/KVM/DMR</td>
+        <td style="max-width:220px">VFIO device migration — reset not completing on destination VM</td>
+        <td style="max-width:220px">VF FLR timeout in migration path</td>
+        <td style="max-width:200px">Increase FLR timeout / fix reset ordering</td>
+      </tr>
+      
+      <tr>
+        <td>
+          <a href="https://hsdes.intel.com/appstore/article/#/22022413643" target="_blank">
+            22022413643
+          </a>
+        </td>
+        <td>KVM/VFIO-PCI/DMR</td>
+        <td style="max-width:220px">KVM LM with VFIO-PCI device — segfault in guest after migration</td>
+        <td style="max-width:220px">KVM VFIO migration state machine defect</td>
+        <td style="max-width:200px">KVM patch for VFIO device state restore</td>
+      </tr>
+      
+      <tr>
+        <td>
+          <a href="https://hsdes.intel.com/appstore/article/#/22022530565" target="_blank">
+            22022530565
+          </a>
+        </td>
+        <td>iommufd/QAT/DMR</td>
+        <td style="max-width:220px">iommufd IOAS mapping failure with QAT VF PCI BAR</td>
+        <td style="max-width:220px">PCI BAR peer-to-peer mapping not supported in iommufd</td>
+        <td style="max-width:200px">Known limitation — non-fatal in all configs</td>
+      </tr>
+      
+      <tr>
+        <td>
+          <a href="https://hsdes.intel.com/appstore/article/#/22022383538" target="_blank">
+            22022383538
+          </a>
+        </td>
+        <td>QAT/DMR</td>
+        <td style="max-width:220px">cpa_sample_code crash with QAT VF after VM operations</td>
+        <td style="max-width:220px">Application-level null ptr after invalid QAT VF state</td>
+        <td style="max-width:200px">VF state reset before cpa re-run</td>
+      </tr>
+      
+    </tbody>
+  </table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════════════ -->
+<footer>
+  Generated by HSD Live Debug Agent &nbsp;·&nbsp;
+  Powered by GENI + Co-Design + NGA MCP &nbsp;·&nbsp;
+  2026-06-10T17:48:43
+  <br>
+  Template: live_debug_report_template.html v1.0 &nbsp;·&nbsp;
+  Framework: project-c3/hsd-triage
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════════════════════════ -->
+<script>
+function toggleIter(header) {
+  const body = header.nextElementSibling;
+  const toggle = header.querySelector('.iter-toggle');
+  const isOpen = body.classList.contains('active');
+  body.classList.toggle('active');
+  toggle.classList.toggle('open');
+  toggle.textContent = isOpen ? '+' : '×';
+}
+
+// Animate confidence bars on load
+document.addEventListener('DOMContentLoaded', function () {
+  // Store widths then reset to 0 for animation
+  const fills = document.querySelectorAll('.conf-bar-fill');
+  fills.forEach(function (el) {
+    const target = el.style.width;
+    el.style.width = '0%';
+    requestAnimationFrame(function () {
+      setTimeout(function () { el.style.width = target; }, 80);
+    });
+  });
+
+  // Auto-expand the last iteration
+  const panels = document.querySelectorAll('.iter-panel');
+  if (panels.length > 0) {
+    const lastHeader = panels[panels.length - 1].querySelector('.iter-header');
+    if (lastHeader) toggleIter(lastHeader);
+  }
+});
+</script>
+</body>
+</html>

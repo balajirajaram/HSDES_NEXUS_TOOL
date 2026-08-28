@@ -1,0 +1,80 @@
+{
+  "_OrchestratorMeta": {
+    "id": "DMR-CPU-IERR-001",
+    "title": "IERR assertion after stressapptest + system idle on DMR A0",
+    "description": "Run stressapptest to exercise CPU+memory, then idle the system for 4+ hours. Observe IERR assertion / system hang. Repro from HSD 15018590736.",
+    "criticality": "P0",
+    "layer_order": "OS",
+    "subsystems": ["cpu", "mca", "ras", "power"],
+    "failure_domains": ["cpu_mca", "ierr", "rasip", "idle_transition"],
+    "blocking_mode": "cascade",
+    "blocks_on_fail": ["cpu", "mca", "ras"],
+    "prereq_group": "BASIC_LINUX",
+    "estimated_runtime": 18000,
+    "requires": {
+      "tools": ["python3", "stressapptest"],
+      "optional_tools": ["mcelog", "rdmsr", "ipmitool", "cpupower", "journalctl"],
+      "env_vars": {
+        "STRESS_DURATION_MIN": "Duration of stressapptest in minutes (default: 30)",
+        "IDLE_WAIT_HOURS": "Hours to idle after stress (default: 4)",
+        "POLL_INTERVAL_SEC": "Polling interval in seconds (default: 300)"
+      }
+    },
+    "stepping_scope": ["DMR_A0"],
+    "hsd_reference": "15018590736",
+    "config_axes": {
+      "socket_topology": "1S",
+      "memory_config": "DDR5_32GB_Hynix"
+    },
+    "log_collection": {
+      "on_fail": [
+        "dmesg",
+        "/var/log/mcelog",
+        "journalctl -k -p err..alert --since='8 hours ago'",
+        "ipmitool sel list",
+        "/tmp/valor_logs/ierr_evidence_*.txt",
+        "/tmp/valor_logs/snap_*.txt",
+        "/tmp/valor_logs/stressapptest_*.log"
+      ],
+      "always": [
+        "/tmp/valor_logs/ierr_evidence_*.txt",
+        "/tmp/valor_logs/snap_pre_stress_*.txt",
+        "/tmp/valor_logs/snap_final_*.txt"
+      ]
+    },
+    "tags": ["ierr", "caterr", "stressapptest", "idle", "cpu", "mca", "dmr-a0", "silicon-bug", "ras"]
+  },
+  "_TestStages": {
+    "_pre_checks": {
+      "description": "Verify stressapptest available and system healthy",
+      "commands": [
+        "which stressapptest && stressapptest --version 2>/dev/null | head -1 || echo 'Installing...' && dnf install -y stressapptest",
+        "uptime",
+        "free -h",
+        "dmesg | grep -iE 'ierr|caterr|mce.*fatal' | wc -l"
+      ]
+    },
+    "_main_test": {
+      "description": "Run stressapptest then idle to trigger IERR",
+      "main_script": "scripts/ierr_repro",
+      "command": "python3 scripts/ierr_repro.py",
+      "expected_verdict": "FAIL",
+      "timeout_s": 21600,
+      "environment": {
+        "VALOR_LOG_DIR": "/tmp/valor_logs",
+        "STRESS_DURATION_MIN": "30",
+        "IDLE_WAIT_HOURS": "4",
+        "POLL_INTERVAL_SEC": "300"
+      }
+    },
+    "_post_collect": {
+      "description": "Collect full evidence bundle for BugScout",
+      "commands": [
+        "ls -la /tmp/valor_logs/ierr_evidence_*.txt 2>/dev/null",
+        "ls -la /tmp/valor_logs/snap_*.txt 2>/dev/null | wc -l",
+        "dmesg | grep -iE 'ierr|caterr|mce' | tail -10",
+        "ipmitool sel list 2>/dev/null | tail -5 || echo 'ipmitool N/A'"
+      ]
+    }
+  }
+}

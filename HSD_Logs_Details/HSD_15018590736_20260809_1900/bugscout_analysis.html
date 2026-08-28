@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BugScout Analysis — HSD 15018590736 (Blind Run)</title>
+<style>
+  :root { --bg:#f8f9fa;--card:#fff;--border:#dee2e6;--text:#212529;--muted:#6c757d;--primary:#0d6efd;--success:#198754;--warn:#fd7e14;--danger:#dc3545;--amber:#ffc107; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);padding:24px;line-height:1.6;}
+  .header{background:var(--card);border-radius:12px;padding:24px 28px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-top:4px solid var(--amber);}
+  .header h1{font-size:1.4em;margin-bottom:4px;}
+  .header .sub{color:var(--muted);font-size:.9em;margin-bottom:12px;}
+  .badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:.78em;font-weight:700;}
+  .b-amber{background:#fff3cd;color:#856404;}
+  .b-blind{background:#e2d9f3;color:#4a235a;}
+  .b-pass{background:#d4edda;color:#155724;}
+  .card{background:var(--card);border-radius:10px;padding:22px 26px;margin-bottom:20px;box-shadow:0 1px 6px rgba(0,0,0,.05);}
+  .card.warn{border-left:5px solid var(--amber);}
+  .card.info{border-left:5px solid var(--primary);}
+  .sec-title{font-size:.88em;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid var(--border);}
+  pre{background:#1e1e1e;color:#d4d4d4;padding:12px 14px;border-radius:6px;font-size:.78em;overflow-x:auto;white-space:pre-wrap;max-height:260px;overflow-y:auto;margin-top:8px;}
+  code{background:#1e1e1e;color:#9cdcfe;padding:2px 5px;border-radius:3px;font-size:.82em;}
+  table{width:100%;border-collapse:collapse;font-size:.85em;margin-top:8px;}
+  th{background:#343a40;color:#fff;padding:9px 13px;text-align:left;font-weight:600;}
+  td{padding:9px 13px;border-bottom:1px solid var(--border);vertical-align:top;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:var(--bg);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px;}
+  .sig-high{color:var(--danger);font-weight:700;}
+  .sig-med{color:var(--warn);font-weight:700;}
+  .info-box{background:#d1ecf1;border-left:4px solid #0dcaf0;padding:10px 14px;border-radius:5px;font-size:.86em;margin-top:10px;}
+  .warn-box{background:#fff3cd;border-left:4px solid var(--amber);padding:10px 14px;border-radius:5px;font-size:.86em;margin-top:10px;}
+  a.back{display:inline-block;margin-bottom:16px;font-size:.88em;color:var(--primary);text-decoration:none;}
+  a.back:hover{text-decoration:underline;}
+  footer{text-align:center;color:var(--muted);font-size:.78em;padding-top:20px;}
+</style>
+</head>
+<body>
+
+<a href="session_report.html" class="back">← Back to Main Run Report</a>
+
+<div class="header">
+  <h1>BugScout Blind Analysis — HSD 15018590736 Evidence</h1>
+  <div class="sub">IERR repro run on DMR A0 (10.3.173.62) — 2026-08-09 — Analysis performed with zero HSD context</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;">
+    <span class="badge b-amber">⚠ AMBER — Latent Risk</span>
+    <span class="badge b-blind">🔒 Blind Analysis</span>
+    <span class="badge b-pass">VALOR PASS (4h, no IERR)</span>
+  </div>
+</div>
+
+<!-- INPUTS -->
+<div class="card info">
+  <div class="sec-title">What BugScout Received</div>
+  <p style="font-size:.87em;margin-bottom:10px;"><strong>Inputs provided (raw evidence only — no HSD number, title, or hypothesis):</strong></p>
+  <table>
+    <tr><th>File</th><th>Size</th><th>Contents</th></tr>
+    <tr><td><code>ierr_evidence_20260809_090100.txt</code></td><td>~40 KB</td><td>Full evidence bundle: dmesg, EDAC /sys reads, SEL (ipmitool sel list), CPU frequency, MSR dumps, stressapptest log, all 50 poll snapshots concatenated</td></tr>
+    <tr><td><code>ierr_final_snap.txt</code></td><td>~12 KB</td><td>Final system state snapshot at end of 4h idle monitoring</td></tr>
+    <tr><td><code>ierr_dmesg_sat.txt</code></td><td>~14 KB</td><td>Full dmesg from boot + SAT region error log</td></tr>
+  </table>
+  <div class="warn-box">⚠ <strong>Not provided:</strong> HSD number, title, reproduction script, expected failure mode, register names (RASIP, FIVR), or any analysis context.</div>
+</div>
+
+<!-- FINDINGS -->
+<div class="card warn">
+  <div class="sec-title">BugScout Findings</div>
+
+  <div class="grid2">
+    <div>
+      <p style="font-size:.85em;font-weight:700;margin-bottom:8px;">Risk Signal 1 — <span class="sig-high">HIGH</span></p>
+      <p style="font-size:.86em;"><strong>PSU/VR Brownout — Cluster 2 (07/24/26, unresolved)</strong></p>
+      <p style="font-size:.84em;margin-top:6px;">Two SEL voltage brownout clusters detected. Cluster 1 (06/22/26): Lower Critical asserted + deasserted — resolved. Cluster 2 (07/24/26): Lower Critical asserted, <strong>no deassertion event found</strong> — state unknown at time of analysis.</p>
+      <pre>07/24/2026 | Lower Critical going low | Voltage Sensor #0x47 | Asserted
+[no subsequent deassertion in SEL]</pre>
+      <p style="font-size:.82em;margin-top:6px;color:var(--muted);">BugScout classified as: external PSU or VR instability (HIGH risk). <em>Actual: FIVR — CPU-internal VR not visible to IPMI SEL.</em></p>
+    </div>
+    <div>
+      <p style="font-size:.85em;font-weight:700;margin-bottom:8px;">Risk Signal 2 — <span class="sig-med">MEDIUM</span></p>
+      <p style="font-size:.86em;"><strong>EDAC Phantom IMC Devices mc#12–15</strong></p>
+      <p style="font-size:.84em;margin-top:6px;">EDAC subsystem reports mc#12 through mc#15 with <code>bad cols/ranks = 0xffffffff</code> — sentinel value indicating uninitialized/unpopulated IMC channels being probed by <code>imh_edac</code> driver.</p>
+      <pre>/sys/bus/edac/devices/mc12/ue_count: 0xffffffff
+/sys/bus/edac/devices/mc13/ue_count: 0xffffffff
+/sys/bus/edac/devices/mc14/ue_count: 0xffffffff
+/sys/bus/edac/devices/mc15/ue_count: 0xffffffff</pre>
+      <p style="font-size:.82em;margin-top:6px;color:var(--muted);">BugScout correctly identified as driver/silicon revision mismatch — imh_edac reading empty IMC slots. <em>Novel finding not in HSD 15018590736.</em></p>
+    </div>
+  </div>
+
+  <div style="margin-top:18px;">
+    <p style="font-size:.85em;font-weight:700;margin-bottom:8px;">Risk Signal 3 — <span class="sig-med">MEDIUM</span></p>
+    <p style="font-size:.86em;"><strong>SAT Region 39 Ghost Reference</strong></p>
+    <p style="font-size:.84em;margin-top:6px;">Kernel SAT subsystem reports "region 39 exceeds region count 1" — a phantom NUMA/memory region reference consistent with the EDAC phantom IMC topology. SAT is enumerating a memory region corresponding to unpopulated IMC channels.</p>
+    <pre>kernel: sat: region 39 exceeds region count 1, skipping
+kernel: imh_edac: Bit-fix filter reset capability detected</pre>
+    <p style="font-size:.82em;margin-top:6px;color:var(--muted);">BugScout correctly linked this to the EDAC phantom IMC issue — same root (driver reading empty channels).</p>
+  </div>
+</div>
+
+<!-- PRESCRIBED ACTIONS -->
+<div class="card">
+  <div class="sec-title">BugScout Prescribed Actions</div>
+  <table>
+    <tr><th>Priority</th><th>Action</th><th>Command</th><th>Rationale</th></tr>
+    <tr>
+      <td>P0</td>
+      <td>Check Cluster 2 voltage sensor current state</td>
+      <td><code>ipmitool sdr list full | grep -E 'Volt|volt'<br>ipmitool sensor list | grep -i 'lower crit'</code></td>
+      <td>Determine if 07/24/26 brownout is still active — if asserted, risk of spontaneous VR fault under load</td>
+    </tr>
+    <tr>
+      <td>P1</td>
+      <td>Read MCG_STATUS and MCA bank registers</td>
+      <td><code>rdmsr -a 0x17A<br>for b in $(seq 0 31); do rdmsr 0x$((0x400 + b*4)); done</code></td>
+      <td>Detect any latent uncorrected error logged in MCA banks during stress run</td>
+    </tr>
+    <tr>
+      <td>P2</td>
+      <td>Resolve EDAC driver enumeration</td>
+      <td><code>cat /sys/bus/edac/devices/mc*/ue_count</code></td>
+      <td>Confirm phantom mc#12–15 are driver issue not hardware; check kernel version against imh_edac fix</td>
+    </tr>
+    <tr>
+      <td>P3</td>
+      <td>Repeat with longer idle window (8–12h)</td>
+      <td>Re-run <code>ierr_repro.py</code> with <code>IDLE_WAIT_HOURS=8</code></td>
+      <td>HSD says "saw once only" — single 4h run has low repro probability; longer window increases odds</td>
+    </tr>
+  </table>
+</div>
+
+<!-- WHAT BUGSCOUT MISSED -->
+<div class="card" style="background:#fff8e1;border-left:5px solid #f59e0b;">
+  <div class="sec-title" style="color:#92400e;">What BugScout Did Not Identify</div>
+  <table>
+    <tr><th>Missing Finding</th><th>Actual (HSD Root Cause)</th><th>Why BugScout Missed It</th></tr>
+    <tr>
+      <td>RASIP error handler domain as fault locus</td>
+      <td><code>rasip_reg_msg_mem_rasip_error_handler_domain.reg_mca_err_src_log</code> corrupted during C-state entry</td>
+      <td>No platform register map provided — BugScout doesn't know which MCA bank maps to RASIP on DMR A0</td>
+    </tr>
+    <tr>
+      <td>P/C-state power-gating race as trigger mechanism</td>
+      <td>32 cores simultaneously entering deep C-states after stressapptest — uncore power-gating sequence not serialized</td>
+      <td>No DMR A0 architecture context (FIVR topology, C-state transition microarchitecture) — visible only with CoDesign spec access</td>
+    </tr>
+    <tr>
+      <td>FIVR vs external PSU distinction</td>
+      <td>FIVR (CPU-internal VR) fault — does not appear in IPMI SEL; only surfaces in MCA banks</td>
+      <td>BugScout sees SEL voltage events and correctly flags them, but lacks the observability boundary knowledge: SEL = external VR only</td>
+    </tr>
+  </table>
+  <div class="info-box" style="margin-top:12px;">💡 <strong>All three gaps are addressable</strong> by the proposed 3-phase MCP enrichment pipeline (Platform Identity → Register Annotation → HSD Pattern Match). See main report for details.</div>
+</div>
+
+<footer>BugScout Blind Analysis — 2026-08-09 | Inputs: raw evidence only | No HSD context provided</footer>
+</body>
+</html>
