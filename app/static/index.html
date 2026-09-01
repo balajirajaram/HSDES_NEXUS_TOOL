@@ -38,6 +38,7 @@
     <button class="tab active" data-tab="analyse">Analyse</button>
     <button class="tab" data-tab="batchlearn">Batch Learn</button>
     <button class="tab" data-tab="livedebug">Live Debug</button>
+    <button class="tab" data-tab="pythonsv">PythonSV</button>
     <button class="tab" data-tab="bugbatch">BugScout Batch</button>
     <button class="tab" data-tab="crashdump">Crashdump</button>
     <button class="tab" data-tab="logsearch">Log Search</button>
@@ -130,6 +131,10 @@
             SSH User (optional)
             <input id="ld_user" type="text" placeholder="intel_user" />
           </label>
+          <p class="hint" style="grid-column:1/-1;margin:0;color:#8a94a6;font-size:.85em">
+            For a hung/unreachable SUT, use the <strong>PythonSV</strong> tab to reach the
+            SUT out-of-band through the lab NUC.
+          </p>
           <label>
             Max Iterations
             <input id="ld_max" type="number" value="10" min="1" max="40" />
@@ -149,6 +154,57 @@
         </form>
       </div>
       <pre id="live-debug-output" class="console"></pre>
+    </section>
+
+    <section id="tab-pythonsv" class="panel">
+      <div class="card">
+        <h2>PythonSV Connection (via lab NUC)</h2>
+        <p style="margin:.2rem 0 1rem;color:#8a94a6">
+          Reach a hung/unreachable SUT out-of-band through its bench NUC, which retains
+          PythonSV/ITP sideband access. The tool tries <strong>SSH</strong> first and falls
+          back to <strong>WinRM</strong>. If neither is reachable you'll get a popup with the
+          one-time WinRM setup to run on the NUC.
+        </p>
+        <form id="pythonsv-form" class="stack two-col">
+          <label>
+            NUC Host
+            <input id="psv_nuc_host" type="text" placeholder="Example: CS17CA101NN1504" />
+          </label>
+          <label>
+            NUC User
+            <input id="psv_nuc_user" type="text" placeholder="Example: .\general" />
+          </label>
+          <label>
+            NUC Password
+            <input id="psv_nuc_pwd" type="password" autocomplete="off"
+              placeholder="used only for this connection" />
+          </label>
+          <label>
+            PythonSV Path (optional)
+            <input id="psv_path" type="text" placeholder="C:\pythonsv" />
+          </label>
+          <p class="hint" style="grid-column:1/-1;margin:0;color:#8a94a6;font-size:.85em">
+            Enter the NUC username and password here — they are used only to open this
+            connection and are never saved to disk or logged. Host / user / PythonSV path
+            fall back to <code>NUC_HOST</code> / <code>NUC_USER</code> /
+            <code>NUC_PYTHONSV_PATH</code> when left blank.
+          </p>
+          <button type="submit" id="psv-connect-btn">Connect / Probe</button>
+        </form>
+        <form id="pythonsv-run-form" class="stack">
+          <label>
+            PythonSV commands (all lines run in ONE session — imports &amp; IPC state persist)
+            <textarea id="psv_commands" rows="4"
+              placeholder="Example:&#10;from pysvtools.server_ip_debug.cha import cha&#10;cha.Cha().show_mca_status(source='reg')"></textarea>
+          </label>
+          <label class="checkbox" style="display:flex;align-items:center;gap:.5rem">
+            <input id="psv_auto_init" type="checkbox" checked />
+            Auto-init (runs <code>ipc.unlock()</code> + <code>sv.refresh()</code> first)
+          </label>
+          <button type="submit" id="psv-run-btn">Run PythonSV</button>
+        </form>
+      </div>
+      <pre id="pythonsv-output" class="console"></pre>
     </section>
 
     <section id="tab-bugbatch" class="panel">

@@ -41,6 +41,142 @@ def _short(text: Any, n: int = 140) -> str:
     s = re.sub(r"\s+", " ", str(text or "")).strip()
     return (s[:n] + "…") if len(s) > n else s
 
+
+def _collect_sources(target: Optional[Dict[str, Any]], recall: Dict[str, Any],
+                     similar: List[Dict[str, Any]], log_findings: Optional[Dict[str, Any]],
+                     transferred: Optional[Dict[str, Any]], mcp_sources: List[str],
+                     axon_records: Optional[List[Dict[str, Any]]],
+                     platform: str) -> List[Dict[str, str]]:
+    """Assemble the reference materials that genuinely contributed to this
+    analysis, so the report can cite where each failure-decode and next-step
+    came from. Only sources actually consulted for this ticket are listed."""
+    sources: List[Dict[str, str]] = []
+    decoded = (log_findings or {}).get("decoded") or {}
+
+    if decoded.get("bios"):
+        sources.append({
+            "name": "BIOS EWL / RC-Fatal / MCHECK decoder databases",
+            "kind": "Decoder DB",
+            "detail": "Enhanced Warning Log, RC-Fatal and MCHECK code tables used to decode BIOS/SOL serial failures.",
+            "ref": "app/decoders/ewl_codes_database.json · rc_fatal_errors_database.json · mcheck_codes_database.json",
+        })
+    if decoded.get("mca"):
+        sources.append({
+            "name": "MCA (Machine Check Architecture) code database",
+            "kind": "Decoder DB",
+            "detail": "Bank-specific MSCOD/MCACOD decode of MCi_STATUS from SOL RAS and PythonSV register dumps.",
+            "ref": "app/decoders/mca_codes_database.json",
+        })
+    _ev = decoded.get("evidence") or {}
+    if _ev.get("bank_units"):
+        # Name the source from the resolver so GNR / SRF / DMR are cited correctly.
+        _src_name = "MCA bank map"
+        _src_ref = "app/decoders/bank_mapping.json"
+        try:
+            from .decoders.bank_map import bank_component
+            _first_bank = next(iter(_ev["bank_units"].keys()))
+            _info = bank_component(_first_bank, platform) or {}
+            _src_name = _info.get("source") or _src_name
+            if "GNR" in _src_name:
+                _src_ref = "app/decoders/bank_mapping_gnr.json"
+            elif "SRF" in _src_name:
+                _src_ref = "app/decoders/bank_mapping_srf.json"
+            elif "CWF" in _src_name:
+                _src_ref = "app/decoders/bank_mapping_cwf.json"
+        except Exception:
+            pass
+        sources.append({
+            "name": _src_name,
+            "kind": "Bank map",
+            "detail": "Maps the failing MCA bank number to its silicon unit "
+                      f"({', '.join(f'{b}->{u}' for b, u in list(_ev['bank_units'].items())[:4])}).",
+            "ref": _src_ref,
+        })
+    if decoded.get("post"):
+        sources.append({
+            "name": "BIOS POST / checkpoint code database",
+            "kind": "Decoder DB",
+            "detail": "Boot-progress checkpoint decode locating the last successful POST stage.",
+            "ref": "app/decoders/post_codes_database.json",
+        })
+    if decoded.get("ierr_table"):
+        sources.append({
+            "name": "PythonSV UBOX IERR/MCerr table decoder",
+            "kind": "Decoder",
+            "detail": "First/second IERR/MCerr capture decode from PythonSV ubox error tables.",
+            "ref": "app/log_triage.py",
+        })
+
+    matches = recall.get("matches") or []
+    if matches:
+        sources.append({
+            "name": "Self-learning Knowledge Base",
+            "kind": "Knowledge Base",
+            "detail": f"{len(matches)} prior case(s) matched (confidence: {recall.get('confidence', '—')}); root cause and resolution reused where applicable.",
+            "ref": config.KB_DB_PATH,
+        })
+
+    if similar:
+        mqs = master_queries(platform) if platform else []
+        detail = f"{len(similar)} similar HSD(s) compared for known-issue / resolution context."
+        if mqs:
+            detail += f" Master queries: {', '.join(str(q) for q in mqs)}."
+        sources.append({
+            "name": f"{product_display(platform) or platform or 'Product'} HSDES master-query corpus",
+            "kind": "HSDES corpus",
+            "detail": detail,
+            "ref": "HSDES REST (hsdes-api.intel.com)",
+        })
+
+    if transferred and transferred.get("transferred_to"):
+        sources.append({
+            "name": f"Transferred sub-team HSD {transferred.get('transferred_to')}",
+            "kind": "HSDES ticket",
+            "detail": "Root cause, fix ingredient/revision and status pulled from the sub-team ticket this sighting was transferred to.",
+            "ref": f"HSD {transferred.get('transferred_to')}",
+        })
+
+    for s in (mcp_sources or []):
+        sources.append({
+            "name": f"{s} (MCP)",
+            "kind": "External agent",
+            "detail": "Internal Geni / Co-Design HSDES agent queried for additional ticket grounding.",
+            "ref": s,
+        })
+
+    if axon_records:
+        sources.append({
+            "name": "Axon SVTools failure recordings",
+            "kind": "Axon",
+            "detail": f"{len(axon_records)} linked recording(s) decoded for failure signatures.",
+            "ref": "Axon (SVTools)",
+        })
+
+    return sources
+
+
+def _render_sources_md(sources: List[Dict[str, str]]) -> str:
+    """Render the reference-source list as a Markdown section for the report."""
+    if not sources:
+        return ""
+    lines = [
+        "",
+        "## Reference Sources",
+        "",
+        "Documents and datasets consulted to decode the failure signatures and derive the next steps:",
+        "",
+        "| # | Source | Type | How it was used | Reference |",
+        "|---|--------|------|-----------------|-----------|",
+    ]
+    for i, s in enumerate(sources, 1):
+        name = str(s.get("name", "")).replace("|", "\\|")
+        kind = str(s.get("kind", "")).replace("|", "\\|")
+        detail = _short(s.get("detail", ""), 160).replace("|", "\\|")
+        ref = str(s.get("ref", "")).replace("|", "\\|")
+        lines.append(f"| {i} | {name} | {kind} | {detail} | `{ref}` |")
+    lines.append("")
+    return "\n".join(lines)
+
 SYSTEM_PROMPT = """You are an expert Intel server-platform debug engineer. You triage
 HSD-ES tickets across ANY domain — CPU/silicon RAS (MCA/MCE/IERR/CATERR), UPI/coherency,
 memory (DDR/DIMM/training), IO (PCIe/CXL), power and sleep states (S3/S4/S5/Sx, ACPI),
@@ -329,7 +465,13 @@ async def analyze(hsd_id: str, symptoms: str,
     mcp_sources: List[str] = []
     if target and not target.get("error") and enrichment_enabled():
         try:
-            mcp_context = await mcp_enrich(hsd_id, symptoms)
+            # Pass ticket text + typed symptoms so need-based sources (BIOS/S3M,
+            # kernel-crash, Redfish) are only queried when the evidence is relevant.
+            _ctx = " ".join(filter(None, [
+                target.get("title", ""),
+                target.get("full_text", "") or target.get("description", ""),
+            ]))
+            mcp_context = await mcp_enrich(hsd_id, symptoms, context_text=_ctx)
         except Exception:
             mcp_context = []
         if mcp_context:
@@ -338,7 +480,7 @@ async def analyze(hsd_id: str, symptoms: str,
             target = dict(target)
             target["full_text"] = (
                 (target.get("full_text", "") or "")
-                + "\n\n== EXTERNAL SOURCES (Geni / Co-Design MCP) ==\n" + extra).strip()
+                + "\n\n== EXTERNAL SOURCES (MCP) ==\n" + extra).strip()
             mcp_sources = [c["source"] for c in mcp_context]
 
     # Transferred-ticket sync is decided later by the auto-orchestrator.
@@ -399,10 +541,9 @@ async def analyze(hsd_id: str, symptoms: str,
     # findings so a fresh HSD with logs is triaged without manual effort.
     if log_findings is not None:
         try:
-            log_findings["decoded"] = triage_logs(combined_log)
+            log_findings["decoded"] = triage_logs(combined_log, product=platform)
         except Exception:
             log_findings["decoded"] = None
-
     # Auto depth orchestration (no user knobs):
     # 1) KB recall, 2) current-ticket logs/comments, 3) clones/similar/transferred only if needed.
     top_match = (recall.get("matches") or [{}])[0]
@@ -498,6 +639,16 @@ async def analyze(hsd_id: str, symptoms: str,
     # Step 3 - WRITE-BACK
     kb_action = kb.upsert(kb_entry) if kb_entry else {"action": "skipped"}
 
+    # Provenance — the reference materials this analysis actually drew on, so the
+    # report can show WHERE each failure-decode and next-step came from.
+    sources = _collect_sources(
+        target, recall, similar, log_findings, transferred,
+        mcp_sources, axon_records, platform,
+    )
+    sources_md = _render_sources_md(sources)
+    if sources_md:
+        report_md = (report_md or "").rstrip() + "\n" + sources_md
+
     return {
         "mode": "llm" if llm.enabled else "offline",
         "hsdes_enabled": client.enabled,
@@ -514,6 +665,7 @@ async def analyze(hsd_id: str, symptoms: str,
         "history_mode": auto_history,
         "transferred_sync": transferred,
         "mcp_sources": mcp_sources,
+        "sources": sources,
         "axon_records": axon_records,
         "kb_action": kb_action,
         "report_markdown": report_md,

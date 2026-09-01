@@ -12,6 +12,7 @@ schema varies per gateway; override via ``GENI_MCP_TOOL`` / ``CODESIGN_MCP_TOOL`
 """
 
 import asyncio
+import re
 from typing import Any, Dict, List, Optional
 
 import httpx
@@ -22,11 +23,15 @@ from .config import config
 class _MCPSource:
     """A single MCP gateway (one tool call per HSD)."""
 
-    def __init__(self, name: str, url: str, tool: str, token: str):
+    def __init__(self, name: str, url: str, tool: str, token: str,
+                 category: str = "general"):
         self.name = name
         self.url = (url or "").rstrip("/")
         self.tool = tool
         self.token = (token or "").strip()
+        # "general" sources run whenever enabled; gated sources ("bios", "kernel",
+        # "redfish") run only when the ticket evidence is relevant to them.
+        self.category = category
         self.enabled = bool(self.url and self.token)
 
     def _headers(self, session_id: Optional[str] = None) -> Dict[str, str]:
@@ -116,7 +121,35 @@ def _sources(geni_token: str = "", codesign_token: str = "") -> List[_MCPSource]
                    geni_token or config.GENI_MCP_TOKEN),
         _MCPSource("Co-Design HSDES", config.CODESIGN_MCP_URL, config.CODESIGN_MCP_TOOL,
                    codesign_token or config.CODESIGN_MCP_TOKEN),
+        # DCG Marketplace debug agents (optional; each OFF unless URL+token set).
+        _MCPSource("Wiki KB", config.WIKI_MCP_URL, config.WIKI_MCP_TOOL,
+                   config.WIKI_MCP_TOKEN, category="general"),
+        _MCPSource("BIOS/S3M expert", config.BIOS_MCP_URL, config.BIOS_MCP_TOOL,
+                   config.BIOS_MCP_TOKEN, category="bios"),
+        _MCPSource("Linux kernel crash", config.KERNEL_MCP_URL, config.KERNEL_MCP_TOOL,
+                   config.KERNEL_MCP_TOKEN, category="kernel"),
+        _MCPSource("Redfish/iDRAC", config.REDFISH_MCP_URL, config.REDFISH_MCP_TOOL,
+                   config.REDFISH_MCP_TOKEN, category="redfish"),
     ]
+
+
+# Keyword gates deciding when a specialised (non-"general") source is relevant.
+_CATEGORY_GATES = {
+    "bios": re.compile(
+        r"\bbios\b|ifwi|\bpost\b|checkpoint|boot[\s-]?hang|s3m|rc[\s_-]?fatal|"
+        r"mcheck|dxe|\bpei\b|memory training|cold\s?reset|\bcpld\b|bmc\s?boot", re.I),
+    "kernel": re.compile(
+        r"kernel|panic|oops|call\s?trace|segfault|\bvfio\b|\bidxd\b|dmesg|"
+        r"null\s?pointer|soft\s?lockup|rcu\s?stall|\bBUG:\b|linux|driver", re.I),
+    "redfish": re.compile(
+        r"redfish|idrac|\bbmc\b|\bsel\b|out[\s-]?of[\s-]?band|power\s?(?:state|cycle)|"
+        r"sensor|thermal|unreachable|hung|no\s?ssh|failed\s?node", re.I),
+}
+
+
+def _relevant_categories(text: str) -> set:
+    hay = text or ""
+    return {cat for cat, pat in _CATEGORY_GATES.items() if pat.search(hay)}
 
 
 def enrichment_enabled(geni_token: str = "", codesign_token: str = "") -> bool:
@@ -124,9 +157,19 @@ def enrichment_enabled(geni_token: str = "", codesign_token: str = "") -> bool:
 
 
 async def enrich(hsd_id: str, symptoms: str,
-                 geni_token: str = "", codesign_token: str = "") -> List[Dict[str, Any]]:
-    """Query every configured MCP source in parallel; return successful answers."""
-    sources = [s for s in _sources(geni_token, codesign_token) if s.enabled]
+                 geni_token: str = "", codesign_token: str = "",
+                 context_text: str = "") -> List[Dict[str, Any]]:
+    """Query every configured MCP source in parallel; return successful answers.
+
+    "general" sources (HSDES, Wiki KB) run whenever enabled. Specialised sources
+    (BIOS/S3M, Linux kernel crash, Redfish/iDRAC) run only when the ticket text /
+    symptoms indicate they are relevant, so they're consulted on need — not always.
+    """
+    relevant = _relevant_categories(f"{symptoms}\n{context_text}")
+    sources = [
+        s for s in _sources(geni_token, codesign_token)
+        if s.enabled and (s.category == "general" or s.category in relevant)
+    ]
     if not sources:
         return []
     prompt = (f"Read HSD ticket {hsd_id} and summarise the failure, latest debug "

@@ -10,6 +10,8 @@ duplicating logic:
 
 from __future__ import annotations
 
+import json
+import os
 import re
 import subprocess
 import sys
@@ -257,7 +259,8 @@ def list_bugscout_runs(limit: int = 30) -> Dict[str, Any]:
 
 def start_live_debug_session(hsd_id: str, execution_mode: str = "manual", server: str = "",
                              ssh_user: str = "", max_iterations: int = 10,
-                             initial_logs_json: Optional[str] = None) -> Dict[str, Any]:
+                             initial_logs_json: Optional[str] = None,
+                             nuc_host: str = "", nuc_user: str = "") -> Dict[str, Any]:
     parser_script = _parse_and_triage_script()
 
     cmd = [
@@ -272,6 +275,10 @@ def start_live_debug_session(hsd_id: str, execution_mode: str = "manual", server
         cmd.extend(["--server", server])
     if ssh_user:
         cmd.extend(["--ssh-user", ssh_user])
+    if nuc_host:
+        cmd.extend(["--nuc-host", nuc_host])
+    if nuc_user:
+        cmd.extend(["--nuc-user", nuc_user])
     if initial_logs_json:
         init_path = Path(initial_logs_json)
         if not init_path.exists() or not init_path.is_file():
@@ -295,9 +302,67 @@ def start_live_debug_session(hsd_id: str, execution_mode: str = "manual", server
         if maybe.exists():
             session_init = str(maybe)
 
-    return {
+    result: Dict[str, Any] = {
         "session_id": session_id,
         "output_dir": out_dir,
         "session_init": session_init,
         "console": output,
     }
+
+    # Surface the NUC PythonSV connectivity probe result for the UI.
+    if execution_mode == "nuc-pythonsv":
+        m_json = re.search(r"NUC_PROBE_JSON:\s*(\{.*\})", output)
+        if m_json:
+            try:
+                result["nuc_probe"] = json.loads(m_json.group(1))
+            except Exception:
+                result["nuc_probe"] = {}
+        m_conn = re.search(r"NUC connectivity:\s*([^\n\r]+)", output)
+        m_psv = re.search(r"PythonSV folder:\s*([^\n\r]+)", output)
+        m_tx = re.search(r"NUC transport:\s*([^\n\r]+)", output)
+        result["nuc_connectivity"] = m_conn.group(1).strip() if m_conn else "UNKNOWN"
+        result["pythonsv_folder"] = m_psv.group(1).strip() if m_psv else "UNKNOWN"
+        result["nuc_transport"] = m_tx.group(1).strip() if m_tx else "UNKNOWN"
+
+    return result
+
+
+def nuc_pythonsv(action: str, nuc_host: str = "", nuc_user: str = "",
+                 pythonsv_path: str = "", commands: Optional[List[str]] = None,
+                 password: str = "", auto_init: bool = True) -> Dict[str, Any]:
+    """Standalone PythonSV-over-NUC helper for the PythonSV tab.
+
+    action='probe' -> connectivity + PythonSV-path check (SSH then WinRM).
+    action='run'   -> run the given PythonSV commands on the NUC. When auto_init
+                      is set, an unlock + sv.refresh preamble runs first.
+    Password is provided per-connection (UI) or falls back to NUC_PASSWORD env;
+    it is used only for this call and never logged or stored.
+    """
+    _ensure_bugscout_path()
+    import live_debug_runner as ldr  # type: ignore
+
+    if action == "probe":
+        return ldr.run_nuc_pythonsv_probe(
+            nuc_host=nuc_host, nuc_user=nuc_user, pythonsv_path=pythonsv_path,
+            password=password)
+
+    if action == "run":
+        cmds = [c for c in (commands or []) if str(c).strip()]
+        if not cmds:
+            raise ValueError("commands are required for action 'run'.")
+        adapter = ldr.NUCPythonSVAdapter(
+            host=nuc_host or os.getenv("NUC_HOST", ""),
+            user=nuc_user or os.getenv("NUC_USER", ""),
+            pythonsv_path=pythonsv_path or os.getenv("NUC_PYTHONSV_PATH", r"C:\pythonsv"),
+            password=password,
+        )
+        raw = adapter.run(cmds, with_preamble=auto_init)
+        return {
+            "transport": adapter.transport_used,
+            "auto_init": auto_init,
+            "output": ldr.clean_pythonsv_output(raw),
+            "raw_output": raw,
+            "notes": ldr.interpret_pythonsv_output(raw),
+        }
+
+    raise ValueError("action must be 'probe' or 'run'.")

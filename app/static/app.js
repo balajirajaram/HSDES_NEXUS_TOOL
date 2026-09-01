@@ -279,6 +279,113 @@ if (liveDebugReportForm) {
   });
 }
 
+// --- PythonSV tab: connect/probe the lab NUC, then optionally run commands ---
+function pythonsvNucFields() {
+  return {
+    nuc_host: (document.getElementById("psv_nuc_host") || {}).value || "",
+    nuc_user: (document.getElementById("psv_nuc_user") || {}).value || "",
+    password: (document.getElementById("psv_nuc_pwd") || {}).value || "",
+    pythonsv_path: (document.getElementById("psv_path") || {}).value || "",
+  };
+}
+
+function pythonsvHandleProbe(data) {
+  const probe = data && (data.nuc_probe || data);
+  if (probe && probe.winrm_setup_required) {
+    const steps = probe.winrm_setup_steps
+      || "Enable WinRM on the NUC (elevated PowerShell):\n  winrm quickconfig -force\n  Enable-PSRemoting -Force";
+    window.alert(
+      "PythonSV: SSH was not reachable and WinRM is not ready.\n\n"
+      + steps + "\n\nThen try Connect / Probe again."
+    );
+  } else if (probe && probe.connected) {
+    window.alert(
+      "Connected to NUC via " + (probe.transport || "?").toUpperCase()
+      + ". PythonSV folder: " + (probe.pythonsv_present ? "FOUND" : "NOT FOUND") + "."
+    );
+  }
+}
+
+// Render a clean, readable PythonSV run result (notes + trimmed output).
+function showPythonsvResult(elId, data) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  if (data && data.error) {
+    el.textContent = "Error: " + data.error;
+    return;
+  }
+  const parts = [];
+  parts.push("Transport: " + ((data.transport || "?").toUpperCase())
+    + (data.auto_init ? "  |  auto-init: on" : "  |  auto-init: off"));
+  const notes = (data && data.notes) || [];
+  if (notes.length) {
+    parts.push("\nNotes:");
+    notes.forEach((n) => parts.push("  • " + n));
+  }
+  parts.push("\n--- Output ---");
+  parts.push((data && data.output) || "(no output)");
+  el.textContent = parts.join("\n");
+}
+
+const pythonsvForm = document.getElementById("pythonsv-form");
+if (pythonsvForm) {
+  pythonsvForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("psv-connect-btn");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Connecting...";
+    }
+    try {
+      const data = await api("/api/bugscout/nuc-pythonsv", {
+        action: "probe",
+        ...pythonsvNucFields(),
+      });
+      showJSON("pythonsv-output", data);
+      pythonsvHandleProbe(data);
+    } catch (err) {
+      showError("pythonsv-output", err);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Connect / Probe";
+      }
+    }
+  });
+}
+
+const pythonsvRunForm = document.getElementById("pythonsv-run-form");
+if (pythonsvRunForm) {
+  pythonsvRunForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("psv-run-btn");
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = "Running...";
+    }
+    try {
+      const commands = (document.getElementById("psv_commands").value || "")
+        .split("\n")
+        .map((s) => s.trim())
+        .filter((s) => s && !s.startsWith("#"));
+      const data = await api("/api/bugscout/nuc-pythonsv", {
+        action: "run",
+        commands,
+        auto_init: !!(document.getElementById("psv_auto_init") || {}).checked,
+        ...pythonsvNucFields(),
+      });
+      showPythonsvResult("pythonsv-output", data);
+    } catch (err) {
+      showError("pythonsv-output", err);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = "Run PythonSV";
+      }
+    }
+  });
+}
+
 const batchLearnForm = document.getElementById("batch-learn-form");
 if (batchLearnForm) {
   batchLearnForm.addEventListener("submit", async (e) => {

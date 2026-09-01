@@ -8,3 +8,7 @@ itsdangerous>=2.1
 requests>=2.31
 requests-kerberos>=0.14
 markdown>=3.7
+# NUC PythonSV live-debug bridge — connects to the lab NUC to drive PythonSV
+# when the SUT is hung. Tries SSH first, falls back to WinRM.
+paramiko>=3.4
+pywinrm>=0.4.3

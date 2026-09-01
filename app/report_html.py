@@ -589,6 +589,7 @@ def _evidence_panels(result: Dict[str, Any]) -> str:
               f'</tr></thead><tbody>{frows}</tbody></table>') if frows else ""
     detail = " ".join(filter(None, [
       f"bank {mcs.get('bank')}" if mcs.get("bank") else "",
+      f"({mcs.get('bank_unit')})" if mcs.get("bank_unit") else "",
       f"MCACOD {mcs.get('mcacod')}" if mcs.get("mcacod") else "",
       f"MSCOD {mcs.get('mscod')}" if mcs.get("mscod") else "",
       f"= {mcs.get('decode')}" if mcs.get("decode") else (

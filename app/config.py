@@ -35,6 +35,29 @@ class Config:
     CODESIGN_MCP_TOOL = os.getenv("CODESIGN_MCP_TOOL", "codesign-ask-hsd-agent")
     CODESIGN_MCP_TOKEN = os.getenv("CODESIGN_MCP_TOKEN", "")
 
+    # ---- DCG Marketplace debug tools (optional MCP enrichment) ----
+    # Additional internal expert agents from the DCG/IT Central Marketplace. Each
+    # is independent and OFF unless its URL + token are set. When enabled, the
+    # analyzer folds their answers into the ticket context and cites them in the
+    # report's Reference Sources. Only queried when relevant evidence is present.
+    # Internal wiki / knowledge-base agent (architecture, specs, debug handbooks).
+    WIKI_MCP_URL = os.getenv("WIKI_MCP_URL", "")
+    WIKI_MCP_TOOL = os.getenv("WIKI_MCP_TOOL", "VeWikiTool")
+    WIKI_MCP_TOKEN = os.getenv("WIKI_MCP_TOKEN", "")
+    # BIOS / firmware expert (DMR BIOS, S3M) for boot-hang / POST / S3M failures.
+    BIOS_MCP_URL = os.getenv("BIOS_MCP_URL", "")
+    BIOS_MCP_TOOL = os.getenv("BIOS_MCP_TOOL", "")
+    BIOS_MCP_TOKEN = os.getenv("BIOS_MCP_TOKEN", "")
+    # Linux kernel crash analysis expert (panic / call-trace / driver decode).
+    KERNEL_MCP_URL = os.getenv("KERNEL_MCP_URL", "")
+    KERNEL_MCP_TOOL = os.getenv("KERNEL_MCP_TOOL", "")
+    KERNEL_MCP_TOKEN = os.getenv("KERNEL_MCP_TOKEN", "")
+    # Redfish / iDRAC out-of-band server management (BMC SEL, power state) — the
+    # out-of-band path when the SUT is hung and unreachable in-band.
+    REDFISH_MCP_URL = os.getenv("REDFISH_MCP_URL", "")
+    REDFISH_MCP_TOOL = os.getenv("REDFISH_MCP_TOOL", "")
+    REDFISH_MCP_TOKEN = os.getenv("REDFISH_MCP_TOKEN", "")
+
     # Optional path to the Axon CLI binary (e.g. ~/bin/axon). When set (or the
     # `axon` binary is on PATH), the analyzer downloads linked Axon recordings and
     # folds their metadata + log content into the decode. Leave blank to disable.
@@ -51,6 +74,28 @@ class Config:
     # analyzer greps it for the exact code sites found in logs (e.g.
     # MultiSocketLib.c:1241) and includes the surrounding source in the report.
     BIOS_REPO_PATH = os.getenv("BIOS_REPO_PATH", "")
+
+    # ---- NUC PythonSV live-debug bridge ----
+    # When the SUT (Server Under Test) is hung/failed and unreachable over SSH,
+    # live-debug instead connects to the NUC — a Windows box on the same bench
+    # that keeps PythonSV/ITP sideband access to the SUT. The NUC is a Windows
+    # host, so commands run over WinRM (not SSH). PythonSV lives at
+    # NUC_PYTHONSV_PATH. The password is read ONLY from the environment and is
+    # NEVER logged, returned to the UI, or written to any report/session file.
+    NUC_HOST = os.getenv("NUC_HOST", "")          # e.g. CS17CA101NN1504
+    NUC_USER = os.getenv("NUC_USER", "")          # e.g. .\general
+    NUC_PYTHONSV_PATH = os.getenv("NUC_PYTHONSV_PATH", r"C:\pythonsv")
+    # Transport preference: 'auto' tries SSH first then WinRM; or force 'ssh'/'winrm'.
+    NUC_TRANSPORT = os.getenv("NUC_TRANSPORT", "auto")
+
+    # Read fresh from env each access; never stored on the instance or serialised.
+    @property
+    def NUC_PASSWORD(self) -> str:
+        return os.getenv("NUC_PASSWORD", "")
+
+    @property
+    def nuc_pythonsv_enabled(self) -> bool:
+        return bool(self.NUC_HOST and self.NUC_USER and self.NUC_PASSWORD)
 
     HOST = os.getenv("HOST", "127.0.0.1")
     PORT = int(os.getenv("PORT", "8000"))

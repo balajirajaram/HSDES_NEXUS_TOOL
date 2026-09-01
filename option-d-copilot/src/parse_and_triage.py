@@ -892,7 +892,8 @@ def mode_report(input_path: str, output_dir: str | None = None):
 # ─── Mode: Live Debug ────────────────────────────────────────────────────────
 
 def mode_live_debug(hsd_id: str, initial_logs: str, execution_mode: str,
-                    server: str, ssh_user: str, max_iterations: int) -> None:
+                    server: str, ssh_user: str, max_iterations: int,
+                    nuc_host: str = "", nuc_user: str = "") -> None:
     """
     Launch an interactive live debug session for a single open HSD.
 
@@ -903,11 +904,15 @@ def mode_live_debug(hsd_id: str, initial_logs: str, execution_mode: str,
         hsd_id:          HSD article ID to debug.
         initial_logs:    Path to JSON file matching live_debug_input.schema.json
                          (optional — provides already-collected context).
-        execution_mode:  manual | local | ssh | auto
+        execution_mode:  manual | local | ssh | auto | nuc-pythonsv
         server:          SSH hostname (required when execution_mode == 'ssh').
         ssh_user:        SSH username (optional).
         max_iterations:  Safety cap on the debug loop (default 10; user can
                          override per-session during the loop).
+        nuc_host:        NUC hostname (used when execution_mode == 'nuc-pythonsv';
+                         falls back to NUC_HOST env). The NUC password is read
+                         only from NUC_PASSWORD env and is never persisted.
+        nuc_user:        NUC username (falls back to NUC_USER env).
     """
     try:
         import live_debug_runner as ldr
@@ -951,9 +956,59 @@ def mode_live_debug(hsd_id: str, initial_logs: str, execution_mode: str,
     print(f"  Execution mode:  {execution_mode}")
     if server:
         print(f"  Server:          {server}")
+    if execution_mode == "nuc-pythonsv":
+        nuc_h = nuc_host or os.getenv("NUC_HOST", "")
+        nuc_u = nuc_user or os.getenv("NUC_USER", "")
+        print(f"  NUC host:        {nuc_h or '(set NUC_HOST)'}")
+        print(f"  NUC user:        {nuc_u or '(set NUC_USER)'}")
+        print(f"  PythonSV path:   {os.getenv('NUC_PYTHONSV_PATH', r'C:\\pythonsv')}")
+        print("  NUC password:    (read from NUC_PASSWORD env — never shown/stored)")
     print(f"  Max iterations:  {max_iterations}")
     print(f"  Output folder:   {out_dir}")
     print(f"{'═' * 60}\n")
+
+    # For NUC PythonSV mode, actually connect now and confirm the bench link +
+    # PythonSV path, so the user gets immediate proof the SUT is reachable
+    # out-of-band (via the NUC) before the debug loop begins.
+    if execution_mode == "nuc-pythonsv":
+        try:
+            probe = ldr.run_nuc_pythonsv_probe(nuc_host=nuc_host, nuc_user=nuc_user)
+        except Exception as exc:
+            probe = {"connected": False, "pythonsv_present": False,
+                     "transport": "", "winrm_setup_required": True, "output": str(exc)}
+        status = "CONNECTED" if probe.get("connected") else "FAILED"
+        psv = "FOUND" if probe.get("pythonsv_present") else "NOT FOUND"
+        print(f"  NUC connectivity: {status}")
+        print(f"  NUC transport:    {probe.get('transport') or 'none'}")
+        print(f"  PythonSV folder:  {psv}")
+        if probe.get("winrm_setup_required"):
+            print("  WinRM setup:      REQUIRED")
+        if probe.get("output"):
+            print("  Probe output:")
+            for ln in str(probe["output"]).splitlines():
+                print(f"    {ln}")
+        # Machine-readable line for the web bridge / UI (safe: no secrets).
+        print("NUC_PROBE_JSON: " + json.dumps({
+            "connected": bool(probe.get("connected")),
+            "transport": probe.get("transport") or "",
+            "pythonsv_present": bool(probe.get("pythonsv_present")),
+            "winrm_setup_required": bool(probe.get("winrm_setup_required")),
+            "winrm_setup_steps": probe.get("winrm_setup_steps", ""),
+        }, ensure_ascii=False))
+        print()
+        try:
+            (out_dir / "nuc_probe.txt").write_text(
+                f"connected={probe.get('connected')}\n"
+                f"transport={probe.get('transport')}\n"
+                f"pythonsv_present={probe.get('pythonsv_present')}\n"
+                f"winrm_setup_required={probe.get('winrm_setup_required')}\n\n"
+                f"{probe.get('output', '')}\n"
+                + (f"\n{probe.get('winrm_setup_steps', '')}\n"
+                   if probe.get("winrm_setup_steps") else ""),
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
 
     if initial_logs_data:
         print(f"  Initial logs provided: {len(initial_logs_data)} categor{'ies' if len(initial_logs_data) != 1 else 'y'}")
@@ -985,6 +1040,12 @@ def mode_live_debug(hsd_id: str, initial_logs: str, execution_mode: str,
         "db_path": str(db_path),
         "out_dir": str(out_dir),
     }
+    if execution_mode == "nuc-pythonsv":
+        # Persist NUC host/user + PythonSV path only — the password stays in the
+        # environment (NUC_PASSWORD) and is deliberately NEVER written here.
+        init_data["nuc_host"] = nuc_host or os.getenv("NUC_HOST", "")
+        init_data["nuc_user"] = nuc_user or os.getenv("NUC_USER", "")
+        init_data["nuc_pythonsv_path"] = os.getenv("NUC_PYTHONSV_PATH", r"C:\pythonsv")
     out_dir.mkdir(parents=True, exist_ok=True)
     init_file.write_text(json.dumps(init_data, indent=2, ensure_ascii=False), encoding="utf-8")
     logger.info("Session init file: %s", init_file)
@@ -1037,12 +1098,19 @@ Examples:
                         help="Path to JSON file with already-collected logs "
                              "(live_debug_input.schema.json format)")
     parser.add_argument("--execution-mode", default="manual",
-                        choices=["manual", "local", "ssh", "auto"],
-                        help="How commands are executed in live-debug mode (default: manual)")
+                        choices=["manual", "local", "ssh", "auto", "nuc-pythonsv"],
+                        help="How commands are executed in live-debug mode (default: manual). "
+                             "Use 'nuc-pythonsv' to drive PythonSV on a lab NUC when the SUT "
+                             "is hung/unreachable.")
     parser.add_argument("--server", default="",
                         help="SSH hostname (required when --execution-mode ssh)")
     parser.add_argument("--ssh-user", default="",
                         help="SSH username (default: current OS user)")
+    parser.add_argument("--nuc-host", default="",
+                        help="NUC hostname for nuc-pythonsv mode (default: NUC_HOST env)")
+    parser.add_argument("--nuc-user", default="",
+                        help="NUC username for nuc-pythonsv mode (default: NUC_USER env). "
+                             "The NUC password comes only from NUC_PASSWORD in the environment.")
     parser.add_argument("--max-iterations", type=int, default=10,
                         help="Safety cap on debug loop iterations (default: 10)")
     parser.add_argument("--output", help="Optional output directory or file base for crashdump mode")
@@ -1066,6 +1134,8 @@ Examples:
             parser.error("--hsd-id is required for live-debug mode")
         if args.execution_mode == "ssh" and not args.server:
             parser.error("--server is required when --execution-mode is ssh")
+        if args.execution_mode == "nuc-pythonsv" and not (args.nuc_host or os.getenv("NUC_HOST")):
+            parser.error("--nuc-host (or NUC_HOST env) is required when --execution-mode is nuc-pythonsv")
         mode_live_debug(
             hsd_id=args.hsd_id,
             initial_logs=args.initial_logs or "",
@@ -1073,6 +1143,8 @@ Examples:
             server=args.server,
             ssh_user=args.ssh_user,
             max_iterations=args.max_iterations,
+            nuc_host=args.nuc_host,
+            nuc_user=args.nuc_user,
         )
     elif args.mode == "crashdump":
         if not args.input:

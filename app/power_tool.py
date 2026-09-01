@@ -133,6 +133,10 @@ def _cmd_optiond(args: argparse.Namespace) -> int:
             cmd.extend(["--server", args.server])
         if args.ssh_user:
             cmd.extend(["--ssh-user", args.ssh_user])
+        if getattr(args, "nuc_host", ""):
+            cmd.extend(["--nuc-host", args.nuc_host])
+        if getattr(args, "nuc_user", ""):
+            cmd.extend(["--nuc-user", args.nuc_user])
         if args.initial_logs:
             cmd.extend(["--initial-logs", args.initial_logs])
         return _run(cmd, cwd=OPTIOND_SRC)
@@ -245,9 +249,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_live = opt_sub.add_parser("live-debug", help="parse_and_triage live-debug mode")
     p_live.add_argument("--hsd-id", required=True)
-    p_live.add_argument("--execution-mode", choices=["manual", "local", "ssh", "auto"], default="manual")
+    p_live.add_argument("--execution-mode", choices=["manual", "local", "ssh", "auto", "nuc-pythonsv"], default="manual")
     p_live.add_argument("--server", default="")
     p_live.add_argument("--ssh-user", default="")
+    p_live.add_argument("--nuc-host", default="", help="NUC hostname for nuc-pythonsv mode (default: NUC_HOST env)")
+    p_live.add_argument("--nuc-user", default="", help="NUC username for nuc-pythonsv mode (default: NUC_USER env)")
     p_live.add_argument("--max-iterations", type=int, default=10)
     p_live.add_argument("--initial-logs", default="")
 

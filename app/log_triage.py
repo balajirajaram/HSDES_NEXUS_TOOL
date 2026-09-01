@@ -116,7 +116,7 @@ def _nonzero_hex(v: str) -> bool:
 
 def _extract_evidence(text: str, recs: List[Dict[str, Any]],
                       codes: List[Dict[str, Any]], post: Optional[Dict[str, Any]],
-                      ierr_rows: List[Dict[str, Any]]) -> Dict[str, Any]:
+                      ierr_rows: List[Dict[str, Any]], product: str = "") -> Dict[str, Any]:
     """Pull the concrete hardware/firmware facts a GNR debug engineer needs to move
     from a generic triage line to a near-root-cause hypothesis. Only reports a field
     when it is actually present in the evidence — never guesses."""
@@ -127,6 +127,15 @@ def _extract_evidence(text: str, recs: List[Dict[str, Any]],
                     if r.get("bank") not in (None, "", "Unknown")})
     if banks:
         ev["mca_banks"] = banks
+        # Name each failing bank for the detected product (GNR uses its own map).
+        try:
+            from .decoders.bank_map import bank_label
+            units = {b: bank_label(b, product) for b in banks}
+            units = {b: u for b, u in units.items() if u}
+            if units:
+                ev["bank_units"] = units
+        except Exception:
+            pass
 
     # 2. MC_STATUS / MCACOD / MSCOD — prefer the record that best represents the
     #    fatal error: a real bank number + nonzero MCACOD/MSCOD, then DB match.
@@ -151,11 +160,20 @@ def _extract_evidence(text: str, recs: List[Dict[str, Any]],
             cm = re.search(r"(?i)MSCOD_decoded:\s*([^,|\"]+)", matched.get("context", "") or "")
             if cm:
                 decode = cm.group(1).strip().strip('"').strip()
+        _bank = str(matched.get("bank")) if matched.get("bank") not in (None, "") else None
+        _unit = ""
+        if _bank is not None:
+            try:
+                from .decoders.bank_map import bank_label
+                _unit = bank_label(_bank, product)
+            except Exception:
+                _unit = ""
         ev["mc_status"] = {
             "status": st if isinstance(st, str) else (hex(st) if isinstance(st, int) else None),
             "mscod": f"0x{mscod:04X}" if isinstance(mscod, int) else mscod,
             "mcacod": f"0x{mcacod:04X}" if isinstance(mcacod, int) else mcacod,
-            "bank": str(matched.get("bank")) if matched.get("bank") not in (None, "") else None,
+            "bank": _bank,
+            "bank_unit": _unit,
             "decode": decode,
         }
         # Status flag bits (VAL/OVER/UC/EN/MISCV/ADDRV/PCC) from a 64-bit MCi_STATUS.
@@ -208,7 +226,7 @@ def _extract_evidence(text: str, recs: List[Dict[str, Any]],
     return ev
 
 
-def triage_logs(text: str) -> Optional[Dict[str, Any]]:
+def triage_logs(text: str, product: str = "") -> Optional[Dict[str, Any]]:
     """Decode every recognizable failure in the combined log text and synthesize
     ranked, evidence-based hypotheses. Returns None when nothing is decodable."""
     if not text or not text.strip():
@@ -288,7 +306,7 @@ def triage_logs(text: str) -> Optional[Dict[str, Any]]:
     # --- concrete root-cause evidence (bank/status/addr/misc, RC agent, socket) ---
     try:
         out["evidence"] = _extract_evidence(text, recs, codes, out.get("post"),
-                                            out.get("ierr_table") or [])
+                                            out.get("ierr_table") or [], product)
     except Exception:
         out["evidence"] = {}
 

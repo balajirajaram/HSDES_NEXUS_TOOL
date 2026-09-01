@@ -23,9 +23,11 @@ Usage (standalone):
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import logging
 import os
+import re
 import subprocess
 import sys
 from datetime import datetime
@@ -284,7 +286,340 @@ class AutoAdapter:
         return self._manual.run(commands, context)
 
 
-def make_adapter(execution_mode: str, server: str = "", ssh_user: str = "") -> Any:
+NUC_WINRM_SETUP_STEPS = (
+    "SSH to the NUC was not reachable, and WinRM is not ready yet.\n"
+    "To enable the WinRM path, run these ONCE on the NUC in an elevated PowerShell, "
+    "then retry:\n"
+    "  winrm quickconfig -force\n"
+    "  Enable-PSRemoting -Force\n"
+    "  Set-Item WSMan:\\localhost\\Service\\AllowUnencrypted $true\n"
+    "  Set-Item WSMan:\\localhost\\Service\\Auth\\Basic $true\n"
+    "  New-NetFirewallRule -DisplayName 'WinRM 5985' -Direction Inbound "
+    "-LocalPort 5985 -Protocol TCP -Action Allow"
+)
+
+# Init preamble prepended to every PythonSV run (unless the user opts out):
+# unlocks a locked part and refreshes the namednodes tree, so `sv` / `ipc` are
+# ready and register access works without the user typing this each time.
+NUC_PYTHONSV_PREAMBLE = (
+    "import ipccli\n"
+    "ipc = ipccli.baseaccess()\n"
+    "try:\n"
+    "    ipc.unlock()\n"
+    "except Exception as _e:\n"
+    "    print('[init] ipc.unlock skipped:', _e)\n"
+    "import namednodes\n"
+    "sv = namednodes.sv\n"
+    "sv.refresh()\n"
+)
+
+
+def clean_pythonsv_output(text: str) -> str:
+    """Strip PythonSV boot noise (EOL banner, version table, per-IP init lines,
+    IPC handshake, SyntaxWarnings) so the response is readable. Collapses the
+    many 'Initialized <ip>' lines into a single summary."""
+    if not text:
+        return ""
+    text = text.replace("\r\n", "\n").replace("\r", "\n")
+    _noise = re.compile(
+        r"SyntaxWarning|if arg is 'self'|Using XDPA|"
+        r"Error while Accessing special Endpoint|In case of any issues|"
+        r"please include the following table|Connecting to IPC API|"
+        r"Initializing IPC API|IPC-CLI:|OpenIPC", re.I)
+    init_ips: list[str] = []
+    out: list[str] = []
+    for raw in text.split("\n"):
+        s = raw.rstrip()
+        stripped = s.strip()
+        # ASCII banner box (END-OF-LIFE notice etc.)
+        if re.fullmatch(r"\*+", stripped) or (stripped.startswith("*") and stripped.endswith("*")):
+            continue
+        # Version table rows / rules
+        if re.fullmatch(r"[=|\-]{3,}", stripped) or re.fullmatch(r"\|.*\|", stripped):
+            continue
+        m = re.fullmatch(r"Initialized\s+(\S+)", stripped)
+        if m:
+            init_ips.append(m.group(1))
+            continue
+        if _noise.search(stripped):
+            continue
+        out.append(s)
+    cleaned = "\n".join(out)
+    if init_ips:
+        cleaned += (f"\n[init] {len(init_ips)} IP components initialized: "
+                    f"{', '.join(init_ips)}")
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
+    return cleaned
+
+
+def interpret_pythonsv_output(text: str) -> list:
+    """Detect known PythonSV / silicon states and return short, plain-English
+    notes so the user immediately understands SUT state vs. tool problems."""
+    notes: list[str] = []
+    if not text:
+        return notes
+    low = text.lower()
+    m = re.search(r"Discovered:\s*([^\r\n]+)", text)
+    if m:
+        notes.append(f"Discovered part: {m.group(1).strip()}")
+    if any(k in low for k in ("is locked", "requires unlock", "run ipc.unlock")):
+        notes.append("Part was LOCKED — the init preamble auto-runs ipc.unlock().")
+    if "not out of reset" in low or "reset phase not_set" in low:
+        notes.append("SUT is NOT out of reset — uncore/PCU not enumerated yet; only "
+                     "cores/IPC are available.")
+    if "bring up hasnt started" in low or "bring up hasn't started" in low:
+        notes.append("Pcode bring-up has not started — uncore/pcudata registers are "
+                     "unavailable.")
+    if "unknown attribute uncore" in low:
+        notes.append("`uncore` is not present (part locked / not fully enumerated). "
+                     "Unlock + sv.refresh(), or wait for bring-up.")
+    if any(k in low for k in ("port in use", "unable_to_connect", "could not reserve port")):
+        notes.append("IPC port busy — another PythonSV/OpenIPC session may be attached. "
+                     "Close it, then reconnect.")
+    if "could not load pcie" in low:
+        notes.append("PCIe IP failed to load — consistent with an early-reset / locked state.")
+    # Undefined interactive helpers (dimminfo, itp, mcscan, ...) — they aren't
+    # auto-loaded in a non-interactive process; the module must be imported.
+    undefined = []
+    for nm in re.findall(r"NameError: name '([^']+)' is not defined", text):
+        if nm not in undefined:
+            undefined.append(nm)
+    if undefined:
+        names = ", ".join(f"`{n}`" for n in undefined)
+        notes.append(f"{names} not defined — these are PythonSV interactive helpers that "
+                     f"a plain session doesn't auto-load. Import the module first "
+                     f"(e.g. `from <project>... import {undefined[0]}`), then call it.")
+    missing_mod = re.findall(r"ModuleNotFoundError: No module named '([^']+)'", text)
+    if missing_mod:
+        mods = ", ".join(f"`{m}`" for m in dict.fromkeys(missing_mod))
+        notes.append(f"Missing module(s) {mods} — a user/console tool expects the "
+                     f"interactive PythonSV sys.path. Add the project dir to sys.path "
+                     f"(e.g. C:\\pythonsv\\<project>) before importing it.")
+    if "no ping" in low or "did not respond" in low:
+        notes.append("SUT OS communicator did not respond (No ping) — silicon is reachable "
+                     "via ITP, but OS-level helpers won't work until the SUT is up.")
+    if not undefined and not missing_mod and "traceback (most recent call last)" in low:
+        notes.append("A PythonSV command raised an exception (see output) — usually a "
+                     "usage/topology mismatch on this part, not a tool error.")
+    return notes
+
+
+class NUCPythonSVAdapter:
+    """Run PythonSV / sideband commands on a lab NUC that retains ITP/PythonSV
+    access to a SUT (Server Under Test) that is itself hung or unreachable.
+
+    The NUC is a **Windows** host. Two transports are supported and, by default,
+    tried in order: **SSH** first (OpenSSH server), then **WinRM** as a fallback
+    when SSH is not reachable. Override with ``NUC_TRANSPORT`` = ``auto`` (default)
+    / ``ssh`` / ``winrm``. PythonSV lives at ``pythonsv_path``. Credentials come
+    ONLY from the environment (``NUC_PASSWORD``) and are NEVER logged, echoed to
+    the UI, or written to disk; any occurrence in output is masked.
+    """
+
+    def __init__(self, host: str, user: str = "", pythonsv_path: str = r"C:\pythonsv",
+                 password: str = ""):
+        self.host = host
+        raw_user = user or os.getenv("NUC_USER", "")
+        # SSH / WinRM-NTLM to a Windows local account use the bare account name;
+        # strip a ".\" / "./" (local-machine) prefix that auth stacks reject.
+        self.user = re.sub(r"^\.[\\/]+", "", raw_user.strip())
+        self.pythonsv_path = pythonsv_path or os.getenv("NUC_PYTHONSV_PATH", r"C:\pythonsv")
+        self.preferred = os.getenv("NUC_TRANSPORT", "auto").lower()   # auto|ssh|winrm
+        self.ssh_port = int(os.getenv("NUC_SSH_PORT", "22"))
+        # WinRM transport tuning (all optional; sensible Windows defaults).
+        self.winrm_transport = os.getenv("NUC_WINRM_TRANSPORT", "ntlm")
+        self.winrm_scheme = os.getenv("NUC_WINRM_SCHEME", "http")
+        self.winrm_port = os.getenv("NUC_WINRM_PORT",
+                                    "5986" if self.winrm_scheme == "https" else "5985")
+        # Password: prefer the value passed for this connection (e.g. typed in the
+        # UI), else fall back to the NUC_PASSWORD env. Kept in memory only — never
+        # logged, echoed, or written to disk; masked in all output.
+        self._password = password or os.getenv("NUC_PASSWORD", "")
+        self.transport_used = ""
+        if not self.host:
+            raise ValueError("NUC host is required (set NUC_HOST or pass --nuc-host).")
+        if not self._password:
+            raise ValueError(
+                "NUC password is required. Enter it in the PythonSV tab (or set "
+                "NUC_PASSWORD). It is used only for this connection and never stored."
+            )
+
+    def _mask(self, text: str) -> str:
+        if self._password and text:
+            return text.replace(self._password, "***")
+        return text
+
+    def _transport_order(self) -> list[str]:
+        if self.preferred == "ssh":
+            return ["ssh"]
+        if self.preferred == "winrm":
+            return ["winrm"]
+        return ["ssh", "winrm"]
+
+    # --- SSH transport (OpenSSH on the Windows NUC; default shell is cmd.exe) ---
+    def _ssh_client(self) -> Any:
+        import paramiko  # type: ignore
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(self.host, port=self.ssh_port, username=self.user,
+                       password=self._password, timeout=15)
+        return client
+
+    def _python_oneliner(self, script_text: str) -> str:
+        """Wrap a multi-line PythonSV script into a single `python -c` call.
+
+        Base64-encoding avoids all shell quoting/newline issues AND runs every
+        line in ONE process, so imports and the PythonSV/IPC session persist
+        across lines (mirroring an interactive PythonSV console).
+        """
+        b64 = base64.b64encode(script_text.encode("utf-8")).decode("ascii")
+        return (f"python -c \"import base64;exec(base64.b64decode('{b64}')"
+                f".decode('utf-8'))\"")
+
+    def _ssh_run_all(self, commands: list[str]) -> str:
+        client = self._ssh_client()
+        try:
+            script_text = "\n".join(str(c) for c in commands)
+            wrapped = f'cd /d "{self.pythonsv_path}" && {self._python_oneliner(script_text)}'
+            logger.info("NUC PythonSV (ssh) %s: running %d line(s) in one session",
+                        self.host, len(commands))
+            # PythonSV/IPC init can take a while — allow a generous timeout.
+            _in, out, err = client.exec_command(wrapped, timeout=900)
+            text = (out.read().decode("utf-8", "replace")
+                    + err.read().decode("utf-8", "replace"))
+        finally:
+            client.close()
+        return text
+
+    # --- WinRM transport (PowerShell remoting) ---
+    def _winrm_session(self) -> Any:
+        import winrm  # type: ignore
+        endpoint = f"{self.winrm_scheme}://{self.host}:{self.winrm_port}/wsman"
+        # Long timeouts so PythonSV init (which can take minutes) doesn't get cut.
+        return winrm.Session(
+            endpoint,
+            auth=(self.user, self._password),
+            transport=self.winrm_transport,
+            server_cert_validation="ignore",
+            read_timeout_sec=920,
+            operation_timeout_sec=900,
+        )
+
+    def _winrm_run_all(self, commands: list[str]) -> str:
+        session = self._winrm_session()
+        script_text = "\n".join(str(c) for c in commands)
+        ps = f'Set-Location -Path "{self.pythonsv_path}"; {self._python_oneliner(script_text)}'
+        logger.info("NUC PythonSV (winrm) %s: running %d line(s) in one session",
+                    self.host, len(commands))
+        r = session.run_ps(ps)
+        return ((r.std_out or b"") + (r.std_err or b"")).decode("utf-8", "replace")
+
+    def run(self, commands: list[str], context: str = "", with_preamble: bool = True) -> str:
+        cmds = list(commands)
+        if with_preamble:
+            # Prepend unlock + sv.refresh so register access just works.
+            cmds = NUC_PYTHONSV_PREAMBLE.splitlines() + cmds
+        errors: list[str] = []
+        for transport in self._transport_order():
+            try:
+                out = (self._ssh_run_all(cmds) if transport == "ssh"
+                       else self._winrm_run_all(cmds))
+                self.transport_used = transport
+                return self._mask(f"[transport: {transport}]\n{out}")
+            except ImportError as exc:
+                errors.append(f"{transport}: driver missing ({exc})")
+            except Exception as exc:
+                errors.append(f"{transport}: {self._mask(str(exc))}")
+        msg = ("[NUC PythonSV ERROR] Could not reach NUC via "
+               + " then ".join(self._transport_order()) + ".\n" + "\n".join(errors))
+        if "winrm" in self._transport_order():
+            msg += "\n\n" + NUC_WINRM_SETUP_STEPS
+        return self._mask(msg)
+
+    def probe(self) -> dict:
+        """Verify the NUC is reachable (SSH → WinRM) and PythonSV exists.
+
+        Returns ``connected`` / ``transport`` / ``pythonsv_present`` plus, when no
+        transport works and WinRM was in play, ``winrm_setup_required`` + the
+        prerequisite steps so the UI can prompt the user.
+        """
+        errors: list[str] = []
+        for transport in self._transport_order():
+            try:
+                if transport == "ssh":
+                    client = self._ssh_client()
+                    lines: list[str] = []
+                    present = False
+                    try:
+                        checks = [
+                            ("hostname", "hostname"),
+                            ("pythonsv-path",
+                             f'if exist "{self.pythonsv_path}" (echo FOUND) else (echo MISSING)'),
+                        ]
+                        for label, cmd in checks:
+                            _in, out, err = client.exec_command(cmd, timeout=30)
+                            text = (out.read().decode("utf-8", "replace")
+                                    + err.read().decode("utf-8", "replace")).strip()
+                            lines.append(f"[{label}] {text}")
+                            if label == "pythonsv-path" and "FOUND" in text:
+                                present = True
+                    finally:
+                        client.close()
+                    self.transport_used = "ssh"
+                    return {"connected": True, "transport": "ssh",
+                            "pythonsv_present": present,
+                            "output": self._mask("\n".join(lines)),
+                            "winrm_setup_required": False}
+
+                session = self._winrm_session()
+                lines = []
+                present = False
+                checks_ps = [
+                    ("hostname", "[System.Net.Dns]::GetHostName()"),
+                    ("pythonsv-path",
+                     f"if (Test-Path -Path '{self.pythonsv_path}') {{ 'FOUND' }} else {{ 'MISSING' }}"),
+                ]
+                for label, script in checks_ps:
+                    r = session.run_ps(script)
+                    text = ((r.std_out or b"") + (r.std_err or b"")).decode("utf-8", "replace").strip()
+                    lines.append(f"[{label}] {text}")
+                    if label == "pythonsv-path" and "FOUND" in text:
+                        present = True
+                self.transport_used = "winrm"
+                return {"connected": True, "transport": "winrm",
+                        "pythonsv_present": present,
+                        "output": self._mask("\n".join(lines)),
+                        "winrm_setup_required": False}
+            except ImportError as exc:
+                errors.append(f"{transport}: driver missing ({exc})")
+            except Exception as exc:
+                errors.append(f"{transport}: {self._mask(str(exc))}")
+
+        winrm_needed = "winrm" in self._transport_order()
+        out = ("Could not reach NUC via " + " then ".join(self._transport_order())
+               + ".\n" + "\n".join(errors))
+        result = {"connected": False, "transport": "", "pythonsv_present": False,
+                  "output": self._mask(out), "winrm_setup_required": winrm_needed}
+        if winrm_needed:
+            result["winrm_setup_steps"] = NUC_WINRM_SETUP_STEPS
+        return result
+
+
+def run_nuc_pythonsv_probe(nuc_host: str = "", nuc_user: str = "",
+                           pythonsv_path: str = "", password: str = "") -> dict:
+    """Build a NUC adapter and run a connectivity + PythonSV-path probe."""
+    adapter = NUCPythonSVAdapter(
+        host=nuc_host or os.getenv("NUC_HOST", ""),
+        user=nuc_user or os.getenv("NUC_USER", ""),
+        pythonsv_path=pythonsv_path or os.getenv("NUC_PYTHONSV_PATH", r"C:\pythonsv"),
+        password=password,
+    )
+    return adapter.probe()
+
+
+def make_adapter(execution_mode: str, server: str = "", ssh_user: str = "",
+                 nuc_host: str = "", nuc_user: str = "",
+                 pythonsv_path: str = "") -> Any:
     """Return the appropriate execution adapter for the given mode."""
     mode = execution_mode.lower()
     if mode == "local":
@@ -293,6 +628,11 @@ def make_adapter(execution_mode: str, server: str = "", ssh_user: str = "") -> A
         if not server:
             raise ValueError("--server is required when --execution-mode is ssh")
         return SSHAdapter(host=server, user=ssh_user)
+    if mode in ("nuc", "nuc-pythonsv", "pythonsv"):
+        host = nuc_host or os.getenv("NUC_HOST", "")
+        user = nuc_user or os.getenv("NUC_USER", "")
+        path = pythonsv_path or os.getenv("NUC_PYTHONSV_PATH", r"C:\pythonsv")
+        return NUCPythonSVAdapter(host=host, user=user, pythonsv_path=path)
     if mode == "auto":
         return AutoAdapter()
     return ManualAdapter()  # default
@@ -606,11 +946,17 @@ def _parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--execution-mode", default="manual",
-        choices=["manual", "local", "ssh", "auto"],
-        help="How commands are executed (default: manual)",
+        choices=["manual", "local", "ssh", "auto", "nuc-pythonsv"],
+        help="How commands are executed (default: manual). Use 'nuc-pythonsv' to "
+             "drive PythonSV on a lab NUC when the SUT is hung/unreachable.",
     )
     p.add_argument("--server", default="", help="SSH hostname (required if --execution-mode ssh)")
     p.add_argument("--ssh-user", default="", help="SSH username (default: current user)")
+    p.add_argument("--nuc-host", default="",
+                   help="NUC hostname for nuc-pythonsv mode (default: NUC_HOST env)")
+    p.add_argument("--nuc-user", default="",
+                   help="NUC username for nuc-pythonsv mode (default: NUC_USER env). "
+                        "The NUC password comes only from NUC_PASSWORD in the environment.")
     p.add_argument(
         "--report-only", default="",
         help="Session ID to re-render reports for (skips debug loop)",
@@ -655,7 +1001,11 @@ def main() -> None:
         initial_logs=initial_logs,
     )
 
-    adapter = make_adapter(args.execution_mode, args.server, args.ssh_user)
+    adapter = make_adapter(
+        args.execution_mode, args.server, args.ssh_user,
+        nuc_host=getattr(args, "nuc_host", ""),
+        nuc_user=getattr(args, "nuc_user", ""),
+    )
 
     print(f"\n{'═'*60}")
     print(f"  HSDES NEXUS — Live-Debug Session")

@@ -36,6 +36,7 @@ from .bugscout_bridge import (
     list_cached_logs,
     parse_crashdump_file,
     start_live_debug_session,
+    nuc_pythonsv,
 )
 from .config import config
 from .hsdes_client import HSDESClient
@@ -126,6 +127,11 @@ class LiveDebugInitRequest(BaseModel):
     ssh_user: str = ""
     max_iterations: int = 10
     initial_logs_json: Optional[str] = None
+    # NUC PythonSV bridge (for when the SUT is hung/unreachable). Host/user only;
+    # the NUC password is read server-side from NUC_PASSWORD env and is never
+    # accepted over the API.
+    nuc_host: str = ""
+    nuc_user: str = ""
 
 
 class BugScoutPrepareRequest(BaseModel):
@@ -144,6 +150,16 @@ class BugScoutReportRequest(BaseModel):
 
 class LiveDebugReportRequest(BaseModel):
     session_id: str
+
+
+class NucPythonSVRequest(BaseModel):
+    action: str = "probe"          # probe | run
+    nuc_host: str = ""
+    nuc_user: str = ""
+    password: str = ""             # entered in the UI; used only for this call, not stored
+    pythonsv_path: str = ""
+    commands: List[str] = []
+    auto_init: bool = True         # prepend ipc.unlock() + sv.refresh() before commands
 
 
 def _creds(request: Request) -> Optional[Dict[str, str]]:
@@ -392,10 +408,17 @@ async def api_bugscout_live_debug_init(body: LiveDebugInitRequest):
     if not hsd:
         return JSONResponse(status_code=400, content={"error": "hsd_id is required."})
     mode = body.execution_mode.strip().lower()
-    if mode not in {"manual", "local", "ssh", "auto"}:
-        return JSONResponse(status_code=400, content={"error": "execution_mode must be one of manual|local|ssh|auto."})
+    if mode not in {"manual", "local", "ssh", "auto", "nuc-pythonsv"}:
+        return JSONResponse(status_code=400, content={"error": "execution_mode must be one of manual|local|ssh|auto|nuc-pythonsv."})
     if mode == "ssh" and not body.server.strip():
         return JSONResponse(status_code=400, content={"error": "server is required when execution_mode is ssh."})
+    nuc_host = body.nuc_host.strip() or config.NUC_HOST
+    nuc_user = body.nuc_user.strip() or config.NUC_USER
+    if mode == "nuc-pythonsv":
+        if not nuc_host:
+            return JSONResponse(status_code=400, content={"error": "nuc_host is required when execution_mode is nuc-pythonsv (or set NUC_HOST)."})
+        if not config.NUC_PASSWORD:
+            return JSONResponse(status_code=400, content={"error": "NUC password is not configured. Set NUC_PASSWORD in the server environment (.env); it is never sent through the UI."})
     try:
         return start_live_debug_session(
             hsd_id=hsd,
@@ -404,9 +427,42 @@ async def api_bugscout_live_debug_init(body: LiveDebugInitRequest):
             ssh_user=body.ssh_user.strip(),
             max_iterations=max(1, min(40, body.max_iterations)),
             initial_logs_json=(body.initial_logs_json or "").strip() or None,
+            nuc_host=nuc_host,
+            nuc_user=nuc_user,
         )
     except FileNotFoundError as exc:
         return JSONResponse(status_code=404, content={"error": str(exc)})
+    except Exception as exc:
+        return JSONResponse(status_code=400, content={"error": str(exc)})
+
+
+@app.post("/api/bugscout/nuc-pythonsv")
+async def api_bugscout_nuc_pythonsv(body: NucPythonSVRequest):
+    action = body.action.strip().lower()
+    if action not in {"probe", "run"}:
+        return JSONResponse(status_code=400, content={"error": "action must be 'probe' or 'run'."})
+    nuc_host = body.nuc_host.strip() or config.NUC_HOST
+    if not nuc_host:
+        return JSONResponse(status_code=400, content={"error": "NUC host is required."})
+    nuc_user = body.nuc_user.strip() or config.NUC_USER
+    if not nuc_user:
+        return JSONResponse(status_code=400, content={"error": "NUC username is required."})
+    # Password is entered in the UI (preferred) or falls back to NUC_PASSWORD env.
+    password = body.password or config.NUC_PASSWORD
+    if not password:
+        return JSONResponse(status_code=400, content={"error": "NUC password is required."})
+    if action == "run" and not [c for c in body.commands if str(c).strip()]:
+        return JSONResponse(status_code=400, content={"error": "commands are required for action 'run'."})
+    try:
+        return nuc_pythonsv(
+            action=action,
+            nuc_host=nuc_host,
+            nuc_user=nuc_user,
+            pythonsv_path=body.pythonsv_path.strip(),
+            commands=body.commands,
+            password=password,
+            auto_init=body.auto_init,
+        )
     except Exception as exc:
         return JSONResponse(status_code=400, content={"error": str(exc)})
 
