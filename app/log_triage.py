@@ -176,6 +176,17 @@ def _extract_evidence(text: str, recs: List[Dict[str, Any]],
             "bank_unit": _unit,
             "decode": decode,
         }
+        # DMR-only: PUNIT (MCACOD=0x402) UC/HW/FW sub-decode from the raw status word.
+        if (product or "").upper() == "DMR":
+            try:
+                from .decoders.dmr_punit import decode_punit
+                _p = decode_punit(matched.get("status"))
+                if _p:
+                    ev["mc_status"]["punit"] = _p
+                    _sub = f"PUNIT {_p['sub_field']} {_p['code']} — {_p['description']}"
+                    ev["mc_status"]["decode"] = (decode + " | " + _sub) if decode else _sub
+            except Exception:
+                pass
         # Status flag bits (VAL/OVER/UC/EN/MISCV/ADDRV/PCC) from a 64-bit MCi_STATUS.
         raw = matched.get("status")
         sval = None
