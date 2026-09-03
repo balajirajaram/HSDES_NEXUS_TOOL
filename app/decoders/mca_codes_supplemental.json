@@ -1,0 +1,46 @@
+{
+  "_about": "Curated, VERIFIED MCA supplement: IP-specific MSCOD meanings, generic MCACOD meanings, and RAS recovery-class behaviour. Complements the bank->IP maps (bank_mapping_*.json) and the bulk mca_codes_database.json. Only values confirmed from the source docs / user are stored — placeholders (e.g. CHA TOR_TIMEOUT code, COR) are intentionally left unresolved, never guessed.",
+  "_sources": {
+    "eds_r_gnr": "637776_GNR_EDS-R_Rev_2_0 (MSCOD/MCACOD encoding)",
+    "eds_r_srf": "737845_SRF_EDS-R_Rev_2_4",
+    "error_arch_ras_bhs": "728644-BHS_Error_Arch_and_RAS_Rev_1_2 (MCACOD 0x412/0x407, bank ownership)",
+    "bwg_ras": "RAS CHAPTER SOURCE 647898 BHS BWG UPLR4 (UCNA/SRAR/FATAL recovery)",
+    "sightings": "Cluster Forum Update WW39 2024 (UPI MSCOD 0x25/0x21 in the field)"
+  },
+  "_product_family": {
+    "GNR": "BHS_FAMILY", "SRF": "BHS_FAMILY", "CWF": "BHS_FAMILY",
+    "DMR": "DMR", "COR": ""
+  },
+  "families": {
+    "BHS_FAMILY": {
+      "mscod_by_ip": {
+        "UPI": {
+          "0x25": "Phy L0p exit error triggering Phy Reset",
+          "0x21": "Phy Reset"
+        },
+        "CHA": {
+          "_pending": "CHA TOR_TIMEOUT is a known CHA MSCOD but the exact code value was not provided — fill from GNR EDS-R CHA MSCOD Encoding section before enabling."
+        }
+      },
+      "mcacod": {
+        "0x412": "Unsupported Transaction / Fabric Error",
+        "0x407": "Ubox Hardware Error"
+      }
+    },
+    "DMR": {
+      "mscod_by_ip": {},
+      "mcacod": {},
+      "_note": "DMR PUNIT (0x402) + MCTile decode lives in dmr_punit_mca.json / dmr_punit.py."
+    }
+  },
+  "recovery": {
+    "_about": "OS/RAS action derived from MCi_STATUS severity bits (UC bit61, PCC bit57, AR bit55, S bit56).",
+    "classes": {
+      "CE":    {"os_action": "Corrected — no action (logged/CMCI)", "reboot": "no", "lmce": "no"},
+      "UCNA":  {"os_action": "Uncorrected No Action — recoverable, logged", "reboot": "no", "lmce": "no"},
+      "SRAR":  {"os_action": "Software Recoverable Action Required — OS must act (poison/kill task)", "reboot": "maybe", "lmce": "yes (LMCE if enabled)"},
+      "SRAO":  {"os_action": "Software Recoverable Action Optional", "reboot": "no", "lmce": "possible"},
+      "FATAL": {"os_action": "Uncorrected fatal (PCC) — crash / shutdown / reset", "reboot": "yes", "lmce": "n/a (broadcast MCE)"}
+    }
+  }
+}

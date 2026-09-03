@@ -187,6 +187,24 @@ def _extract_evidence(text: str, recs: List[Dict[str, Any]],
                     ev["mc_status"]["decode"] = (decode + " | " + _sub) if decode else _sub
             except Exception:
                 pass
+        # Verified MCACOD / IP-specific MSCOD meaning + RAS recovery class (all products).
+        try:
+            from .decoders import mca_supplement as _sup
+            _extras = []
+            _mc = _sup.mcacod_meaning(mcacod, product)
+            if _mc:
+                _extras.append(f"MCACOD 0x{mcacod:X} — {_mc}" if isinstance(mcacod, int) else _mc)
+            _ms = _sup.mscod_meaning(mscod, _unit or "", product)
+            if _ms:
+                _extras.append(f"MSCOD 0x{mscod:X} — {_ms}" if isinstance(mscod, int) else _ms)
+            if _extras:
+                _cur = ev["mc_status"]["decode"]
+                ev["mc_status"]["decode"] = (_cur + " | " + " | ".join(_extras)) if _cur else " | ".join(_extras)
+            _rec = _sup.recovery_for_status(matched.get("status"))
+            if _rec:
+                ev["mc_status"]["recovery"] = _rec
+        except Exception:
+            pass
         # Status flag bits (VAL/OVER/UC/EN/MISCV/ADDRV/PCC) from a 64-bit MCi_STATUS.
         raw = matched.get("status")
         sval = None
