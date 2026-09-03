@@ -1,5 +1,28 @@
 "use strict";
 
+// Light/dark theme toggle — persists the choice in localStorage.
+(function themeInit() {
+  const KEY = "nexus-theme";
+  const root = document.documentElement;
+  const saved = localStorage.getItem(KEY);
+  if (saved === "dark") root.setAttribute("data-theme", "dark");
+  function label() {
+    const btn = document.getElementById("theme-toggle");
+    if (btn) btn.textContent = root.getAttribute("data-theme") === "dark" ? "☀ Light" : "🌙 Dark";
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    label();
+    const btn = document.getElementById("theme-toggle");
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const dark = root.getAttribute("data-theme") === "dark";
+      if (dark) { root.removeAttribute("data-theme"); localStorage.setItem(KEY, "light"); }
+      else { root.setAttribute("data-theme", "dark"); localStorage.setItem(KEY, "dark"); }
+      label();
+    });
+  });
+})();
+
 function renderMarkdown(md) {
   const lines = String(md || "").replace(/\r\n/g, "\n").split("\n");
   let html = "";

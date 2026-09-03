@@ -7,46 +7,49 @@
   <link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
-  <div class="bg-orb orb-a"></div>
-  <div class="bg-orb orb-b"></div>
-  <div class="bg-grid"></div>
-
-  <header class="hero">
-    <div class="hero-top">
-      <div>
-        <p class="eyebrow">HSD Triage &amp; Root-Cause Tool</p>
-        <h1>HSDES NEXUS <span class="scope">Control Center</span></h1>
-        <p class="sub">Reads the HSD ticket + attached logs, decodes the failure, and reports a ranked root cause with evidence and next steps.</p>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="logo">intel</span>
+        <span class="brand-text">
+          <span class="brand-name">HSDES NEXUS</span>
+          <span class="brand-sub">Control Center</span>
+        </span>
       </div>
-      <div class="identity">
-        <div class="id-block">
-          <span class="id-label">Session</span>
-          <span id="account-name" class="id-value">Kerberos SSO</span>
+      <nav class="nav">
+        <button class="tab active" data-tab="analyse">Analyse</button>
+        <button class="tab" data-tab="batchlearn">Batch Learn</button>
+        <button class="tab" data-tab="livedebug">Live Debug</button>
+        <button class="tab" data-tab="pythonsv">PythonSV</button>
+        <button class="tab" data-tab="bugbatch">BugScout Batch</button>
+        <button class="tab" data-tab="crashdump">Crashdump</button>
+        <button class="tab" data-tab="logsearch">Log Search</button>
+        <button class="tab" data-tab="handbook">Handbook RAG</button>
+        <button class="tab" data-tab="kb">Knowledge Base</button>
+      </nav>
+      <div class="sidebar-foot">
+        <button id="theme-toggle" type="button" class="theme-toggle">🌙 Dark</button>
+        <div class="session-mini"><span class="dot"></span><span id="account-name">Kerberos SSO</span></div>
+      </div>
+    </aside>
+
+    <div class="content">
+      <header class="topbar">
+        <div class="topbar-head">
+          <p class="eyebrow">HSD Triage &amp; Root-Cause Tool</p>
+          <h1>HSDES NEXUS <span class="scope">Control Center</span></h1>
+          <p class="sub">Reads the HSD ticket + attached logs, decodes the failure, and reports a ranked root cause with evidence and next steps.</p>
         </div>
-      </div>
-    </div>
-    <div id="status" class="status-bar">
-      <span class="badge" id="badge-mode">mode: ...</span>
-      <span class="badge" id="badge-auth">auth: ...</span>
-      <span class="badge" id="badge-llm">LLM: ...</span>
-      <span class="badge" id="badge-kb">KB: ...</span>
-      <span class="badge" id="badge-bugscout">BugScout bridge: ...</span>
-    </div>
-  </header>
+        <div id="status" class="status-bar">
+          <span class="badge" id="badge-mode">mode: ...</span>
+          <span class="badge" id="badge-auth">auth: ...</span>
+          <span class="badge" id="badge-llm">LLM: ...</span>
+          <span class="badge" id="badge-kb">KB: ...</span>
+          <span class="badge" id="badge-bugscout">BugScout bridge: ...</span>
+        </div>
+      </header>
 
-  <nav class="tabs">
-    <button class="tab active" data-tab="analyse">Analyse</button>
-    <button class="tab" data-tab="batchlearn">Batch Learn</button>
-    <button class="tab" data-tab="livedebug">Live Debug</button>
-    <button class="tab" data-tab="pythonsv">PythonSV</button>
-    <button class="tab" data-tab="bugbatch">BugScout Batch</button>
-    <button class="tab" data-tab="crashdump">Crashdump</button>
-    <button class="tab" data-tab="logsearch">Log Search</button>
-    <button class="tab" data-tab="handbook">Handbook RAG</button>
-    <button class="tab" data-tab="kb">Knowledge Base</button>
-  </nav>
-
-  <main>
+      <main>
     <section id="tab-analyse" class="panel active">
       <div class="card">
         <h2>HSD Root Cause Analysis</h2>
@@ -328,6 +331,8 @@
   <footer>
     Intel Internal Use Only. This control center invokes HSDES analysis and BugScout-derived workflows from option-d-copilot.
   </footer>
+    </div><!-- /content -->
+  </div><!-- /app -->
 
   <script src="/static/app.js"></script>
 </body>
