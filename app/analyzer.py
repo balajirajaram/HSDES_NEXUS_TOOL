@@ -152,6 +152,26 @@ def _collect_sources(target: Optional[Dict[str, Any]], recall: Dict[str, Any],
             "ref": "Axon (SVTools)",
         })
 
+    # Product spec corpus (EDS-R / Error-Arch/RAS / SOC guide-HAS) — cite the
+    # verified Tier-1 docs for the detected product, but only when an MCA/RAS
+    # decode was actually produced (keeps the citation relevant, not noise).
+    if platform and (decoded.get("mca") or _ev.get("bank_units")):
+        try:
+            from .products import spec_corpus, product_display as _pd
+            for doc in (spec_corpus(platform) or {}).get("tier1", []):
+                url = (doc.get("url") or "").strip()
+                if not url:
+                    continue
+                sources.append({
+                    "name": doc.get("title", "Spec"),
+                    "kind": doc.get("type", "Spec"),
+                    "detail": f"Authoritative {_pd(platform) or platform} spec for "
+                              "MCA/RAS bank->IP ownership and MSCOD/MCACOD decode.",
+                    "ref": url,
+                })
+        except Exception:
+            pass
+
     return sources
 
 

@@ -37,8 +37,31 @@ _GENERIC = {
 
 
 def normalize_terms(text: str) -> List[str]:
-    tokens = re.findall(r"[A-Za-z0-9_]+", (text or "").lower())
+    tokens = re.findall(r"[A-Za-z0-9_]+", _strip_volatile(text).lower())
     return [t for t in tokens if t not in _STOPWORDS and len(t) > 1]
+
+
+# Volatile tokens make every occurrence of the SAME failure look unique (so the
+# KB stores duplicates and recall misses). Strip them before tokenizing so the
+# signature key collapses identical failures. Diagnostic short hex codes
+# (e.g. MCACOD 0x040C) are deliberately preserved — only timestamps, UUIDs and
+# long hex addresses/IDs are removed. (Pattern approach from bugninja-agents.)
+_VOLATILE_PATTERNS = [
+    re.compile(r"\d{4}-\d{2}-\d{2}[ t]\d{2}:\d{2}:\d{2}(?:[.,]\d+)?(?:z|[+-]\d{2}:?\d{2})?", re.I),
+    re.compile(r"\d{4}-\d{2}-\d{2}"),                               # date
+    re.compile(r"\b\d{1,2}:\d{2}:\d{2}(?:[.,]\d+)?\b"),             # time
+    re.compile(r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.I),  # uuid
+    re.compile(r"\b0x[0-9a-f]{9,}\b", re.I),                        # 0x long hex address/ID
+    re.compile(r"\b[0-9a-f]*[a-f][0-9a-f]{11,}\b", re.I),           # bare long hex blob (>=12, has a letter)
+]
+
+
+def _strip_volatile(text: str) -> str:
+    t = text or ""
+    for p in _VOLATILE_PATTERNS:
+        t = p.sub(" ", t)
+    return t
+
 
 
 class KBStore:
