@@ -47,6 +47,15 @@ MCACOD_TABLE_PATTERN = re.compile(r"(?i)[|│]\s*MCACOD\s*[|│]\s*(0x[0-9A-Fa-f
 BANK_PATTERN = re.compile(r"(?i)bank\s*#?\s*(\d+)")
 # BIOS RAS format: "McBank = 0x4" — hex bank number from McBankErrorHandler lines
 MCBANK_HEX_PATTERN = re.compile(r"(?i)McBank\s*=\s*0x([0-9A-Fa-f]+)")
+# Register-name format: MC4_STATUS / MC12_ADDR / MC0_MISC → decimal bank number
+MCREG_BANK_PATTERN = re.compile(r"(?i)\bMC(\d{1,2})_(?:STATUS|ADDR|MISC|CTL)\b")
+# Software/tooling noise that carries hex tokens which must NEVER be read as an
+# MCi_STATUS (e.g. PythonSV plugin-registration warnings expose a Plugin *ID*):
+#   WARNING  Plugin "mca" is already registered (<Plugin name: mca, ... ID: 0x000073EC038A86A0>)
+_NOISE_LINE_PATTERN = re.compile(
+    r"(?i)(?:already\s+registered|Plugin\s+name\s*:|Plugin\s+type\s*:|McaPlugin"
+    r"|object\s+at\s+0x|Traceback|register(?:ed|ing)\s+plugin)"
+)
 HEX_TOKEN_PATTERN = re.compile(r"\b(?:0x)?[0-9A-Fa-f]{8,16}\b")
 # PythonSV CCF table section header
 CCF_TABLE_HEADER_PATTERN = re.compile(r"={5,}\s*Ccf:.*mca_status\s*={5,}", re.IGNORECASE)
@@ -278,6 +287,16 @@ class MCADecoder:
             "matches": matches,
         }
 
+    @staticmethod
+    def _status_is_valid_mca(status_value: str | int) -> bool:
+        """True only if MCi_STATUS bit 63 (VAL) is set. A status word with VAL=0
+        carries no valid machine-check and must not be reported as an error — this
+        is what rejects hex tokens accidentally mined from unrelated 64-bit values."""
+        status_int = parse_code_value(status_value)
+        if status_int is None:
+            return False
+        return bool((status_int >> 63) & 0x1)
+
     def decode_codes(self, mscod: int, mcacod: int, bank: int | None = None) -> list[dict]:
         matches: list[dict] = []
         for entry in self.entries:
@@ -337,6 +356,8 @@ class MCADecoder:
             if mce_match:
                 mce_bank = int(mce_match.group(1))
                 mce_status = "0x" + mce_match.group(2)
+                if not self._status_is_valid_mca(mce_status):
+                    continue
                 decoded = self.decode_status(mce_status, mce_bank)
                 decoded["context"] = line.strip()
                 records.append(decoded)
@@ -349,6 +370,9 @@ class MCADecoder:
                 if bank is None:
                     bank = _lookback_bank(i)
                 for status in status_values:
+                    # Reject status words whose VAL bit (63) is clear — no valid MCA.
+                    if not self._status_is_valid_mca(status):
+                        continue
                     decoded = self.decode_status(status, bank)
                     decoded["context"] = line.strip()
                     records.append(decoded)
@@ -470,6 +494,10 @@ class MCADecoder:
         return records
 
     def _extract_status_values(self, line: str) -> list[str]:
+        # Never mine hex out of tooling/plugin-registration or traceback noise —
+        # those hex tokens are software IDs/addresses, not MCi_STATUS values.
+        if _NOISE_LINE_PATTERN.search(line):
+            return []
         matches: list[str] = []
         for pattern in STATUS_PATTERNS:
             matches.extend(match.group(1) for match in pattern.finditer(line))
@@ -538,6 +566,7 @@ class MCADecoder:
         
         Supports:
         - BIOS RAS format: McBank = 0xN (hex) — checked first as most specific
+        - Register-name format: MC4_STATUS / MC12_ADDR → bank 4 / 12
         - Memory controller paths: mc0-7 → banks 19-26
         - Component paths: ccf, hamvf, hsf, sca, etc.
         - Legacy format: bank #N or bank N
@@ -548,7 +577,12 @@ class MCADecoder:
         mcbank_match = MCBANK_HEX_PATTERN.search(line)
         if mcbank_match:
             return int(mcbank_match.group(1), 16)
-        
+
+        # 1b. Register-name format: MC4_STATUS / MC12_ADDR / MC0_MISC → bank number
+        mcreg_match = MCREG_BANK_PATTERN.search(line)
+        if mcreg_match:
+            return int(mcreg_match.group(1))
+
         # 2. Memory controller: mc0-7 → banks 19-26
         mc_match = MC_PATTERN.search(line_lower)
         if mc_match:
