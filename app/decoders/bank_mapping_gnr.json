@@ -36,5 +36,5 @@
   "28": {"bank": 28, "hex": "0x1C", "component": "(Empty)",      "category": ""},
   "29": {"bank": 29, "hex": "0x1D", "component": "HBM",          "category": "HBM (Uncore)"},
   "30": {"bank": 30, "hex": "0x1E", "component": "HBM_M2MEM",    "category": "HBM (Uncore)"},
-  "31": {"bank": 31, "hex": "0x1F", "component": "HVM_MCCHAN",   "category": "HBM (Uncore)"}
+  "31": {"bank": 31, "hex": "0x1F", "component": "HBM_MCCHAN",   "category": "HBM (Uncore)"}
 }
