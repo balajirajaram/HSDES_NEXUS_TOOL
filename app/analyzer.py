@@ -471,7 +471,8 @@ async def analyze(hsd_id: str, symptoms: str,
                 target.get("title", ""),
                 target.get("full_text", "") or target.get("description", ""),
             ]))
-            mcp_context = await mcp_enrich(hsd_id, symptoms, context_text=_ctx)
+            mcp_context = await mcp_enrich(hsd_id, symptoms, context_text=_ctx,
+                                           product=detect_product(_ctx) or "")
         except Exception:
             mcp_context = []
         if mcp_context:

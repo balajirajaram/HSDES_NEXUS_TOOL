@@ -53,7 +53,12 @@
     "master_queries": [],
     "register_namespace": "sv.socket0",
     "wiki_scopes": [],
-    "notes": "Future product — add master_queries when available."
+    "specs_project": "DMR",
+    "spec_docs": [
+      {"title": "DMR SOC PM HAS", "url": "https://docs.intel.com/documents/pm_doc/src/server/DMR/SOC_PM_HAS/DMR_SOC_PM_HAS.html"},
+      {"title": "DMR architecture index", "url": "https://docs.intel.com/documents/arch_datacenter/DMR/index.html"}
+    ],
+    "notes": "Future product — add master_queries when available. spec_docs verified via mcp-intel-specs DMR project index."
   },
   "COR": {
     "display": "Coral Rapids",
@@ -63,6 +68,8 @@
     "master_queries": [],
     "register_namespace": "sv.socket0",
     "wiki_scopes": [],
-    "notes": "Future product — add master_queries when available."
+    "specs_project": "",
+    "spec_docs": [],
+    "notes": "Future product — add master_queries + specs_project/spec_docs once the COR docs.intel.com index is confirmed (do not guess the path)."
   }
 }

@@ -58,6 +58,15 @@ class Config:
     REDFISH_MCP_TOOL = os.getenv("REDFISH_MCP_TOOL", "")
     REDFISH_MCP_TOKEN = os.getenv("REDFISH_MCP_TOKEN", "")
 
+    # Intel Specs (docs.intel.com HAS / SOC guide / architecture) reader — the
+    # mcp-intel-specs server (intel-innersource/applications.ai.agent.tools.specs).
+    # Read-only; validates a sighting against the SOC guide + HAS for DMR/COR/etc.
+    # OFF unless SPECS_MCP_URL + SPECS_MCP_TOKEN are set. SPECS_MCP_TOOL defaults to
+    # its doc-search entry point.
+    SPECS_MCP_URL = os.getenv("SPECS_MCP_URL", "")
+    SPECS_MCP_TOOL = os.getenv("SPECS_MCP_TOOL", "find_document")
+    SPECS_MCP_TOKEN = os.getenv("SPECS_MCP_TOKEN", "")
+
     # Optional path to the Axon CLI binary (e.g. ~/bin/axon). When set (or the
     # `axon` binary is on PATH), the analyzer downloads linked Axon recordings and
     # folds their metadata + log content into the decode. Leave blank to disable.

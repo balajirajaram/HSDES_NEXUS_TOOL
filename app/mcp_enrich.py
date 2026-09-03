@@ -115,7 +115,62 @@ class _MCPSource:
         return {"source": self.name, "text": text}
 
 
-def _sources(geni_token: str = "", codesign_token: str = "") -> List[_MCPSource]:
+class _SpecsSource(_MCPSource):
+    """Intel Specs (docs.intel.com HAS / SOC guide / EDS-R) reader.
+
+    Differs from a plain _MCPSource: its tool (find_document/search_in_document)
+    takes ``{query, project}`` — not ``{message}`` — and it scopes the search to
+    the detected product's docs.intel.com project when known.
+    """
+
+    def __init__(self, url: str, tool: str, token: str, project: str = ""):
+        super().__init__("Intel Specs (HAS/SOC guide)", url, tool, token,
+                         category="specs")
+        self.project = (project or "").strip()
+
+    async def ask(self, hsd_id: str, prompt: str) -> Dict[str, Any]:
+        if not self.enabled:
+            return {"source": self.name, "error": "not configured"}
+        args: Dict[str, Any] = {"query": prompt}
+        if self.project:
+            args["project"] = self.project
+        try:
+            async with httpx.AsyncClient(timeout=90) as cx:
+                init = await cx.post(self.url, headers=self._headers(), json={
+                    "jsonrpc": "2.0", "id": 1, "method": "initialize",
+                    "params": {
+                        "protocolVersion": config.MCP_PROTOCOL_VERSION,
+                        "capabilities": {},
+                        "clientInfo": {"name": "auto-hsd-analyser", "version": "1.0"},
+                    },
+                })
+                init.raise_for_status()
+                sid = (init.headers.get("mcp-session-id")
+                       or init.headers.get("Mcp-Session-Id"))
+                await cx.post(self.url, headers=self._headers(sid), json={
+                    "jsonrpc": "2.0", "method": "notifications/initialized",
+                })
+                call = await cx.post(self.url, headers=self._headers(sid), json={
+                    "jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                    "params": {"name": self.tool, "arguments": args},
+                })
+                call.raise_for_status()
+                data = self._parse(call)
+        except Exception as exc:  # pragma: no cover - network guard
+            return {"source": self.name, "error": f"{exc}"}
+        text = self._extract_text(data)
+        if not text:
+            return {"source": self.name, "error": "no content"}
+        return {"source": self.name, "text": text}
+
+
+def _sources(geni_token: str = "", codesign_token: str = "",
+             product: str = "") -> List[_MCPSource]:
+    try:
+        from .products import specs_project
+        specs_proj = specs_project(product)
+    except Exception:
+        specs_proj = ""
     return [
         _MCPSource("Geni HSDES", config.GENI_MCP_URL, config.GENI_MCP_TOOL,
                    geni_token or config.GENI_MCP_TOKEN),
@@ -130,7 +185,12 @@ def _sources(geni_token: str = "", codesign_token: str = "") -> List[_MCPSource]
                    config.KERNEL_MCP_TOKEN, category="kernel"),
         _MCPSource("Redfish/iDRAC", config.REDFISH_MCP_URL, config.REDFISH_MCP_TOOL,
                    config.REDFISH_MCP_TOKEN, category="redfish"),
+        # Intel Specs (HAS / SOC guide / EDS-R) — SOC-guide/HAS validation for
+        # DMR/COR/etc. Scoped to the product's docs.intel.com project when known.
+        _SpecsSource(config.SPECS_MCP_URL, config.SPECS_MCP_TOOL,
+                     config.SPECS_MCP_TOKEN, project=specs_proj),
     ]
+
 
 
 # Keyword gates deciding when a specialised (non-"general") source is relevant.
@@ -144,6 +204,12 @@ _CATEGORY_GATES = {
     "redfish": re.compile(
         r"redfish|idrac|\bbmc\b|\bsel\b|out[\s-]?of[\s-]?band|power\s?(?:state|cycle)|"
         r"sensor|thermal|unreachable|hung|no\s?ssh|failed\s?node", re.I),
+    # Specs (HAS / SOC guide / EDS-R) — consulted for MCA/RAS/register/architecture
+    # questions where the SOC guide or HAS defines correct behaviour.
+    "specs": re.compile(
+        r"\bmca\b|mcacod|mscod|\bbank\s?\d|machine\s?check|\bras\b|\bcha\b|\bupi\b|"
+        r"\bpunit\b|\bllc\b|mcchan|\bmse\b|\beds\b|\bhas\b|soc\s?guide|register|"
+        r"errata|architecture|ierr|caterr|shutdown\s?error", re.I),
 }
 
 
@@ -158,16 +224,17 @@ def enrichment_enabled(geni_token: str = "", codesign_token: str = "") -> bool:
 
 async def enrich(hsd_id: str, symptoms: str,
                  geni_token: str = "", codesign_token: str = "",
-                 context_text: str = "") -> List[Dict[str, Any]]:
+                 context_text: str = "", product: str = "") -> List[Dict[str, Any]]:
     """Query every configured MCP source in parallel; return successful answers.
 
     "general" sources (HSDES, Wiki KB) run whenever enabled. Specialised sources
-    (BIOS/S3M, Linux kernel crash, Redfish/iDRAC) run only when the ticket text /
-    symptoms indicate they are relevant, so they're consulted on need — not always.
+    (BIOS/S3M, Linux kernel crash, Redfish/iDRAC, Specs/HAS) run only when the
+    ticket text / symptoms indicate they are relevant, so they're consulted on
+    need — not always. ``product`` scopes the Specs source to that project.
     """
     relevant = _relevant_categories(f"{symptoms}\n{context_text}")
     sources = [
-        s for s in _sources(geni_token, codesign_token)
+        s for s in _sources(geni_token, codesign_token, product)
         if s.enabled and (s.category == "general" or s.category in relevant)
     ]
     if not sources:

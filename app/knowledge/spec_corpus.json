@@ -1,0 +1,86 @@
+{
+  "_about": "Authoritative MCA/RAS document corpus per product (DMR/GNR/SRF/COR). Source hierarchy for grounding an MCA bank -> MCACOD -> MSCOD -> owning IP -> recovery -> sighting -> errata -> uarch -> RTL root-cause chain. Tiered: tier1 = EDS-R register specs + Error-Arch/RAS guides + BWG RAS chapter + HSDES; tier2 = Silicon Central + Spec Updates/errata + FA; tier3 = per-IP architecture specs + RTL notes. URLs are user-provided/verified references — NEVER fabricate a URL; leave 'url' empty when unknown.",
+  "sections_to_extract": [
+    "Machine Check Architecture (MCA) Bank Mapping",
+    "MSCOD Encoding", "MCACOD Encoding",
+    "CHA Encoding", "UPI Encoding", "Punit Encoding",
+    "LLC Encoding", "MCCHAN Encoding", "MSE Encoding"
+  ],
+  "layers": [
+    "MCA Bank", "MCACOD", "MSCOD", "Owning IP", "Recovery behavior",
+    "Known sightings", "Known errata", "Microarchitectural flow", "Exact RTL root cause"
+  ],
+  "products": {
+    "GNR": {
+      "tier1": [
+        {"type": "EDS-R Register Spec", "title": "637776_GNR_EDS-R_Rev_2_0", "url": "https://intel.sharepoint.com/sites/cpxipu/Shared%20Documents/Cluster/BALAJI/GNR/637776_GNR_EDS-R_Rev_2_0%20(1).pdf", "covers": ["MCA bank mapping", "MSCOD encoding", "MCACOD encoding", "CHA/UPI/Punit/LLC/MCCHAN/MSE encoding"]},
+        {"type": "Error Arch & RAS Guide", "title": "728644-BHS_Error_Arch_and_RAS_Rev_1_2 (BHS family)", "url": "https://intel-my.sharepoint.com/personal/balaji_rajaram_intel_com/Documents/Documents/Intel/RAS/728644-BHS_Error_Arch_and_RAS_Rev_1_2.pdf", "covers": ["Ubox", "B2HOT", "B2CXL", "MCA reporting ownership", "MCACOD mappings", "IP ownership (bank->IP)"]},
+        {"type": "BWG RAS Chapter", "title": "RAS CHAPTER SOURCE 647898 BHS BWG UPLR4 WIP", "url": "https://intel.sharepoint.com/sites/ras-firmware/_layouts/15/Doc.aspx?sourcedoc=%7BBC2D589B-7987-4C09-9D61-3977D0087E2B%7D&file=RAS%20CHAPTER%20SOURCE%20647898%20BHS%20BWG%20UPLR4%20WIP.docx", "covers": ["UCNA", "SRAR", "Fatal", "LMCE", "eMCA", "MCE signaling", "OS handling", "BIOS handling"]}
+      ],
+      "tier2": [
+        {"type": "Processor Spec Update / Errata", "title": "GNR Processor Specification Update", "url": ""},
+        {"type": "Silicon Central", "title": "Central sighting / FA / RPP status", "url": ""}
+      ],
+      "tier3": [
+        {"type": "IP Architecture Spec", "title": "UPI / CHA / SCF / PUNIT / MCCHAN / MSE / LLC Architecture Specs", "url": ""}
+      ]
+    },
+    "SRF": {
+      "tier1": [
+        {"type": "EDS-R Register Spec", "title": "737845_SRF_EDS-R_Rev_2_4", "url": "https://intel-my.sharepoint.com/personal/balaji_rajaram_intel_com/Documents/Documents/Intel/GNR/737845_SRF_EDS-R_Rev_2_4.pdf", "covers": ["MCA bank mapping", "MSCOD encoding", "MCACOD encoding", "CHA/UPI/Punit/LLC/MCCHAN/MSE encoding", "characterized errata maintained separately"]},
+        {"type": "Error Arch & RAS Guide", "title": "728644-BHS_Error_Arch_and_RAS_Rev_1_2 (BHS family)", "url": "https://intel-my.sharepoint.com/personal/balaji_rajaram_intel_com/Documents/Documents/Intel/RAS/728644-BHS_Error_Arch_and_RAS_Rev_1_2.pdf", "covers": ["MCA reporting ownership", "MCACOD mappings", "IP ownership"]},
+        {"type": "BWG RAS Chapter", "title": "RAS CHAPTER SOURCE 647898 BHS BWG UPLR4 WIP", "url": "https://intel.sharepoint.com/sites/ras-firmware/_layouts/15/Doc.aspx?sourcedoc=%7BBC2D589B-7987-4C09-9D61-3977D0087E2B%7D&file=RAS%20CHAPTER%20SOURCE%20647898%20BHS%20BWG%20UPLR4%20WIP.docx", "covers": ["UCNA", "SRAR", "Fatal", "LMCE", "eMCA", "MCE signaling"]}
+      ],
+      "tier2": [
+        {"type": "Processor Spec Update / Errata", "title": "SRF Processor Specification Update", "url": ""},
+        {"type": "Silicon Central", "title": "Central sighting / FA / RPP status", "url": ""}
+      ],
+      "tier3": [
+        {"type": "IP Architecture Spec", "title": "UPI / CHA / SCF / PUNIT / MCCHAN / MSE / LLC Architecture Specs", "url": ""}
+      ]
+    },
+    "CWF": {
+      "tier1": [
+        {"type": "Error Arch & RAS Guide", "title": "728644-BHS_Error_Arch_and_RAS_Rev_1_2 (BHS family)", "url": "https://intel-my.sharepoint.com/personal/balaji_rajaram_intel_com/Documents/Documents/Intel/RAS/728644-BHS_Error_Arch_and_RAS_Rev_1_2.pdf", "covers": ["MCA reporting ownership", "MCACOD mappings", "IP ownership"]},
+        {"type": "BWG RAS Chapter", "title": "RAS CHAPTER SOURCE 647898 BHS BWG UPLR4 WIP", "url": "https://intel.sharepoint.com/sites/ras-firmware/_layouts/15/Doc.aspx?sourcedoc=%7BBC2D589B-7987-4C09-9D61-3977D0087E2B%7D&file=RAS%20CHAPTER%20SOURCE%20647898%20BHS%20BWG%20UPLR4%20WIP.docx", "covers": ["UCNA", "SRAR", "Fatal", "LMCE", "eMCA"]}
+      ],
+      "tier2": [
+        {"type": "Processor Spec Update / Errata", "title": "CWF Processor Specification Update", "url": ""},
+        {"type": "Silicon Central", "title": "Central sighting / FA / RPP status", "url": ""}
+      ],
+      "tier3": [
+        {"type": "IP Architecture Spec", "title": "UPI / CHA / SCF / PUNIT / MCCHAN / MSE / LLC Architecture Specs", "url": ""}
+      ]
+    },
+    "DMR": {
+      "tier1": [
+        {"type": "EDS-R Register Spec", "title": "DMR EDS-R (Register Specification) / DMR Processor Registers Specification", "url": ""},
+        {"type": "SOC/HAS (docs.intel.com)", "title": "DMR SOC PM HAS", "url": "https://docs.intel.com/documents/pm_doc/src/server/DMR/SOC_PM_HAS/DMR_SOC_PM_HAS.html"},
+        {"type": "Architecture index (docs.intel.com)", "title": "DMR architecture index", "url": "https://docs.intel.com/documents/arch_datacenter/DMR/index.html"},
+        {"type": "Error Arch & RAS Guide", "title": "DMR Error Architecture & RAS Guide", "url": ""},
+        {"type": "BWG RAS Chapter", "title": "DMR BWG RAS / eMCA / LMCE chapters", "url": ""}
+      ],
+      "tier2": [
+        {"type": "Processor Spec Update / Errata", "title": "DMR Processor Specification Update", "url": ""},
+        {"type": "Silicon Central", "title": "Central sighting / FA / RPP status", "url": ""}
+      ],
+      "tier3": [
+        {"type": "IP Architecture Spec", "title": "UPI / CHA / SCF / PUNIT / MCCHAN / MSE / LLC Architecture Specs", "url": ""}
+      ]
+    },
+    "COR": {
+      "tier1": [
+        {"type": "EDS-R Register Spec", "title": "COR EDS-R / COR Processor Registers Specification", "url": ""},
+        {"type": "Error Arch & RAS Guide", "title": "COR Error Architecture & RAS Guide", "url": ""},
+        {"type": "BWG RAS Chapter", "title": "COR BWG RAS / eMCA / LMCE chapters", "url": ""}
+      ],
+      "tier2": [
+        {"type": "Processor Spec Update / Errata", "title": "COR Processor Specification Update", "url": ""},
+        {"type": "Silicon Central", "title": "Central sighting / FA / RPP status", "url": ""}
+      ],
+      "tier3": [
+        {"type": "IP Architecture Spec", "title": "UPI / CHA / SCF / PUNIT / MCCHAN / MSE / LLC Architecture Specs", "url": ""}
+      ]
+    }
+  }
+}
