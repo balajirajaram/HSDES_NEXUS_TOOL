@@ -11,6 +11,7 @@ typing your domain password. Always serve over HTTPS in any shared deployment.
 """
 
 import os
+import re
 import secrets
 import time
 from typing import Dict, List, Optional
@@ -56,6 +57,16 @@ async def _no_cache(request: Request, call_next):
 
 _STATIC = os.path.join(os.path.dirname(__file__), "static")
 _OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "output")
+
+
+def _normalize_hsd_id(value: str) -> str:
+    """Accept a plain HSD number or an HSDES article URL from the UI."""
+    text = str(value or "").strip()
+    article_match = re.search(r"/article(?:-one)?/[^/]*?(\d{8,})", text, re.IGNORECASE)
+    if article_match:
+        return article_match.group(1)
+    number_match = re.search(r"(?<!\d)(\d{8,})(?!\d)", text)
+    return number_match.group(1) if number_match else text
 
 
 def _save_report(hsd_id: str, markdown: str, result: Optional[Dict] = None) -> tuple[str, str]:
@@ -230,18 +241,19 @@ async def api_analyze(request: Request, req: AnalyzeRequest):
     if not req.hsd_id.strip() or not req.symptoms.strip():
         return JSONResponse(status_code=400,
                             content={"error": "Both 'hsd_id' and 'symptoms' are required."})
+    hsd_id = _normalize_hsd_id(req.hsd_id)
     creds = _creds(request)
     if not creds and not _kerberos():
         return JSONResponse(status_code=401, content={"error": "Please sign in first."})
     result = await analyze(
-        req.hsd_id.strip(), req.symptoms.strip(),
+        hsd_id, req.symptoms.strip(),
         username=(creds or {}).get("username"),
         password=(creds or {}).get("password"),
         log_text=req.log_text,
         fetch_attachments=req.fetch_attachments,
     )
     if result.get("report_markdown"):
-        md_path, html_path = _save_report(req.hsd_id.strip(), result["report_markdown"], result)
+        md_path, html_path = _save_report(hsd_id, result["report_markdown"], result)
         result["saved_path"] = md_path
         result["saved_html_path"] = html_path
     return result
