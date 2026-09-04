@@ -1550,7 +1550,11 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     # ---------- Artifacts under analysis ----------
     L.append("## Artifacts Under Analysis")
     L.append(f"- **Ticket:** HSD {hsd_id} — {ttitle}")
-    L.append(f"- **Comment thread:** {n_comments} comment(s) parsed")
+    if target.get("error"):
+        L.append(f"- **Ticket fetch status:** unavailable from the current session ({target['error']})")
+        L.append("- **Reason:** HSDES article/attachments could not be read with the active auth/session, so the tool did not inspect the ticket body or attachment set.")
+    else:
+        L.append(f"- **Comment thread:** {n_comments} comment(s) parsed")
     if attachments:
         note = (f"{attachments_fetched} downloaded &amp; scanned"
                 if attachments_fetched else "not fetched — enable auto-fetch")
@@ -1571,6 +1575,12 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     # Human-triage investigation timeline straight from the comment thread —
     # visible in the main body (not buried in the appendix) with full detail.
     _render_investigation_timeline(L, cf)
+
+    # Explicit auth/session status in the main summary so the user can immediately
+    # tell the difference between a truly empty ticket and a failed HSDES fetch.
+    if target.get("error"):
+        L.append("**Session status:** auth/session issue — re-run with valid HSDES access to fetch the article and attached logs.")
+        L.append("")
 
     # ---------- Findings summary (quick 4-part overview) ----------
     sigs = (log_findings or {}).get("signatures", []) if log_findings else []
@@ -1598,6 +1608,10 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
             L.append(f"- **Last good checkpoint:** `{log_findings['last_checkpoint']}`")
         if suspected_area:
             L.append(f"- **Suspected area:** {suspected_area}")
+    elif target.get("error"):
+        L.append("- HSDES article / attachment access failed in this session "
+                 f"({target['error']}); the tool could not inspect the actual ticket log payload. "
+                 "This should not be interpreted as 'no logs attached' — it is 'logs not accessible from current auth/session'.")
     elif attachments:
         L.append(f"- {len(attachments)} attachment(s) on ticket — not fetched "
                  "(enable auto-fetch to scan logs).")
