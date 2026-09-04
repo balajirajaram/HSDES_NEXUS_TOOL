@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup C — Intel Brand</title>
+<style>
+  :root{
+    --bg:#f2f5f9; --surface:#ffffff; --line:#e0e6ee; --line-strong:#c6d0dc;
+    --text:#12263a; --muted:#54677c;
+    --intel-blue:#0068b5; --intel-blue-dk:#00457c; --intel-energy:#00c7fd;
+    --accent-weak:#e7f4fb; --ok:#008a52; --warn:#a05a00; --bad:#c81326;
+    --radius:6px; --shadow:0 1px 3px rgba(0,60,120,.08),0 4px 12px rgba(0,60,120,.06);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"IntelOne Text","Segoe UI",-apple-system,Roboto,Arial,sans-serif;font-size:14px;line-height:1.5}
+  .topbar{background:var(--intel-blue-dk);color:#fff;padding:0 28px;height:52px;
+    display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:600;font-size:15px;letter-spacing:.2px}
+  .brand .logo{padding:3px 8px;border-radius:4px;background:var(--intel-energy);color:#00263f;font-weight:800;font-size:13px;letter-spacing:.5px}
+  .brand .scope{color:#a9cfe8;font-weight:400}
+  .session{display:flex;align-items:center;gap:8px;color:#bfe0f2;font-size:13px}
+  .session .dot{width:8px;height:8px;border-radius:50%;background:var(--intel-energy)}
+  .accentbar{height:3px;background:linear-gradient(90deg,var(--intel-energy),var(--intel-blue))}
+  .wrap{max-width:1180px;margin:24px auto;padding:0 28px}
+  .pagehead h1{margin:0 0 4px;font-size:22px;font-weight:600;color:var(--intel-blue-dk)}
+  .pagehead p{margin:0 0 18px;color:var(--muted)}
+  .status{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .chip{background:var(--surface);border:1px solid var(--line);border-radius:4px;
+    padding:4px 12px;font-size:12px;color:var(--muted)}
+  .chip b{color:var(--intel-blue);font-weight:600}
+  .chip.ok{border-color:#b6e2cd;background:#f0fbf6;color:var(--ok)}
+  .tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:2px solid var(--line)}
+  .tab{padding:10px 16px;font-size:13px;color:var(--muted);cursor:pointer;position:relative;top:2px;
+    border-bottom:3px solid transparent;background:none;border-top:none;border-left:none;border-right:none}
+  .tab.active{color:var(--intel-blue);border-bottom-color:var(--intel-blue);font-weight:600}
+  .card{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--intel-blue);
+    border-radius:var(--radius);box-shadow:var(--shadow);padding:22px 24px;max-width:720px}
+  .card h2{margin:0 0 4px;font-size:16px;font-weight:600;color:var(--intel-blue-dk)}
+  .card .hint{margin:0 0 18px;color:var(--muted);font-size:13px}
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:16px}
+  label .lbl{display:block;margin-bottom:6px}
+  input[type=text],textarea{width:100%;border:1px solid var(--line-strong);border-radius:4px;
+    padding:9px 11px;font:inherit;font-weight:400;color:var(--text);background:#fff}
+  input:focus,textarea:focus{outline:none;border-color:var(--intel-blue);box-shadow:0 0 0 3px var(--accent-weak)}
+  textarea{resize:vertical}
+  .check{display:flex;align-items:center;gap:8px;font-weight:400;color:var(--muted)}
+  .btn{background:var(--intel-blue);color:#fff;border:none;border-radius:4px;padding:9px 18px;
+    font:inherit;font-weight:600;cursor:pointer}
+  .btn:hover{background:var(--intel-blue-dk)}
+</style></head>
+<body>
+  <div class="topbar">
+    <div class="brand"><span class="logo">intel</span> HSDES NEXUS <span class="scope">· Control Center</span></div>
+    <div class="session"><span class="dot"></span> Kerberos SSO · rbalaji</div>
+  </div>
+  <div class="accentbar"></div>
+  <div class="wrap">
+    <div class="pagehead">
+      <h1>HSD Root‑Cause Analysis</h1>
+      <p>Reads the HSD ticket and attached logs, decodes the failure, and reports a ranked root cause with evidence and next steps.</p>
+    </div>
+    <div class="status">
+      <span class="chip">Mode <b>Offline</b></span>
+      <span class="chip ok">Auth ready</span>
+      <span class="chip">LLM <b>off</b></span>
+      <span class="chip">KB <b>123</b></span>
+      <span class="chip">BugScout <b>ready</b></span>
+    </div>
+    <div class="tabs">
+      <button class="tab active">Analyse</button><button class="tab">Batch Learn</button>
+      <button class="tab">Live Debug</button><button class="tab">PythonSV</button>
+      <button class="tab">Crashdump</button><button class="tab">Knowledge Base</button>
+    </div>
+    <div class="card">
+      <h2>New analysis</h2>
+      <p class="hint">Enter an HSD ID and the observed symptoms.</p>
+      <label><span class="lbl">HSD ID</span><input type="text" placeholder="16030948515"></label>
+      <label><span class="lbl">Symptoms / failure signature</span>
+        <textarea rows="3" placeholder="Platform, stepping, suspect domain, key signatures"></textarea></label>
+      <label><span class="lbl">Attached log text (optional)</span>
+        <textarea rows="4" placeholder="Paste serial, PythonSV, BMC SEL, OS or RPT logs"></textarea></label>
+      <label class="check"><input type="checkbox" checked> Auto‑fetch and analyze ticket attachments from HSDES</label>
+      <button class="btn">Run analysis</button>
+    </div>
+  </div>
+</body></html>

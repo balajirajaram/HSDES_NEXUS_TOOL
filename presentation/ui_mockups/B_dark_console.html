@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mockup B — Dark Console</title>
+<style>
+  :root{
+    --bg:#0e1420; --surface:#151d2b; --surface-2:#1b2536; --line:#26324a;
+    --text:#e6edf6; --muted:#8b9ab1; --accent:#3d9bff; --accent-weak:#12233c;
+    --ok:#3fb950; --warn:#d29922; --bad:#f0603f;
+    --mono:"Cascadia Code",Consolas,"SF Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font-family:"Inter","Segoe UI",-apple-system,Roboto,Arial,sans-serif;font-size:14px;line-height:1.55}
+  .topbar{background:var(--surface);border-bottom:1px solid var(--line);padding:0 28px;
+    display:flex;align-items:center;justify-content:space-between;height:56px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+  .brand .logo{width:26px;height:26px;border-radius:6px;
+    background:linear-gradient(135deg,#3d9bff,#1f6fd6);display:grid;place-items:center;color:#fff;font-weight:700}
+  .brand .scope{color:var(--muted);font-weight:400}
+  .session{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;font-family:var(--mono)}
+  .session .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok)}
+  .wrap{max-width:1180px;margin:24px auto;padding:0 28px}
+  .pagehead h1{margin:0 0 4px;font-size:22px;font-weight:600}
+  .pagehead p{margin:0 0 18px;color:var(--muted)}
+  .status{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+  .chip{background:var(--surface-2);border:1px solid var(--line);border-radius:6px;
+    padding:4px 12px;font-size:12px;color:var(--muted);font-family:var(--mono)}
+  .chip b{color:var(--text);font-weight:600}
+  .chip.ok{border-color:#1f6f34;color:var(--ok)}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:20px}
+  .tab{padding:10px 16px;font-size:13px;color:var(--muted);cursor:pointer;
+    border-bottom:2px solid transparent;background:none;border:none}
+  .tab.active{color:var(--text);border-bottom-color:var(--accent);font-weight:600}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:10px;
+    padding:22px 24px;max-width:720px}
+  .card h2{margin:0 0 4px;font-size:16px;font-weight:600}
+  .card .hint{margin:0 0 18px;color:var(--muted);font-size:13px}
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:16px}
+  label .lbl{display:block;margin-bottom:6px}
+  input[type=text],textarea{width:100%;border:1px solid var(--line);border-radius:6px;
+    padding:9px 11px;font:inherit;font-weight:400;color:var(--text);background:var(--surface-2)}
+  input:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-weak)}
+  textarea{resize:vertical;font-family:var(--mono);font-size:13px}
+  .check{display:flex;align-items:center;gap:8px;font-weight:400;color:var(--muted)}
+  .btn{background:var(--accent);color:#04101f;border:none;border-radius:6px;padding:9px 18px;
+    font:inherit;font-weight:700;cursor:pointer}
+  .btn:hover{background:#5aabff}
+</style></head>
+<body>
+  <div class="topbar">
+    <div class="brand"><span class="logo">N</span> HSDES NEXUS <span class="scope">· Control Center</span></div>
+    <div class="session"><span class="dot"></span> kerberos_sso · rbalaji</div>
+  </div>
+  <div class="wrap">
+    <div class="pagehead">
+      <h1>HSD Root‑Cause Analysis</h1>
+      <p>Reads the HSD ticket and attached logs, decodes the failure, and reports a ranked root cause with evidence and next steps.</p>
+    </div>
+    <div class="status">
+      <span class="chip">mode <b>offline</b></span>
+      <span class="chip ok">auth ready</span>
+      <span class="chip">llm <b>off</b></span>
+      <span class="chip">kb <b>123</b></span>
+      <span class="chip">bugscout <b>ready</b></span>
+    </div>
+    <div class="tabs">
+      <button class="tab active">Analyse</button><button class="tab">Batch Learn</button>
+      <button class="tab">Live Debug</button><button class="tab">PythonSV</button>
+      <button class="tab">Crashdump</button><button class="tab">Knowledge Base</button>
+    </div>
+    <div class="card">
+      <h2>New analysis</h2>
+      <p class="hint">Enter an HSD ID and the observed symptoms.</p>
+      <label><span class="lbl">HSD ID</span><input type="text" placeholder="16030948515"></label>
+      <label><span class="lbl">Symptoms / failure signature</span>
+        <textarea rows="3" placeholder="Platform, stepping, suspect domain, key signatures"></textarea></label>
+      <label><span class="lbl">Attached log text (optional)</span>
+        <textarea rows="4" placeholder="Paste serial, PythonSV, BMC SEL, OS or RPT logs"></textarea></label>
+      <label class="check"><input type="checkbox" checked> Auto‑fetch and analyze ticket attachments from HSDES</label>
+      <button class="btn">Run analysis</button>
+    </div>
+  </div>
+</body></html>
