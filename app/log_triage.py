@@ -318,9 +318,29 @@ def triage_logs(text: str, product: str = "") -> Optional[Dict[str, Any]]:
         pc = dec["pc"]
         post_lines = "\n".join(
             ln for ln in text.splitlines()
-            if re.search(r"\bpost\b|progress code|checkpoint|\bPC[-:\s]", ln, re.I))
+            if re.search(
+                r"(?:\bpost\s*code(?:\b|(?=[0-9]))|\bpostcode(?:\b|(?=[0-9]))|"
+                r"\bpost_code(?:\b|(?=[0-9]))|"
+                r"\bpost\s*[:=]\s*(?:0x|[0-9A-F])|\bprogress\s+code\b|"
+                r"\bcheckpoint\s+(?:code|0x|[0-9]+\.)|\bPC[-:\s])",
+                ln, re.I))
         found = pc.search_in_log(post_lines, dec["post_db"]) if post_lines.strip() else []
         decoded = [d for d in (pc.decode_code(c, dec["post_db"]) for c in found) if d]
+        # Also catch the dotted major.minor serial form (e.g. "PostCode 0.3" -> 0x03),
+        # which the hex-only scanner misses. Map "M.N" to the DB byte that exists.
+        if post_lines.strip():
+            dotted = []
+            seen = {d.get("code") for d in decoded}
+            for mm in re.finditer(
+                    r"(?:post\s*code|checkpoint|progress\s*code|\bPC)\D{0,8}(\d{1,3})\.(\d{1,3})",
+                    post_lines, re.I):
+                for cand in (int(mm.group(2)), int(mm.group(1))):
+                    d = pc.decode_code(f"0x{cand:02X}", dec["post_db"])
+                    if d and d.get("code") not in seen:
+                        dotted.append(d)
+                        seen.add(d.get("code"))
+                        break
+            decoded = dotted + decoded
     except Exception:
         decoded = []
     if decoded:
@@ -373,3 +393,36 @@ def triage_logs(text: str, product: str = "") -> Optional[Dict[str, Any]]:
     out["top_severity"] = max((h["severity"] for h in hyps),
                               key=lambda s: _rank.get(s, 0), default=None)
     return out if (out["bios"] or out["mca"] or out["post"]) else None
+
+
+def extract_post_codes(text: str) -> List[Dict[str, Any]]:
+    """Decode explicit POST references from HSD text without scanning app telemetry."""
+    if not text or not text.strip():
+        return []
+    try:
+        pc = _decoders()["pc"]
+        db = _decoders()["post_db"]
+        found: List[Dict[str, Any]] = []
+        seen = set()
+        for match in re.finditer(
+                r"(?:post\s*code|postcode|post_code|checkpoint\s+code|"
+                r"progress\s+code|\bPC)\D{0,8}(\d{1,3})\.(\d{1,3})",
+                text, re.I):
+            for value in (int(match.group(2)), int(match.group(1))):
+                decoded = pc.decode_code(f"0x{value:02X}", db)
+                if decoded and decoded.get("code") not in seen:
+                    found.append(decoded)
+                    seen.add(decoded.get("code"))
+                    break
+        for match in re.finditer(
+                r"(\d{1,3})\.(\d{1,3})\D{0,8}(?:post\s*code|postcode|post_code)",
+                text, re.I):
+            for value in (int(match.group(2)), int(match.group(1))):
+                decoded = pc.decode_code(f"0x{value:02X}", db)
+                if decoded and decoded.get("code") not in seen:
+                    found.append(decoded)
+                    seen.add(decoded.get("code"))
+                    break
+        return found
+    except Exception:
+        return []

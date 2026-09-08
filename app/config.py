@@ -106,6 +106,19 @@ class Config:
     def nuc_pythonsv_enabled(self) -> bool:
         return bool(self.NUC_HOST and self.NUC_USER and self.NUC_PASSWORD)
 
+    # ---- AutoHSD SUT node SSH (Phase 2: collect logs live from the node) ----
+    # The node hostname is parsed from the HSD title (e.g. [cs16ca101ks1206]) and
+    # NEXUS SSHes in to collect dmesg / journalctl / mcelog / SEL / MCA. Secrets are
+    # read ONLY from the environment and are NEVER logged or written to any report.
+    SUT_SSH_USER = os.getenv("SUT_SSH_USER", "root")
+    SUT_SSH_KEY = os.getenv("SUT_SSH_KEY", "")   # optional key file path
+    SUT_SSH_PORT = int(os.getenv("SUT_SSH_PORT", "22"))
+    SUT_SSH_DOMAIN = os.getenv("SUT_SSH_DOMAIN", "")  # optional FQDN suffix
+
+    @property
+    def SUT_SSH_PASSWORD(self) -> str:
+        return os.getenv("SUT_SSH_PASSWORD", "")
+
     HOST = os.getenv("HOST", "127.0.0.1")
     PORT = int(os.getenv("PORT", "8000"))
 

@@ -22,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from .analyzer import analyze, kb
+from .analyzer import analyze, kb, update_hsd_report
 from .batch_learn import batch_learn
 from .bugscout_bridge import (
     bugscout_finalize_batch,
@@ -42,6 +42,7 @@ from .bugscout_bridge import (
 from .config import config
 from .hsdes_client import HSDESClient
 from .llm_client import llm
+from .node_triage import triage_auto_hsd
 from .report_html import APP_NAME, render_report_html, render_structured_report_html
 
 app = FastAPI(title="HSDES NEXUS")
@@ -101,6 +102,29 @@ class AnalyzeRequest(BaseModel):
 class LoginRequest(BaseModel):
     username: str
     password: str
+
+
+class ChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class ChatRequest(BaseModel):
+    messages: List[ChatMessage]
+    hsd_id: Optional[str] = None
+    context: Optional[str] = None
+
+
+class HsdUpdateRequest(BaseModel):
+    hsd_id: str
+    symptoms: str = "Automated triage"
+    dry_run: bool = True
+
+
+class AutoHsdRequest(BaseModel):
+    hsd_id: str
+    post: bool = False
+
 
 
 class BatchLearnRequest(BaseModel):
@@ -252,6 +276,82 @@ async def api_analyze(request: Request, req: AnalyzeRequest):
         log_text=req.log_text,
         fetch_attachments=req.fetch_attachments,
     )
+    if result.get("report_markdown"):
+        md_path, html_path = _save_report(hsd_id, result["report_markdown"], result)
+        result["saved_path"] = md_path
+        result["saved_html_path"] = html_path
+    return result
+
+
+_CHAT_SYSTEM = (
+    "You are the HSDES NEXUS interactive debug assistant for Intel server platforms "
+    "(GNR/SRF/CWF/DMR). Answer the engineer's follow-up questions about the current HSD "
+    "analysis. Ground every answer in the provided analysis context and the ticket; when "
+    "the context lacks the fact, say so and name the exact log/register to capture next. "
+    "Be precise and concise: cite decoded MCA bank/IP, MCACOD/MSCOD, POST codes, IERR "
+    "source, and recovery class where relevant. Never invent HSD IDs, register names, or "
+    "values. Prefer concrete PythonSV reads over generic advice."
+)
+
+
+@app.post("/api/chat")
+async def api_chat(request: Request, body: ChatRequest):
+    creds = _creds(request)
+    if not creds and not _kerberos():
+        return JSONResponse(status_code=401, content={"error": "Please sign in first."})
+    if not body.messages:
+        return JSONResponse(status_code=400, content={"error": "No messages provided."})
+    if not llm.enabled:
+        return JSONResponse(status_code=503, content={
+            "error": "Interactive mode needs an LLM/Copilot endpoint. Set LLM_BASE_URL, "
+                     "LLM_API_KEY and LLM_MODEL in .env (an OpenAI-compatible or "
+                     "Copilot-compatible gateway)."})
+    system = _CHAT_SYSTEM
+    ctx = (body.context or "").strip()
+    if body.hsd_id:
+        system += f"\n\nCurrent HSD under discussion: {body.hsd_id}."
+    if ctx:
+        system += "\n\n=== CURRENT ANALYSIS CONTEXT ===\n" + ctx[:12000]
+    messages = [{"role": "system", "content": system}]
+    for m in body.messages[-16:]:
+        role = m.role if m.role in ("user", "assistant") else "user"
+        messages.append({"role": role, "content": m.content})
+    try:
+        reply = await llm.chat(messages, temperature=0.2)
+    except Exception as exc:
+        return JSONResponse(status_code=502, content={"error": f"LLM request failed: {exc}"})
+    return {"reply": reply}
+
+
+@app.post("/api/hsd/update")
+async def api_hsd_update(request: Request, body: HsdUpdateRequest):
+    """Run (or reuse) analysis and post the condensed RCA as a ticket comment.
+    dry_run=True (default) returns the exact comment + payload without writing."""
+    if not body.hsd_id.strip():
+        return JSONResponse(status_code=400, content={"error": "'hsd_id' is required."})
+    if not _creds(request) and not _kerberos():
+        return JSONResponse(status_code=401, content={"error": "Please sign in first."})
+    hsd_id = _normalize_hsd_id(body.hsd_id)
+    try:
+        return await update_hsd_report(hsd_id, body.symptoms.strip() or "Automated triage",
+                                       dry_run=body.dry_run)
+    except Exception as exc:
+        return JSONResponse(status_code=502, content={"error": f"HSD update failed: {exc}"})
+
+
+@app.post("/api/autohsd/triage")
+async def api_autohsd_triage(request: Request, body: AutoHsdRequest):
+    """Phase 2: for a one-liner AutoHSD, parse the node from the title, SSH-collect
+    logs, triage, and (when post=True) post the RCA. If the node is down, reports it."""
+    if not body.hsd_id.strip():
+        return JSONResponse(status_code=400, content={"error": "'hsd_id' is required."})
+    if not _creds(request) and not _kerberos():
+        return JSONResponse(status_code=401, content={"error": "Please sign in first."})
+    hsd_id = _normalize_hsd_id(body.hsd_id)
+    try:
+        result = await triage_auto_hsd(hsd_id, post=body.post)
+    except Exception as exc:
+        return JSONResponse(status_code=502, content={"error": f"AutoHSD triage failed: {exc}"})
     if result.get("report_markdown"):
         md_path, html_path = _save_report(hsd_id, result["report_markdown"], result)
         result["saved_path"] = md_path

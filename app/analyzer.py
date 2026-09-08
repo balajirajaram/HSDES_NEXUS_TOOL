@@ -30,7 +30,7 @@ from .knowledge_base import match_knowledge, lookup_bios_code
 from .products import detect_product, master_queries, product_display
 from .transferred_sync import sync_transferred, extract_axon_uuids, canonical_axon_url
 from .mcp_enrich import enrich as mcp_enrich, enrichment_enabled
-from .log_triage import triage_logs
+from .log_triage import extract_post_codes, triage_logs
 from .axon_record import fetch_axon_records
 
 kb = KBStore(config.KB_DB_PATH)
@@ -40,6 +40,274 @@ def _short(text: Any, n: int = 140) -> str:
     """Collapse whitespace/newlines and truncate for clean table display."""
     s = re.sub(r"\s+", " ", str(text or "")).strip()
     return (s[:n] + "…") if len(s) > n else s
+
+
+# We are Intel — drop "contact your Intel representative" guidance from decoded
+# MCA-DB actions before they surface in the report's next-steps sections.
+def _strip_intel_contact(text: Any) -> str:
+    s = str(text or "")
+    s = re.sub(r"[.;,]?\s*(?:and\s+)?contact your Intel representative[^.]*\.?",
+               "", s, flags=re.IGNORECASE)
+    s = re.sub(r"[.;,]?\s*Contact your OEM debug team\s*/\s*Intel representative\.?",
+               "", s, flags=re.IGNORECASE)
+    return re.sub(r"\s{2,}", " ", s).strip(" .;,")
+
+
+# ---- Precise root-cause narrowing from decoded MCA evidence ---------------
+# A 3-strike / WDTimeout is a forward-progress SYMPTOM, not a root cause; a bare
+# "timeout → replace CPU" line is not actionable. These helpers turn the decoded
+# bank / IP / MCACOD / MSCOD / recovery-class / first-IERR facts into a narrowed
+# statement that names the real failing IP (or, for a 3-strike, the ranked
+# blocker to trace) plus IP-specific next reads.
+_THREE_STRIKE_RE = re.compile(
+    r"3.?strike|three.?strike|wd\s*timeout|watchdog|internal.?timer|internal_timer|e101",
+    re.IGNORECASE)
+
+
+def _mc_evidence(decoded: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    ev = (decoded or {}).get("evidence") or {}
+    return ev if isinstance(ev, dict) else {}
+
+
+def _is_three_strike(mcs: Dict[str, Any]) -> bool:
+    if not mcs:
+        return False
+    blob = " ".join(str(mcs.get(k, "")) for k in ("decode", "mscod", "mcacod"))
+    if _THREE_STRIKE_RE.search(blob):
+        return True
+    return ("0400" in str(mcs.get("mcacod", ""))
+            and "e101" in str(mcs.get("mscod", "")).lower())
+
+
+# Placeholder tokens that mean "no first-error source was actually captured".
+_NO_SOURCE = {"", "none", "n/a", "na", "unknown", "-", "—"}
+
+
+def _recovery_str(recovery: Any) -> str:
+    """Render an MCA recovery-class value (str or dict) as one readable line."""
+    if not recovery:
+        return ""
+    if isinstance(recovery, str):
+        return recovery.strip()
+    if isinstance(recovery, dict):
+        parts = []
+        if recovery.get("os_action"):
+            parts.append(str(recovery["os_action"]).strip())
+        if recovery.get("lmce"):
+            parts.append(f"LMCE: {str(recovery['lmce']).strip()}")
+        if recovery.get("reboot"):
+            parts.append(f"reboot: {str(recovery['reboot']).strip()}")
+        return " · ".join(parts) if parts else ""
+    return str(recovery).strip()
+
+
+def _ierr_has_source(row: Dict[str, Any]) -> bool:
+    """True only when an IERR/MCERR row names a real captured source (not a
+    placeholder 'None' / 'No error logged' row)."""
+    if not isinstance(row, dict):
+        return False
+    src = str(row.get("source_unit") or "").strip().lower()
+    note = str(row.get("note") or "").strip().lower()
+    if src in _NO_SOURCE:
+        return False
+    if "no error" in note or "not logged" in note:
+        return False
+    return True
+
+
+def _is_poison_consumption(mcs: Dict[str, Any]) -> bool:
+    """True when the MCA is a poison CONSUMPTION at a core cache unit (DCU/MLC/IFU/
+    DTLB). The consuming unit is the VICTIM; the poison originated upstream."""
+    if not mcs:
+        return False
+    decode = str(mcs.get("decode") or "").lower()
+    unit = str(mcs.get("bank_unit") or "").upper()
+    if "poison" in decode and unit in {"DCU", "MLC", "IFU", "DTLB"}:
+        return True
+    # MCACOD 0x0134 = DCU load poison consumption.
+    return unit in {"DCU", "MLC", "IFU", "DTLB"} and "0134" in str(mcs.get("mcacod", ""))
+
+
+def _specific_root_cause(decoded: Optional[Dict[str, Any]],
+                         target: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    """Narrowed, evidence-grounded root-cause line, or None when nothing decoded."""
+    ev = _mc_evidence(decoded)
+    mcs = ev.get("mc_status") or {}
+    if not mcs or not mcs.get("status"):
+        return None
+    sockets = ev.get("sockets") or []
+    skt = f"Socket {sockets[0]}" if sockets else "the failing socket"
+    bank = mcs.get("bank")
+    unit = (mcs.get("bank_unit")
+            or (ev.get("bank_units") or {}).get(str(bank))
+            or "the logged IP")
+    where = (f"{skt} MCA bank {bank} (**{unit}**)"
+             if bank not in (None, "") else f"{skt} — **{unit}**")
+    ierr = [r for r in (decoded.get("ierr_table") or []) if _ierr_has_source(r)]
+    first = ierr[0] if ierr else {}
+
+    if _is_poison_consumption(mcs):
+        rc = (f"A **poison-consumption** machine check was logged in {where} "
+              f"(MCACOD {mcs.get('mcacod','?')}, MSCOD {mcs.get('mscod','?')} — "
+              f"{_short(mcs.get('decode',''), 120)}). The {unit} is the **consumer/VICTIM**, "
+              f"not the origin — poison is created upstream and consumed here on a load. "
+              f"Locate the **poison SOURCE**: read MC_ADDR (ADDRV) to map the poisoned "
+              f"address, then check the memory (IMC UE / patrol scrub) and IO/CXL (poisoned "
+              f"completion / AER) paths. A `NO_iMC_MCA` signature means it is NOT an ordinary "
+              f"DDR UE — trace the uncore/mesh/CXL read-return path.")
+        if first.get("source_unit"):
+            rc += (f" First IERR/MCERR captured from **{first['source_unit']}**"
+                   + (f" @ `{first['address']}`" if first.get("address") else "") + ".")
+        return rc
+
+    if _is_three_strike(mcs):
+        rc = (f"A **3-strike core watchdog timeout** (MCACOD INTERNAL_TIMER / "
+              f"MSCOD THREE_STRIKE) was logged in {where}. This is the **trigger, not "
+              f"the root cause** — the core stopped retiring because an upstream "
+              f"transaction never completed. Narrow to the real forward-progress "
+              f"blocker on {skt}, ranked: (1) CHA/TOR request timeout (stuck LLC/snoop), "
+              f"(2) UPI credit starvation / link degrade, (3) IMC/DDR read stall "
+              f"(no data return), (4) mesh/IDI credit stall or a hung uncore IP.")
+        if first.get("source_unit"):
+            rc += (f" First IERR/MCERR was captured from **{first['source_unit']}** on "
+                   f"Socket {first.get('socket', '?')}"
+                   + (f" @ `{first['address']}`" if first.get("address") else "")
+                   + " — begin the trace there.")
+        return rc
+
+    decode = (mcs.get("decode") or "").strip()
+    rc = f"Uncorrected machine-check logged in {where}"
+    codebits = []
+    if mcs.get("mcacod"):
+        codebits.append(f"MCACOD {mcs['mcacod']}")
+    if mcs.get("mscod"):
+        codebits.append(f"MSCOD {mcs['mscod']}")
+    if codebits:
+        rc += " — " + ", ".join(codebits)
+    if decode:
+        rc += f" ({_short(decode, 160)})"
+    _rec = _recovery_str(mcs.get("recovery"))
+    if _rec:
+        rc += f"; recovery class **{_rec}**"
+    flags = ev.get("status_flags") or {}
+    fset = [k for k in ("PCC", "UC", "OVER", "EN") if flags.get(k)]
+    if fset:
+        rc += f"; status flags {', '.join(fset)}"
+    rc += f". Failing IP = **{unit}** on {skt}"
+    if ev.get("mc_addr"):
+        rc += f"; MC_ADDR `{ev['mc_addr']}`"
+    if first.get("source_unit"):
+        rc += (f". First IERR/MCERR from **{first['source_unit']}**"
+               + (f" @ `{first['address']}`" if first.get("address") else ""))
+    return rc + "."
+
+
+# ---- POST-code explanation + hardware-vs-progress verdict -----------------
+# A POST code is a BIOS firmware PROGRESS checkpoint, not an error code. It only
+# signals a hardware/boot failure when the boot STALLS at it (never advances);
+# if the log shows later checkpoints, the code is just an informational milestone.
+def _post_phase(code_int: Optional[int]) -> str:
+    if code_int is None:
+        return ""
+    if code_int <= 0x10:
+        return "SEC (early CPU / microcode / cache-as-RAM / uncore bring-up, before memory training)"
+    if code_int <= 0x2F:
+        return "PEI (memory reference code / KTI-UPI training, DRAM bring-up)"
+    if code_int <= 0x7F:
+        return "PEI→DXE (silicon init, RC completion)"
+    if code_int <= 0xBF:
+        return "DXE / BDS (driver dispatch, boot device selection)"
+    return "late BDS / OS hand-off"
+
+
+def _post_verdict(decoded: Optional[Dict[str, Any]],
+                  target: Optional[Dict[str, Any]] = None) -> Optional[str]:
+    """Explain the last decoded POST checkpoint and state whether it is a hardware
+    failure or just boot progress, using whether the boot advanced past it."""
+    dp = (decoded or {}).get("post") or {}
+    codes = dp.get("codes") or []
+    if not codes:
+        return None
+    last = codes[-1]
+    code = last.get("code", "")
+    try:
+        cint = int(str(code), 16)
+    except (TypeError, ValueError):
+        cint = last.get("code_int")
+    desc = last.get("description") or last.get("macro") or ""
+    phase = _post_phase(cint)
+    boot = (decoded or {}).get("boot_flow") or {}
+    target_text = str((target or {}).get("full_text") or "")
+    narrative_recovery = bool(re.search(
+        r"boot(?:ed|ing)\s+(?:up\s+)?to\s+EDK|power\s*cycle.*boot|"
+        r"boot(?:ed|ing).*OS|upto\s+EDK", target_text, re.I))
+    advanced = bool(boot.get("reached_os")) or len(codes) > 1 or narrative_recovery
+    source = "HSD description/comments" if target_text else "attached logs"
+
+    line = (f"**POST `{code}`** = `{last.get('macro', '')}` — {desc}. "
+            f"Phase: {phase}. A POST code is a **BIOS firmware progress checkpoint, "
+            f"not an error code**.")
+    if advanced:
+        return (line + f" Source: {source}. Verdict: **NOT a hardware failure** — the boot logged "
+                "checkpoint(s) after this point, so it is an informational progress "
+                "milestone, not the stall point.")
+    if cint is not None and cint <= 0x10:
+        cause = ("this is very early SEC (CPU/BSP-select/microcode/cache-as-RAM/uncore, "
+                 "pre-memory) — a genuine stall here points to CPU/socket/VR/BSP-selection "
+                 "or microcode bring-up; confirm with IERR/CATERR + a BMC port-80 capture "
+                 "before calling it a hardware fault")
+    elif cint is not None and cint <= 0x2F:
+        cause = ("this is PEI memory/UPI training — a stall here points to DIMM/channel "
+                 "training or UPI link bring-up; check MRC/KTI logs and DIMM population")
+    else:
+        cause = "inspect the BIOS module/driver dispatched right after this checkpoint"
+    return (line + f" Source: {source}. Verdict: **boot did not advance past `{code}`** — {cause}. "
+            "It is a hardware failure ONLY IF a HW error (MCA/IERR/CATERR) is also "
+            "captured at this point; otherwise treat it as a firmware/config hang.")
+
+
+def _specific_next_steps(decoded: Optional[Dict[str, Any]]) -> List[str]:
+    """IP-specific next reads derived from the decoded bank/unit."""
+    ev = _mc_evidence(decoded)
+    mcs = ev.get("mc_status") or {}
+    if not mcs or not mcs.get("status"):
+        return []
+    bank = mcs.get("bank")
+    unit = (mcs.get("bank_unit") or "").lower()
+    sockets = ev.get("sockets") or []
+    skt = sockets[0] if sockets else "N"
+    steps: List[str] = []
+    try:
+        b = int(str(bank))
+        steps.append(f"Dump the failing bank on Socket {skt}: `rdmsr 0x{b*4+0x401:X}` "
+                     f"(MC{b}_STATUS), `0x{b*4+0x402:X}` (MC{b}_ADDR), "
+                     f"`0x{b*4+0x403:X}` (MC{b}_MISC).")
+    except (TypeError, ValueError):
+        pass
+    if _is_three_strike(mcs):
+        steps.append("3-strike = forward-progress timeout — trace the BLOCKER, not the core: "
+                     "read CHA TOR state (`sv.socketN.uncore.cha.tor_*` for stuck/pending "
+                     "entries), then UPI link/credit status, then IMC/DDR pending reads, then "
+                     "mesh/IDI credits.")
+        steps.append("Capture ACD / crashdump for TOR + the timed-out core's RIP; correlate its "
+                     "last request with the pending uncore transaction (CHA/UPI/IMC) that never "
+                     "returned.")
+    else:
+        if "upi" in unit or "kti" in unit:
+            steps.append("UPI/KTI bank: read per-link ktilk phy/LL error+status and CRC/retry "
+                         "counters on both link partners; check for L0p-exit / phy-reset events.")
+        elif "cha" in unit or "llc" in unit:
+            steps.append("CHA/LLC bank: read CHA TOR timeout + SAD/target decode; identify the "
+                         "target (memory vs IO) that failed to return.")
+        elif any(k in unit for k in ("imc", "ddr", "mcchan", "m2mem", "b2cmi")):
+            steps.append("Memory bank: read IMC retry/CRC and the failing DIMM/rank from MC_ADDR; "
+                         "check DDR training margins on that channel.")
+        elif any(k in unit for k in ("ubox", "punit", "pcu")):
+            steps.append("UBOX/PUnit bank: read the ubox IERR/MCerr logging registers and the "
+                         "PUnit mailbox status for the first-error source.")
+        steps.append("Confirm the decoded MCACOD/MSCOD against the product EDS-R bank→IP table "
+                     "before dispositioning.")
+    return steps 
 
 
 def _collect_sources(target: Optional[Dict[str, Any]], recall: Dict[str, Any],
@@ -197,70 +465,110 @@ def _render_sources_md(sources: List[Dict[str, str]]) -> str:
     lines.append("")
     return "\n".join(lines)
 
-SYSTEM_PROMPT = """You are an expert Intel server-platform debug engineer. You triage
-HSD-ES tickets across ANY domain — CPU/silicon RAS (MCA/MCE/IERR/CATERR), UPI/coherency,
-memory (DDR/DIMM/training), IO (PCIe/CXL), power and sleep states (S3/S4/S5/Sx, ACPI),
-BIOS/IFWI/BMC/CPLD and boot/hang/reset, OS/driver (Windows/Linux), and manageability.
-You cover GNR, SRF and CWF today and the SAME method extends to future products (DMR, COR).
+SYSTEM_PROMPT = """You are a Principal Xeon Platform Validation / RAS debug engineer.
+Your task is NOT to summarize logs — it is to RECONSTRUCT FAILURE CAUSALITY for an Intel
+server-platform HSD (GNR/SRF/CWF today; DMR/COR next). You cover CPU/silicon RAS
+(MCA/MCE/IERR/CATERR/3-strike), UPI/coherency, CHA/SCF/mesh, memory (DDR/MRC), IO
+(PCIe/CXL), power/Sx, BIOS/IFWI/BMC and boot/hang/reset, OS/driver.
 
-You act as an AGENTIC end-to-end director. Ground every answer in evidence from:
-  1. the target HSD (title + description + comments),
-  2. the product's HSDES master-query corpus of similar/known issues (the KB + provided
-     similar HSDs) — use it to say whether this is a known issue and how it was resolved,
-  3. internal wikis/specs for architectural context, and
-  4. register/code sources for the EXACT PythonSV commands.
-You reason strictly from evidence and NEVER fabricate HSD IDs, register names, or commands.
+HARD RULE: Never produce a generic recommendation ("Update BIOS", "Collect more logs",
+"Verify microcode", "re-run") UNLESS it is directly supported by the evidence in this
+ticket. Do not jump from a signature (e.g. MCACOD=0x400 / WDTimeout / TOR_TIMEOUT) to a
+conclusion without first establishing the timeline, the owning IP, and cause-vs-noise.
+NEVER fabricate HSD IDs, register names, values, banks, or commands. If a fact is not in
+the provided data, say so and list it under Required Missing Data.
 
-You are given: the target HSD data (title, description, comments — may be partial),
-matched cases from a learned Knowledge Base (KB), similar HSDs, attached-log findings,
-the comment investigation, and (optionally) transferred sub-team ticket findings. Produce a
-professional **Root Cause Analysis** report in Markdown with a clear, sectioned structure
-modelled on a formal RCA (like a silicon-debug RCA memo). Use EXACTLY these sections and
-headings, in this order:
+You are given: the target HSD (title/description/comments), KB matches, similar HSDs,
+decoded attached-log findings (MCA banks, MCACOD/MSCOD, status flags, IERR/MCERR source,
+POST codes, boot flow), the comment investigation, and optional transferred-ticket findings.
+
+Work through these steps IN ORDER and emit them as the report sections below.
+
+STEP 1 — FAILURE TIMELINE: identify FIRST_EVENT, SECONDARY_EVENTS (propagated), and
+FINAL_FAILURE (last observable symptom). Order by time, not by log position.
+
+STEP 2 — FAILURE OWNER (IP): map every error to Core / CHA / UBOX / SCF / UPI / MC / PCIe /
+Firmware / BIOS. For every MCA report Bank, MCACOD, MSCOD, Socket, Die, IP, and explain what
+each code means (from the provided decode).
+
+STEP 3 — CAUSE vs NOISE: label every observation ROOT_CAUSE, SUPPORTING_EVIDENCE, or
+INCIDENTAL. Never treat WHEA spam, PCIe retries, or machine-check aftermaths as primary
+without proof.
+
+STEP 4 — CORRELATION: correlate PythonSV / StatusScope / MCA / serial / BMC / HSD-comment
+evidence into a causal chain (e.g. CHA TOR_TIMEOUT -> SCF timeout -> MCERR -> CPU error ->
+node hang). Only assert a link when evidence supports it; otherwise mark it hypothesised.
+
+STEP 5 — COMPETING HYPOTHESES: give Hypothesis A/B/C, each with Evidence For and Evidence
+Against. Rank them.
+
+STEP 6 — CONFIDENCE: calibrate 95-100% Confirmed / 80-94% Strong / 60-79% Likely /
+<60% Insufficient evidence.
+
+STEP 7 — REQUIRED MISSING DATA: list the exact items needed to raise confidence
+(MC_STATUS, MC_MISC, MCA bank owner, crashdump register, StatusScope output, first-IERR
+socket/die) and WHY each is needed.
+
+STEP 8 — VERDICT: Root Cause + reasoning chain + confidence + the single next validation
+experiment.
+
+MCA DEEP ANALYSIS (mandatory when any MCA is present): for every MCA decode MCACOD, decode
+MSCOD, identify the bank owner, map to IP, determine fatality, determine first reported
+socket and die, and whether the error propagated. Classify as PRIMARY_ERROR,
+SECONDARY_ERROR, or VICTIM_ERROR. A 3-strike / WDTimeout / INTERNAL_TIMER is a
+forward-progress SYMPTOM, not a root cause — find the transaction/IP that blocked progress
+(CHA TOR, UPI credits, IMC/DDR, mesh) and say which failed first.
+
+SELF-REVIEW (do this before finalizing; if any answer is unsatisfactory, rewrite the RCA):
+1) What evidence would DISPROVE my root cause? 2) Could another IP own this failure?
+3) Did I confuse symptom with cause? 4) Did I use a KB match without evidence?
+5) Would a senior RAS architect accept this RCA?
+
+Produce the report in Markdown with EXACTLY these sections, in this order:
 
 # Root Cause Analysis — HSD <id>
-A metadata block (Markdown table) with: Date, Platform/Family, Component/Domain,
-Status/Priority, Owner.
+Metadata table: Date, Platform/Family, Component/Domain, Status/Priority, Owner.
 
 ## Artifacts Under Analysis
-The ticket, number of comments parsed, attachments/log files scanned (name each file).
+Ticket, number of comments parsed, attachment/log files scanned (name each), log lines.
 
-## Findings Summary
-A short, scannable overview: the failure signature (from logs/comments), the proposed root
-the proposed root cause in one line, and a confidence read.
+## Failure Timeline
+FIRST_EVENT / SECONDARY_EVENTS / FINAL_FAILURE (as a small table where possible).
 
-## Analysis Methodology
-Bullet list of exactly what you inspected and how (ticket read, N comments, M log lines,
-signatures/MCA decode, KB recall, and transferred-ticket follow).
+## MCA Deep Analysis
+Per-MCA table (Bank | MCACOD | MSCOD | Socket | Die | IP | Meaning | Fatality | Class), then
+PRIMARY_ERROR / SECONDARY_ERROR / VICTIM_ERROR. If no valid MCA, say so.
 
-## Measured Data / Evidence
-Where logs or comments contain concrete values (signatures, MCA status words, event timeline,
-bandwidth/error counters, register values), present them as Markdown TABLES (source→value,
-or event timeline). If no measured data is available, say so briefly.
+## Failure Owner (IP)
+The owning IP with the evidence that assigns ownership.
 
-## Root Cause
-The primary root cause, labelled clearly as **confirmed from data** vs **hypothesis**, tied
-to specific supporting evidence. Then a numbered list of ranked alternative hypotheses, each
-with its supporting/contradicting evidence.
+## Cause vs Noise
+Bulleted classification (ROOT_CAUSE / SUPPORTING_EVIDENCE / INCIDENTAL).
 
-## Secondary Observations
-Other signatures, secondary domains, already-tried paths — numbered.
+## Correlation & Causal Chain
+The evidence-backed chain (or the best hypothesised chain, clearly labelled).
 
-## Recommended Fix
-A NUMBERED method (concrete, ordered steps — e.g. exact PythonSV reads, revision A/B,
-ingredient/BKC update, re-validate) and end with a bold **Expected result:** line stating what
-success looks like.
+## Competing Hypotheses
+Hypothesis A/B/C, each with Evidence For / Evidence Against, ranked.
+
+## Root Cause & Confidence
+Primary root cause labelled **confirmed from data** vs **hypothesis**, the reasoning chain,
+and a confidence % using the bands above.
+
+## Required Missing Data
+Exact items needed + why each is needed.
+
+## Recommended Fix / Next Validation Experiment
+NUMBERED, concrete, evidence-tied steps (exact PythonSV reads / revision A-B / BKC update /
+re-validate). End with a bold **Expected result:** line. Do NOT include generic steps unless
+evidence supports them.
+
+## Self-Review
+Answer the 5 self-review questions briefly; confirm the RCA survives them.
 
 ## Appendix
 Similar-HSDs table (ID | Source: KB/HSDES | Similarity reason | Root cause | Status), KB
-recall detail. Only include Axon recording links that are ACTUALLY present in the provided
-ticket data — never invent an Axon search/Explore URL. Cite only HSD IDs present in the
-provided data.
-
-Rules: Only cite HSD IDs present in the provided data. If unsure of an exact register/command
-path, say so and give the closest known one plus how to confirm it. Clearly separate
-"confirmed from data" vs "hypothesis". NEVER fabricate HSD IDs, register names, values, or
-commands.
+recall detail. Only cite HSD IDs and Axon links ACTUALLY present in the provided data.
 
 Return a SINGLE JSON object (no prose outside it) with keys:
   "report_markdown": string  (the full RCA report in the section order above)
@@ -565,6 +873,19 @@ async def analyze(hsd_id: str, symptoms: str,
             log_findings["decoded"] = triage_logs(combined_log, product=platform)
         except Exception:
             log_findings["decoded"] = None
+    # POST codes are often recorded in the HSD narrative rather than in the
+    # attached console logs; retain them with explicit ticket-text provenance.
+    if target and not target.get("error"):
+        ticket_post = extract_post_codes(target.get("full_text") or "")
+        if ticket_post:
+            if log_findings is None:
+                log_findings = {"lines_scanned": 0, "signatures": [], "decoded": {}}
+            if not log_findings.get("decoded"):
+                log_findings["decoded"] = {}
+            post = log_findings["decoded"].setdefault("post", {"codes": []})
+            post["codes"] = ticket_post + [c for c in post.get("codes", [])
+                                            if c.get("code") not in {x.get("code") for x in ticket_post}]
+            log_findings["decoded"]["post_source"] = "HSD description/comments"
     # Auto depth orchestration (no user knobs):
     # 1) KB recall, 2) current-ticket logs/comments, 3) clones/similar/transferred only if needed.
     top_match = (recall.get("matches") or [{}])[0]
@@ -691,6 +1012,118 @@ async def analyze(hsd_id: str, symptoms: str,
         "kb_action": kb_action,
         "report_markdown": report_md,
     }
+
+
+def _md_section(md: str, header: str) -> str:
+    """Return the body of a '## <header>' section from a report, or ''."""
+    i = md.find(header)
+    if i < 0:
+        return ""
+    j = md.find("\n## ", i + len(header))
+    return md[i:(j if j >= 0 else len(md))].strip()
+
+
+def _md_line(section: str, key: str) -> str:
+    """Pull the value after a bold '**key:**' bullet within a section (the colon
+    may sit inside or outside the bold markers)."""
+    m = re.search(r"\*\*" + re.escape(key) + r":?\*\*[:：]?\s*(.+)", section)
+    return _strip_md(m.group(1).strip()) if m else ""
+
+
+def _strip_md(text: str) -> str:
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"`(.+?)`", r"\1", text)
+    return text.strip()
+
+
+def build_hsd_comment(result: Dict[str, Any]) -> str:
+    """Condensed, HSDES-ready HTML RCA comment (verdict, owning IP, confidence,
+    next steps) built from an analyze() result. Safe to post to the ticket thread."""
+    md = result.get("report_markdown") or ""
+    target = result.get("target") or {}
+    hsd_id = str(target.get("id") or "")
+    lf = result.get("log_findings") or {}
+    decoded = lf.get("decoded") or {}
+    mcs = (decoded.get("evidence") or {}).get("mc_status") or {}
+
+    verdict_sec = _md_section(md, "## Engineer Verdict Audit")
+    vtype = _md_line(verdict_sec, "Verdict type") or "see report"
+    vreason = _md_line(verdict_sec, "Reason")
+
+    conf_sec = _md_section(md, "## Root-Cause Confidence")
+    conf_line = ""
+    for ln in conf_sec.splitlines()[1:]:
+        if ln.strip() and not ln.startswith("- **Ceiling"):
+            conf_line = _strip_md(ln.strip())
+            break
+
+    # Owning IP / primary error from the MCA Ownership section.
+    own_sec = _md_section(md, "## MCA Ownership Analysis")
+    primary = _md_line(own_sec, "PRIMARY_ERROR")
+    owning_ip = mcs.get("bank_unit") or ""
+    mca_line = ""
+    if mcs.get("status"):
+        mca_line = (f"MCA bank {mcs.get('bank','?')} ({owning_ip}) "
+                    f"{mcs.get('mcacod','')}/{mcs.get('mscod','')} — "
+                    f"{mcs.get('decode','')}").strip()
+
+    # Top next action from the Engineer Playbook.
+    pb_sec = _md_section(md, "## Engineer Playbook")
+    next_action = _md_line(pb_sec, "Highest-value next action")
+
+    # Required missing data (first few rows).
+    miss_sec = _md_section(md, "## Required Missing Data")
+    missing = re.findall(r"\|\s*\d+\s*\|\s*([^|]+?)\s*\|", miss_sec)[:4]
+
+    def esc(s: str) -> str:
+        return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
+
+    rows = []
+    rows.append("<b>NEXUS Automated Root-Cause Analysis</b>")
+    rows.append("<i>Auto-generated by HSDES NEXUS — deterministic decode of the ticket + attached logs. Please verify before closing.</i>")
+    rows.append("<ul>")
+    if mca_line:
+        rows.append(f"<li><b>Decoded failure:</b> {esc(mca_line)}</li>")
+    if primary:
+        rows.append(f"<li><b>Primary error / owning IP:</b> {esc(primary)}</li>")
+    rows.append(f"<li><b>Verdict:</b> {esc(vtype)}" + (f" — {esc(vreason)}" if vreason else "") + "</li>")
+    if conf_line:
+        rows.append(f"<li><b>Confidence:</b> {esc(conf_line)}</li>")
+    if next_action:
+        rows.append(f"<li><b>Highest-value next step:</b> {esc(next_action)}</li>")
+    if missing:
+        rows.append("<li><b>Data still needed:</b> " + esc(", ".join(m.strip() for m in missing)) + "</li>")
+    rows.append("</ul>")
+    if hsd_id:
+        rows.append(f"<i>Full report saved as output/hsd_{esc(hsd_id)}_*.html / .md</i>")
+    return "\n".join(rows)
+
+
+async def update_hsd_report(hsd_id: str, symptoms: str = "Automated triage",
+                            dry_run: bool = True,
+                            result: Optional[Dict[str, Any]] = None,
+                            fetch_attachments: bool = True) -> Dict[str, Any]:
+    """Run (or reuse) an analysis and post the condensed RCA as a ticket comment.
+    When dry_run=True (default) nothing is written — the exact comment + payload
+    are returned for review."""
+    hsd_id = re.sub(r"\D", "", str(hsd_id))
+    if result is None:
+        result = await analyze(hsd_id, symptoms, fetch_attachments=fetch_attachments)
+    comment = build_hsd_comment(result)
+    client = HSDESClient()
+    meta = await client._article_meta(hsd_id)
+    payload = client.build_comment_payload(hsd_id, comment, meta.get("tenant", "server_platf"))
+    if dry_run:
+        return {"ok": True, "dry_run": True, "hsd_id": hsd_id,
+                "comment_html": comment, "payload": payload,
+                "hsdes_enabled": client.enabled}
+    if not client.enabled:
+        return {"ok": False, "dry_run": False, "hsd_id": hsd_id,
+                "error": "HSDES not enabled (no auth configured)", "comment_html": comment}
+    posted = await client.add_comment(hsd_id, comment, meta=meta)
+    return {"ok": posted.get("ok", False), "dry_run": False, "hsd_id": hsd_id,
+            "comment_html": comment, "payload": payload,
+            "error": posted.get("error"), "response": posted.get("response")}
 
 
 async def _llm_report(hsd_id, symptoms, platform, recall, target, similar,
@@ -1074,6 +1507,9 @@ def _render_debug_summary(L: List[str], hsd_id: str, target: Dict[str, Any],
         last = decoded["post"]["codes"][-1]
         L.append(f"- **Last POST checkpoint:** `{last.get('code','')}` "
                  f"({last.get('description') or last.get('macro','')})")
+        _pv = _post_verdict(decoded, target)
+        if _pv:
+            L.append(f"- **POST-code meaning &amp; HW verdict:** {_pv}")
     L.append("")
 
     # ---- Evidence ----
@@ -1090,7 +1526,9 @@ def _render_debug_summary(L: List[str], hsd_id: str, target: Dict[str, Any],
         for ln in e.get("lines", [])[:1]:
             ev.append(f"{e['category']}: `{_short(ln, 90)}`")
     if decoded and decoded.get("mca") and decoded["mca"].get("action"):
-        ev.append(f"Recommended action (MCA DB): {_short(decoded['mca']['action'], 160)}")
+        _mca_act = _strip_intel_contact(decoded["mca"]["action"])
+        if _mca_act:
+            ev.append(f"Recommended action (MCA DB): {_short(_mca_act, 160)}")
     _axon_sigs_ev = (target.get("axon_svtools_signatures") or []) if target else []
     if _axon_sigs_ev:
         ev.append(f"Axon SVTools: {' · '.join(_axon_sigs_ev[:3])}")
@@ -1113,6 +1551,11 @@ def _render_debug_summary(L: List[str], hsd_id: str, target: Dict[str, Any],
     elif mca_demoted:
         L.append(f"- (**reported subject / disposition** — {demote_why}) "
                  f"{_demoted_primary_line(target, cf)}")
+    _spec_rc = None
+    if not cf.get("root_cause") and not mca_demoted:
+        _spec_rc = _specific_root_cause(decoded, target)
+        if _spec_rc:
+            L.append(f"- (**narrowed from decoded evidence**) {_spec_rc}")
     if ierr_rows:
         first_ierr = ierr_rows[0]
         L.append(f"- (**IERR from PythonSV UBOX table**) "
@@ -1123,7 +1566,7 @@ def _render_debug_summary(L: List[str], hsd_id: str, target: Dict[str, Any],
         L.append("- (**Axon SVTools failure signatures from the linked recording:**)")
         for s in axon_sigs[:5]:
             L.append(f"  - `{s}`")
-    if not cf.get("root_cause") and not ierr_rows and not axon_sigs:
+    if not cf.get("root_cause") and not ierr_rows and not axon_sigs and not _spec_rc:
         if mca_demoted:
             pass  # already led with the disposition/subject line above
         elif decoded and decoded.get("hypotheses"):
@@ -1166,8 +1609,14 @@ def _render_debug_summary(L: List[str], hsd_id: str, target: Dict[str, Any],
     # ---- Next Actions ----
     L.append("### Next Actions")
     na: List[str] = []
+    # Lead with IP-specific reads derived from the decoded bank/unit; the generic
+    # MCA-DB action is kept only as a labelled reference.
+    for s in _specific_next_steps(decoded):
+        na.append(s)
     if decoded.get("mca") and decoded["mca"].get("action"):
-        na.append(_short(decoded["mca"]["action"], 180))
+        _dbact = _strip_intel_contact(decoded["mca"]["action"])
+        if _dbact:
+            na.append(f"(MCA-DB reference) {_short(_dbact, 160)}")
     if boot and boot.get("failing_stage"):
         na.append(f"Inspect the BIOS/firmware path entering "
                   f"{boot['failing_stage']['label']} (right after the last checkpoint).")
@@ -1421,6 +1870,558 @@ def _render_missing_evidence(L: List[str], audit: List[Dict[str, Any]]) -> None:
         L.append("")
 
 
+def _confidence_band(score: int) -> str:
+    if score >= 95:
+        return f"**Confirmed ({score}%)**"
+    if score >= 80:
+        return f"**Strong evidence ({score}%)**"
+    if score >= 60:
+        return f"**Likely ({score}%)**"
+    return f"**Insufficient evidence ({score}%)**"
+
+
+# IP-branch guide for the first-error provenance + debug decision tree. Maps the
+# owning IP keyword to (label, next-check, status_scope command, expected register).
+_IP_BRANCH: List[Tuple[str, str, str, str, str]] = [
+    ("cha", "CHA / LLC (TOR)",
+     "read the TOR entry owner → it routes to the real blocker (PXP→PCIe, UPI→fabric, IMC→memory)",
+     "status_scope.run(analyzers=['cha','upi','pcie'])",
+     "CHA TOR owner register — which agent holds the stuck entry"),
+    ("upi", "UPI / KTI (fabric)",
+     "read per-link CRC/retry + credit state on both link partners",
+     "status_scope.run(analyzers=['upi'])  # + sv.socketN.uncore.upi.upi<port>.ktilk_*",
+     "UPI link status + retry/credit counters (L0p-exit / phy-reset events)"),
+    ("kti", "UPI / KTI (fabric)",
+     "read per-link CRC/retry + credit state on both link partners",
+     "status_scope.run(analyzers=['upi'])",
+     "UPI link status + retry/credit counters"),
+    ("imc", "IMC / DDR (memory)",
+     "read IMC pending reads + retry/CRC and the failing DIMM/rank",
+     "status_scope.run(analyzers=['imc'])  # + sv.socketN.uncore.mc*.dump()",
+     "IMC pending transaction + failing rank/channel"),
+    ("ddr", "IMC / DDR (memory)",
+     "read IMC pending reads + retry/CRC and the failing DIMM/rank",
+     "status_scope.run(analyzers=['imc'])",
+     "IMC pending transaction + failing rank/channel"),
+    ("pcie", "PXP / PCIe (IO)",
+     "read the PCIe/PXP link + AER + credit backpressure state",
+     "status_scope.run(analyzers=['pcie'])",
+     "PCIe LTSSM + AER + credit/backpressure registers"),
+    ("pxp", "PXP / PCIe (IO)",
+     "read the PCIe/PXP link + AER + credit backpressure state",
+     "status_scope.run(analyzers=['pcie'])",
+     "PCIe LTSSM + AER + credit/backpressure registers"),
+    ("ubox", "UBOX / IEH",
+     "read the ubox IERR/MCerr logging registers for the first-error source",
+     "sv.socketN.uncore.ubox.ncevents.ierrloggingreg",
+     "UBOX first IERR/MCERR source + logged agent"),
+    ("punit", "PUnit / PCU (power)",
+     "read the PUnit mailbox + global status for the first-error source",
+     "sv.socketN.uncore.punit.* (mailbox/global status)",
+     "PUnit mailbox status + reset/throttle cause"),
+]
+
+
+def _ip_branch(unit: str) -> Optional[Tuple[str, str, str, str, str]]:
+    u = (unit or "").lower()
+    for key, label, check, cmd, expect in _IP_BRANCH:
+        if key in u:
+            return (key, label, check, cmd, expect)
+    return None
+
+
+def _render_causality_sections(L: List[str], target: Dict[str, Any],
+                               log_findings: Optional[Dict[str, Any]],
+                               recall: Dict[str, Any],
+                               comment_findings: Optional[Dict[str, Any]],
+                               evidence_audit: List[Dict[str, Any]]) -> None:
+    """Deterministic, engineer-grade causality sections built ONLY from decoded
+    artifacts (no LLM): Failure Timeline, MCA Ownership, Cause vs Noise, Competing
+    Hypotheses, Confidence, Required Missing Data (with impact), Evidence Ranking."""
+    lf = log_findings or {}
+    decoded = lf.get("decoded") or {}
+    if not decoded and not (comment_findings or {}).get("root_cause"):
+        return
+    ev = decoded.get("evidence") or {}
+    mcs = ev.get("mc_status") or {}
+    # Keep only IERR/MCERR rows that name a real captured source; drop placeholder
+    # "None" / "No error logged" rows so they never read as a proven first error.
+    ierr = [r for r in (decoded.get("ierr_table") or []) if _ierr_has_source(r)]
+    mca = decoded.get("mca") or {}
+    boot = decoded.get("boot_flow") or {}
+    flags = ev.get("status_flags") or {}
+    sockets = ev.get("sockets") or []
+    sigs = lf.get("signatures") or []
+    cf = comment_findings or {}
+    three_strike = _is_three_strike(mcs)
+    poison = _is_poison_consumption(mcs)
+    first_ierr = ierr[0] if ierr else {}
+    skt = f"Socket {sockets[0]}" if sockets else (
+        f"Socket {first_ierr.get('socket')}" if first_ierr.get("socket") else "the failing socket")
+
+    # Provenance / capture flags used by the scorecard and confidence ceilings.
+    txt = (target.get("full_text") or "")
+    have_owning_ip = bool(mcs.get("bank_unit") or first_ierr.get("source_unit"))
+    have_first_error = bool(first_ierr.get("source_unit"))
+    # A TOR "dump" means the stuck-entry owner was actually captured — NOT the
+    # bare TOR_TIMEOUT symptom string.
+    have_tor_dump = bool(re.search(r"tor[_\s]*(owner|dump|entry|valid|state)", txt, re.I))
+    have_crashdump = "crashdump" in txt.lower()
+    have_reg_evidence = bool(mcs.get("status"))
+    reproducible = bool(re.search(r"reproduc|100%\s*repro|consistently\s*fail", txt, re.I))
+    fix_validated = bool(cf.get("workaround") and re.search(
+        r"validated|resolved|no\s*repro|passes|fixed", txt, re.I))
+    have_root_cause = bool(cf.get("root_cause") or (have_first_error and mcs.get("status")))
+
+    # ---------- RCA Scorecard (manager-friendly, top of report) ----------
+    _present = sum(1 for a in evidence_audit if a.get("present"))
+    _total = len(evidence_audit) or 1
+    completeness = int(100 * _present / _total)
+    def _ck(b):
+        return "✅" if b else "❌"
+    L.append("## RCA Scorecard")
+    L.append("| Check | Status |")
+    L.append("|-------|--------|")
+    L.append(f"| Root cause identified | {_ck(have_root_cause)} |")
+    L.append(f"| First error located | {_ck(have_first_error)} |")
+    L.append(f"| Owning IP determined | {_ck(have_owning_ip)} |")
+    L.append(f"| Reproducible | {_ck(reproducible)} |")
+    L.append(f"| Fix validated | {_ck(fix_validated)} |")
+    L.append(f"| Additional data needed | {_ck(_present < _total)} |")
+    L.append("")
+    L.append(f"**RCA completeness: {completeness}%** ({_present}/{_total} key evidence items decoded).")
+    L.append("")
+
+    # ---------- Failure Timeline ----------
+    L.append("## Failure Timeline")
+    tl: List[Tuple[str, str, str]] = []  # (stage, event, source)
+    if first_ierr.get("source_unit"):
+        tl.append(("FIRST_EVENT",
+                   f"{first_ierr.get('type','IERR')} ({first_ierr.get('priority','First')}) from "
+                   f"**{first_ierr['source_unit']}** on Socket {first_ierr.get('socket','?')}"
+                   + (f" @ `{first_ierr['address']}`" if first_ierr.get("address") else ""),
+                   "PythonSV UBOX IERR/MCerr table"))
+    elif poison:
+        tl.append(("FIRST_EVENT",
+                   "poison CREATED upstream (memory UE / IO-CXL / uncore) — source not captured",
+                   "MCA decode (inferred)"))
+    elif mcs.get("status"):
+        tl.append(("FIRST_EVENT",
+                   f"MCA logged in bank {mcs.get('bank','?')} ({mcs.get('bank_unit','?')})",
+                   "MCA decode"))
+    if mcs.get("status"):
+        _dec = _short(mcs.get("decode") or mca.get("headline") or "machine-check", 120)
+        if poison:
+            prop = (f"poison CONSUMED at bank {mcs.get('bank','?')} "
+                    f"({mcs.get('bank_unit','?')}) on a load — {_dec} — _victim, not origin_")
+        else:
+            prop = f"MCA bank {mcs.get('bank','?')} ({mcs.get('bank_unit','?')}) — {_dec}"
+        tl.append(("PROPAGATION", prop, "MCA decode"))
+    if three_strike:
+        tl.append(("PROPAGATION",
+                   "forward progress stalled → core watchdog fired → 3-strike / Internal Timer "
+                   "(MCACOD 0x400) — _symptom, not origin_", "MCA decode (inferred chain)"))
+    _final = ""
+    if boot.get("reached_os"):
+        _final = "Runtime / post-boot failure (system had reached OS)"
+    elif boot.get("failing_stage"):
+        _final = f"Boot stopped before {boot['failing_stage'].get('label','?')}"
+    _title = _short(target.get("title", ""), 80)
+    if not _final and _title:
+        _final = _title
+    if _final:
+        tl.append(("FINAL_FAILURE", _final, "boot flow / ticket"))
+    if tl:
+        L.append("| Stage | Event | Source |")
+        L.append("|-------|-------|--------|")
+        for stage, event, src in tl:
+            L.append(f"| **{stage}** | {event.replace('|', '\\|')} | {src} |")
+    else:
+        L.append("- Timeline could not be reconstructed — no ordered hardware events decoded.")
+    L.append("")
+
+    # ---------- MCA Ownership Analysis ----------
+    if mcs.get("status") or (ev.get("mca_banks")):
+        L.append("## MCA Ownership Analysis")
+        L.append("| Bank | MCACOD | MSCOD | Owning IP | Socket | Fatality | Class |")
+        L.append("|------|--------|-------|-----------|--------|----------|-------|")
+        fatal = "FATAL" if (flags.get("UC") and flags.get("PCC")) else (
+            "uncorrected" if flags.get("UC") else "corrected")
+        recov = _recovery_str(mcs.get("recovery"))
+        if recov:
+            fatal = recov
+        # 3-strike Internal Timer AND poison consumption are VICTIM/symptom, not
+        # the origin; a real IP/source fault is PRIMARY.
+        cls = ("SECONDARY (symptom)" if three_strike
+               else "VICTIM (consumer)" if poison else "PRIMARY")
+        L.append(f"| {mcs.get('bank','?')} | {mcs.get('mcacod','—')} | {mcs.get('mscod','—')} | "
+                 f"{mcs.get('bank_unit','—')} | {sockets[0] if sockets else '?'} | {fatal} | {cls} |")
+        if three_strike and first_ierr.get("source_unit"):
+            L.append(f"| — | — | — | {first_ierr['source_unit']} | {first_ierr.get('socket','?')} | "
+                     f"first error | **PRIMARY (origin)** |")
+        elif poison:
+            L.append("| — | — | — | poison source (upstream) | — | "
+                     "origin unproven | **PRIMARY (origin)** |")
+        L.append("")
+        if three_strike:
+            L.append("- **PRIMARY_ERROR:** the transaction/IP that blocked forward progress "
+                     f"({first_ierr.get('source_unit') or 'CHA TOR / UPI / IMC — capture to confirm'}).")
+            L.append("- **SECONDARY_ERROR:** 3-strike / Internal Timer (0x400) — the watchdog "
+                     "reaction to the stall.")
+            L.append("- **VICTIM_ERROR:** the core that could not retire (reported the machine check).")
+        elif poison:
+            L.append(f"- **PRIMARY_ERROR:** the upstream agent that CREATED the poison "
+                     f"(memory UE / IO-CXL poisoned completion / uncore read-return) — not yet proven.")
+            L.append(f"- **VICTIM_ERROR:** {mcs.get('bank_unit') or 'the core cache unit'} "
+                     f"consumed the poison on a load ({mcs.get('mcacod','?')}/{mcs.get('mscod','?')}).")
+            L.append("- **Next:** read MC_ADDR (ADDRV) to map the poisoned address; a `NO_iMC_MCA` "
+                     "signature rules out an ordinary DDR UE — trace the mesh/CXL/IO read path.")
+        else:
+            L.append(f"- **PRIMARY_ERROR:** {mcs.get('bank_unit') or 'the logged bank'} "
+                     f"({mcs.get('mcacod','?')}/{mcs.get('mscod','?')}).")
+        L.append("")
+
+    # ---------- First-Error Provenance & Debug Decision Tree ----------
+    _prov_unit = first_ierr.get("source_unit") or mcs.get("bank_unit") or ""
+    branch = _ip_branch(_prov_unit)
+    if branch:
+        _key, _label, _check, _cmd, _expect = branch
+        L.append("## First-Error Provenance & Debug Decision Tree")
+        # Ownership confidence: strong only when the first-error source is explicit.
+        own_conf = "high" if have_first_error else "low (bank-derived, not first-error proven)"
+        own_reasons = []
+        if have_first_error:
+            own_reasons.append("explicit first IERR/MCerr source in the UBOX table")
+        if mcs.get("bank_unit"):
+            own_reasons.append(f"MCA bank maps to {mcs['bank_unit']}")
+        L.append(f"- **Primary IP:** {_prov_unit} ({_label})")
+        L.append(f"- **Ownership confidence:** {own_conf}"
+                 + (f" — {'; '.join(own_reasons)}" if own_reasons else ""))
+        L.append("")
+        if "cha" in _key:
+            L.append("A CHA TOR_TIMEOUT names the *victim queue*, not the origin. Resolve the TOR "
+                     "entry owner to route to the real blocker:")
+            L.append("")
+            L.append("```")
+            L.append(f"Observed:  {_prov_unit} TOR_TIMEOUT")
+            L.append("Next check: TOR entry owner")
+            L.append("  ├─ owner = PXP / PCIe  → IO branch (backpressure / AER / credits)")
+            L.append("  ├─ owner = UPI / KTI   → fabric branch (credit starvation / link degrade)")
+            L.append("  └─ owner = IMC / DDR   → memory branch (read stall / deadlock)")
+            L.append(f"Command:   {_cmd}")
+            L.append(f"Expected:  {_expect}")
+            L.append("```")
+        else:
+            L.append("```")
+            L.append(f"Observed:  first error from {_prov_unit}")
+            L.append(f"Next check: {_check}")
+            L.append(f"Command:   {_cmd}")
+            L.append(f"Expected:  {_expect}")
+            L.append("```")
+        L.append("")
+    elif poison:
+        # Core cache units (DCU/MLC/IFU/DTLB) are not fabric IPs; poison consumption
+        # needs its own provenance branch that routes to the poison SOURCE.
+        _vic = mcs.get("bank_unit") or "core cache"
+        L.append("## First-Error Provenance & Debug Decision Tree")
+        L.append(f"- **Reporting IP:** {_vic} (poison **consumer / victim**, not the origin)")
+        L.append("- **Ownership confidence:** low — the poison *source* is not captured; "
+                 "the consuming unit only proves *where* poison was read, not *who* created it.")
+        L.append("")
+        L.append("A DCU/MLC load-poison consumption names the *consumer*, not the origin. "
+                 "Trace the poison source:")
+        L.append("")
+        L.append("```")
+        L.append(f"Observed:  {_vic} load-poison consumption ({mcs.get('mcacod','?')}/{mcs.get('mscod','?')})")
+        L.append("Next check: MC_ADDR (ADDRV) → poisoned physical address")
+        L.append("  ├─ iMC MCA present  → memory branch (DDR UE / patrol scrub creating poison)")
+        L.append("  ├─ NO_iMC_MCA       → uncore/mesh/CXL read-return path (not a DDR UE)")
+        L.append("  ├─ CXL/PCIe AER     → IO branch (poisoned completion from device)")
+        L.append("  └─ UCNA depository  → prior deferred/uncorrected source that seeded poison")
+        L.append("Command:   check IMC banks + UCNA list; map MC_ADDR to channel/rank or MMIO region")
+        L.append("Expected:  a source MCA (IMC UE / CXL AER) OR an unlogged mesh path")
+        L.append("```")
+        L.append("")
+
+    # ---------- Cause vs Noise ----------
+    L.append("## Cause vs Noise")
+    root_items, support_items, noise_items = [], [], []
+    if cf.get("root_cause"):
+        root_items.append(f"Comment-thread converged cause: {_short(cf['root_cause'], 160)}")
+    if three_strike and first_ierr.get("source_unit"):
+        root_items.append(f"First error from **{first_ierr['source_unit']}** — the forward-progress blocker")
+    elif poison:
+        root_items.append(f"Upstream **poison SOURCE** (unproven) — the {mcs.get('bank_unit','core')} "
+                          f"only CONSUMED the poison ({mcs.get('mcacod','')}/{mcs.get('mscod','')})".strip())
+    elif mcs.get("status"):
+        root_items.append(f"MCA bank {mcs.get('bank','?')} ({mcs.get('bank_unit','?')}) "
+                          f"{mcs.get('mcacod','')} {mcs.get('mscod','')}".strip())
+    if flags:
+        support_items.append("MCi_STATUS flags: " + " ".join(k for k, v in flags.items() if v))
+    if ev.get("mc_addr"):
+        support_items.append(f"MC_ADDR `{ev['mc_addr']}`")
+    _rec = _recovery_str(mcs.get("recovery"))
+    if _rec:
+        support_items.append(f"recovery class {_rec}")
+    if poison and mcs.get("bank_unit"):
+        support_items.append(f"{mcs['bank_unit']} is the poison CONSUMER (victim), not the origin")
+    if boot.get("reached_os"):
+        support_items.append("system reached OS (runtime failure, not boot hang)")
+    for s in sigs:
+        lab = str(s.get("label", ""))
+        if s.get("count", 0) >= 50 and any(k in lab.lower() for k in ("whea", "pcie", "retry", "mce")):
+            noise_items.append(f"{lab} (x{s['count']}) — raw log-line count, machine-check "
+                               "aftermath / telemetry, not a distinct event")
+    if three_strike:
+        noise_items.append("3-strike / WDTimeout itself — a symptom of the stall, not the origin")
+    for label, items in (("ROOT_CAUSE", root_items), ("SUPPORTING_EVIDENCE", support_items),
+                         ("INCIDENTAL_TELEMETRY", noise_items)):
+        L.append(f"**{label}:**")
+        if items:
+            for it in items:
+                L.append(f"- {it}")
+        else:
+            L.append("- _none identified_")
+        L.append("")
+
+    # ---------- Competing Hypotheses ----------
+    L.append("## Competing Hypotheses")
+    hyps: List[Tuple[str, List[str], List[str]]] = []
+    if three_strike:
+        blocker = first_ierr.get("source_unit") or "CHA TOR / SCF"
+        hyps.append((f"Forward-progress stall in **{blocker}** → watchdog 3-strike",
+                     [f"first error from {blocker}" if first_ierr.get("source_unit") else
+                      "3-strike is a stall symptom (MCACOD 0x400)",
+                      "core watchdog / Internal Timer decoded"],
+                     ["no TOR/credit dump captured to prove which IP stalled first"]))
+        hyps.append(("UPI link degrade / credit starvation (multi-socket stall)",
+                     ["UPI implicated in signatures" if any("upi" in str(s.get("label","")).lower()
+                       for s in sigs) else "UPI is a common forward-progress blocker"],
+                     ["no per-link UPI CRC/retry or credit evidence in the logs"]))
+        hyps.append(("IMC / DDR read stall (no data return)",
+                     ["memory path can stall CHA and trip the watchdog"],
+                     ["no IMC retry/CRC or DIMM/rank evidence captured"]))
+    elif mcs.get("status"):
+        unit = mcs.get("bank_unit") or "the logged IP"
+        hyps.append((f"Fault in **{unit}** ({mcs.get('mcacod','?')}/{mcs.get('mscod','?')})",
+                     [f"MCA decoded to {unit}", "status flags present" if flags else
+                      "MCACOD/MSCOD decoded"],
+                     ["MC_ADDR/MC_MISC not captured" if not ev.get("mc_addr") else
+                      "single occurrence — recurrence not shown"]))
+        hyps.append(("Upstream IP that fed the error (victim vs source ambiguity)",
+                     ["machine checks often log at the victim, not the source"],
+                     ["first-error socket/die ordering not captured"]))
+        hyps.append(("Config / firmware / BKC-specific behaviour",
+                     ["would explain a systematic, reproducible failure"],
+                     ["no A/B revision comparison in the ticket"]))
+    else:
+        hyps.append(("Insufficient decoded evidence to rank hypotheses",
+                     ["ticket text / comments only"],
+                     ["no valid MCA / IERR / register capture attached"]))
+    for i, (name, fors, againsts) in enumerate(hyps[:3], 1):
+        letter = chr(ord("A") + i - 1)
+        L.append(f"**Hypothesis {letter}: {name}**")
+        L.append("- Evidence for: " + ("; ".join(fors) if fors else "—"))
+        L.append("- Evidence against: " + ("; ".join(againsts) if againsts else "—"))
+        L.append("")
+
+    # ---------- Contradiction Detector ----------
+    sig_text = " ".join(str(s.get("label", "")).lower() for s in sigs)
+    contradictions: List[str] = []
+    lead = hyps[0][0].lower() if hyps else ""
+    if "upi" in lead:
+        conflicts = []
+        if "upi" not in sig_text and "kti" not in sig_text:
+            conflicts.append("no UPI/KTI error signature in the logs")
+        if "retry" not in sig_text and "crc" not in txt.lower():
+            conflicts.append("no UPI retry/CRC escalation captured")
+        if conflicts:
+            contradictions.append("Leading hypothesis names **UPI**, but: " + "; ".join(conflicts))
+    if "imc" in lead or "ddr" in lead or "memory" in lead:
+        if not any(k in sig_text for k in ("ddr", "dimm", "imc", "memory", "ce", "ue")):
+            contradictions.append("Leading hypothesis names **memory/IMC**, but no DDR/DIMM/IMC "
+                                  "error signature is present")
+    if "pcie" in lead or "pxp" in lead:
+        if "pcie" not in sig_text and "aer" not in sig_text:
+            contradictions.append("Leading hypothesis names **PCIe/PXP**, but no PCIe/AER "
+                                  "signature is present")
+    if three_strike and not have_first_error:
+        contradictions.append("A 3-strike is decoded but the **first-error source is not "
+                              "captured** — origin attribution is unproven (do not name a "
+                              "specific IP as root cause yet)")
+    if contradictions:
+        L.append("## Contradiction Detector")
+        for c in contradictions:
+            L.append(f"- ⚠️ {c}.")
+        L.append("")
+
+    # ---------- Confidence (with ceiling rules) ----------
+    present = sum(1 for a in evidence_audit if a.get("present"))
+    total = len(evidence_audit) or 1
+    score = 30 + int(60 * present / total)
+    if cf.get("root_cause"):
+        score = min(97, score + 15)
+    if have_reg_evidence:
+        score += 15  # direct register evidence
+    # Confidence ceilings — RCA systems must not read overconfident.
+    ceilings: List[Tuple[int, str]] = []
+    if not have_tor_dump and ("cha" in (first_ierr.get("source_unit", "").lower()
+                                        + mcs.get("bank_unit", "").lower())):
+        ceilings.append((70, "no TOR dump to prove the stuck-entry owner"))
+    if not have_owning_ip:
+        ceilings.append((60, "owning IP not determined"))
+    if poison:
+        ceilings.append((70, "poison source not identified — only the consuming unit was captured"))
+    if not have_crashdump:
+        ceilings.append((75, "no crashdump attached"))
+    if contradictions:
+        ceilings.append((65, "unresolved contradiction(s) with the leading hypothesis"))
+    cap = min([c for c, _ in ceilings], default=100)
+    capped = min(score, cap)
+    L.append("## Root-Cause Confidence")
+    L.append(f"{_confidence_band(capped)} — based on {present}/{total} key hardware/firmware "
+             "facts decoded" + (" plus a comment-thread root cause" if cf.get("root_cause") else "")
+             + ".")
+    if ceilings and cap < score:
+        _why = next(w for c, w in ceilings if c == cap)
+        L.append(f"- **Ceiling applied:** capped at {cap}% — {_why}. Raising it requires that data.")
+    L.append("")
+
+    # ---------- Engineer Verdict Audit (prevents over-interpretation) ----------
+    direct = []
+    if mcs.get("bank_unit"):
+        direct.append("MCA bank owner known")
+    if have_first_error:
+        direct.append("first-error source known")
+    if have_tor_dump:
+        direct.append("TOR entry owner captured")
+    if have_crashdump:
+        direct.append("crashdump present")
+    indirect = []
+    if (lf.get("lines_scanned") or 0) > 0:
+        indirect.append("serial/console log correlation")
+    if "statusscope" in txt.lower():
+        indirect.append("StatusScope correlation")
+    if recall.get("matches"):
+        indirect.append(f"KB similarity ({len(recall['matches'])} case(s))")
+    missing_key = []
+    if not have_tor_dump and "cha" in (str(first_ierr.get("source_unit", ""))
+                                       + str(mcs.get("bank_unit", ""))).lower():
+        missing_key.append("TOR owner dump")
+    if not have_crashdump:
+        missing_key.append("crashdump")
+    if not ev.get("mc_addr"):
+        missing_key.append("MC_ADDR/MC_MISC")
+    if poison:
+        missing_key.append("poison source trace (MC_ADDR → IMC UE / CXL AER / uncore path)")
+    # Verdict type: proven ownership vs likely vs hypothesis.
+    # Poison consumption never proves the origin — the consumer is only the victim.
+    ownership_proven = have_first_error and (have_tor_dump or have_crashdump) and not poison
+    if cf.get("root_cause") or ownership_proven:
+        vtype, vreason = "CONFIRMED ROOT CAUSE", (
+            "owning IP proven by first-error source plus a TOR/crashdump capture"
+            if ownership_proven else "converged and corroborated in the ticket thread")
+    elif poison:
+        vtype, vreason = "WORKING HYPOTHESIS", (
+            f"poison was CONSUMED at {mcs.get('bank_unit','the core cache')} (victim); the "
+            "upstream poison SOURCE that is the true root cause is not yet identified")
+    elif have_owning_ip and not contradictions and not (three_strike and not have_first_error):
+        vtype, vreason = "LIKELY ROOT CAUSE", (
+            "owning IP identified, but direct ownership (TOR owner / crashdump) not yet proven")
+    else:
+        vtype, vreason = "WORKING HYPOTHESIS", (
+            "origin not proven" + (" — active contradiction(s)" if contradictions else
+            " — first-error source not captured" if three_strike else " — insufficient evidence"))
+    L.append("## Engineer Verdict Audit")
+    L.append("- **Evidence directly proving root cause:** "
+             + (", ".join(direct) if direct else "_none_"))
+    L.append("- **Evidence indirectly supporting root cause:** "
+             + (", ".join(indirect) if indirect else "_none_"))
+    L.append("- **Evidence missing:** " + (", ".join(missing_key) if missing_key else "_none_"))
+    L.append(f"- **Verdict type:** **{vtype}**")
+    L.append(f"- **Reason:** {vreason}.")
+    L.append("")
+
+    # ---------- Required Missing Data (with impact) ----------
+    missing = [a for a in evidence_audit if not a.get("present")]
+    if missing:
+        L.append("## Required Missing Data")
+        L.append("| # | Missing artifact | Why it matters | Expected confidence impact |")
+        L.append("|---|------------------|----------------|----------------------------|")
+        for i, a in enumerate(missing, 1):
+            why = _short(a.get("collect", ""), 90).replace("|", "\\|")
+            L.append(f"| {i} | {a['label']} | {why} | +5–15% (moves toward confirmed) |")
+        L.append("")
+
+    # ---------- Evidence Ranking ----------
+    L.append("## Evidence Ranking")
+    l1, l2, l3 = [], [], []
+    if mcs.get("status") or mca:
+        l1.append("MCA decode (bank/MCACOD/MSCOD/flags)")
+    if ierr:
+        l1.append("PythonSV UBOX IERR/MCerr table")
+    if any("statusscope" in str(a.get("label", "")).lower() for a in evidence_audit):
+        l1.append("StatusScope")
+    txt = (target.get("full_text") or "")
+    if "statusscope" in txt.lower():
+        l1.append("StatusScope capture (in ticket)")
+    if "crashdump" in txt.lower():
+        l1.append("Crashdump")
+    if (lf.get("lines_scanned") or 0) > 0:
+        l2.append(f"Serial / console logs ({lf.get('lines_scanned'):,} lines scanned)")
+    if "bmc" in txt.lower() or "sel" in txt.lower():
+        l2.append("BMC / SEL log")
+    if (recall.get("matches")):
+        l3.append(f"KB similarity ({len(recall['matches'])} prior case(s), {recall.get('confidence')})")
+    L.append("- **Level 1 — explicit hardware evidence:** "
+             + (", ".join(l1) if l1 else "_none captured — highest-value gap_"))
+    L.append("- **Level 2 — log-derived evidence:** " + (", ".join(l2) if l2 else "_none_"))
+    L.append("- **Level 3 — inferred evidence:** " + (", ".join(l3) if l3 else "_none_"))
+    L.append("")
+
+    # ---------- Engineer Playbook (what to check next) ----------
+    _pb_unit = first_ierr.get("source_unit") or mcs.get("bank_unit") or ""
+    pb = _ip_branch(_pb_unit)
+    if pb:
+        _key, _label, _check, _cmd, _expect = pb
+        L.append("## Engineer Playbook — What to Check Next")
+        if "cha" in _key:
+            L.append(f"- **Highest-value next action:** capture the {_pb_unit} TOR entry owner.")
+            L.append(f"- **Command:** `{_cmd}`")
+            L.append("- **Expected outcomes:**")
+            L.append("  - owner = **PXP / PCIe** → follow the PCIe flow (backpressure / AER / credits)")
+            L.append("  - owner = **UPI / KTI** → follow the fabric flow (credit starvation / link degrade)")
+            L.append("  - owner = **IMC / DDR** → follow the memory flow (read stall / deadlock)")
+            L.append("- **Confidence gain:** proving the TOR owner lifts the verdict from "
+                     "*LIKELY* to *CONFIRMED* and typically +15–25%.")
+        else:
+            L.append(f"- **Highest-value next action:** {_check} for **{_pb_unit}**.")
+            L.append(f"- **Command:** `{_cmd}`")
+            L.append(f"- **Expected evidence:** {_expect}.")
+            L.append("- **Confidence gain:** direct ownership evidence lifts the verdict toward "
+                     "*CONFIRMED* (+15–25%).")
+        L.append("")
+    elif poison:
+        _vic = mcs.get("bank_unit") or "core cache"
+        L.append("## Engineer Playbook — What to Check Next")
+        L.append(f"- **Highest-value next action:** trace the poison SOURCE — read MC_ADDR (ADDRV) "
+                 f"from the {_vic} bank and map the poisoned physical address.")
+        L.append("- **Command:** dump IMC MCA banks + UCNA depository; map MC_ADDR to channel/rank "
+                 "(memory) or MMIO region (IO/CXL).")
+        L.append("- **Expected outcomes:**")
+        L.append("  - **iMC MCA present** → memory branch (DDR UE / patrol scrub created the poison)")
+        L.append("  - **NO_iMC_MCA** → uncore/mesh/CXL read-return path (not an ordinary DDR UE)")
+        L.append("  - **CXL/PCIe AER** → IO branch (device sent a poisoned completion)")
+        L.append("- **Also confirm:** latest microcode/BIOS (poison-handling errata can turn a "
+                 "recoverable SRAR into a fatal kernel panic).")
+        L.append("- **Confidence gain:** identifying the source lifts the verdict from "
+                 "*WORKING HYPOTHESIS* to *CONFIRMED* (+20–30%).")
+        L.append("")
+
+    L.append("---")
+    L.append("")
+
+
 def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
                     hsdes_enabled, log_findings=None, attachments=None,
                     attachments_fetched=0, attach_files=None,
@@ -1572,6 +2573,11 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     # Symptom / Data / Evidence / Hypothesis / Conclusion / Next Actions).
     _render_debug_summary(L, hsd_id, target, log_findings, cf, rc_validation, symptoms)
 
+    # Deterministic engineer-grade causality sections (no LLM required):
+    # Timeline -> MCA Ownership -> Cause vs Noise -> Competing Hypotheses ->
+    # Confidence -> Required Missing Data -> Evidence Ranking.
+    _render_causality_sections(L, target, log_findings, recall, cf, evidence_audit)
+
     # Human-triage investigation timeline straight from the comment thread —
     # visible in the main body (not buried in the appendix) with full detail.
     _render_investigation_timeline(L, cf)
@@ -1636,6 +2642,9 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
             last = decoded["post"]["codes"][-1]
             L.append(f"- **Last POST checkpoint:** `{last.get('code','')}` "
                      f"({last.get('description') or last.get('macro','')})")
+            _pv = _post_verdict(decoded, target)
+            if _pv:
+                L.append(f"- **POST-code meaning &amp; HW verdict:** {_pv}")
     L.append("")
 
     # 2. Proposed root cause
@@ -1751,6 +2760,14 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
             L.append("Decoded log telemetry (incidental — for reference only):")
             for h in decoded["hypotheses"][:3]:
                 L.append(f"- ({h['severity']}) {h['text']}")
+    elif _specific_root_cause(decoded, target):
+        L.append(f"**Primary (narrowed from decoded evidence):** "
+                 f"{_specific_root_cause(decoded, target)}")
+        if decoded and decoded.get("hypotheses"):
+            L.append("")
+            L.append("Supporting decoded findings:")
+            for h in decoded["hypotheses"][:3]:
+                L.append(f"- ({h['severity']}) {h['text']}")
     elif decoded and decoded.get("hypotheses"):
         top = decoded["hypotheses"][0]
         L.append(f"**Primary (evidence-based, from decoded logs — {top['severity']}):** "
@@ -1852,6 +2869,10 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
         regs = (cf.get("breadcrumbs") or {}).get("register", [])[:3]
         fix_steps.append("Confirm the identified root cause on hardware"
                          + (f" (read {', '.join(regs)})" if regs else "") + ".")
+    # IP-specific reads derived from the decoded bank/unit — the precise,
+    # narrowed next steps (replaces generic 'replace processor' guidance).
+    for s in _specific_next_steps(decoded):
+        fix_steps.append(s)
     if sigs:
         fix_steps.append(f"Corroborate the top log signature ({sigs[0]['label']}) and decode the "
                          "flagged MCA bank / trace.")
@@ -2047,6 +3068,10 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
                 L.append(f"| `{c.get('code','')}` | {c.get('macro','')} | "
                          f"{_short(c.get('description',''), 80)} |")
             L.append("")
+            _pv = _post_verdict(decoded, target)
+            if _pv:
+                L.append(_pv)
+                L.append("")
 
     L.append("## B. KB recall result")
     L.append(f"- **Confidence:** {recall['confidence']} (best score {recall['best_score']})")
