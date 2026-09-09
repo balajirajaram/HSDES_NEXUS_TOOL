@@ -119,11 +119,13 @@ class HsdUpdateRequest(BaseModel):
     hsd_id: str
     symptoms: str = "Automated triage"
     dry_run: bool = True
+    force: bool = False
 
 
 class AutoHsdRequest(BaseModel):
     hsd_id: str
     post: bool = False
+    force: bool = False
 
 
 
@@ -334,7 +336,7 @@ async def api_hsd_update(request: Request, body: HsdUpdateRequest):
     hsd_id = _normalize_hsd_id(body.hsd_id)
     try:
         return await update_hsd_report(hsd_id, body.symptoms.strip() or "Automated triage",
-                                       dry_run=body.dry_run)
+                                       dry_run=body.dry_run, force=body.force)
     except Exception as exc:
         return JSONResponse(status_code=502, content={"error": f"HSD update failed: {exc}"})
 
@@ -349,7 +351,7 @@ async def api_autohsd_triage(request: Request, body: AutoHsdRequest):
         return JSONResponse(status_code=401, content={"error": "Please sign in first."})
     hsd_id = _normalize_hsd_id(body.hsd_id)
     try:
-        result = await triage_auto_hsd(hsd_id, post=body.post)
+        result = await triage_auto_hsd(hsd_id, post=body.post, force=body.force)
     except Exception as exc:
         return JSONResponse(status_code=502, content={"error": f"AutoHSD triage failed: {exc}"})
     if result.get("report_markdown"):

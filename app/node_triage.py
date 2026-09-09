@@ -26,16 +26,74 @@ except Exception:  # pragma: no cover
     _PARAMIKO = False
 
 # Read-only log collection commands (name -> shell command). Tail-bounded so a
-# huge journal can't blow up memory. All are best-effort (2>/dev/null).
+# huge journal can't blow up memory. All are best-effort (2>/dev/null). This is
+# the BASE set collected for every triage regardless of failure type.
 _LOG_CMDS: List[Tuple[str, str]] = [
     ("dmesg", "dmesg -T 2>/dev/null | tail -n 4000"),
     ("journalctl", "journalctl -k -n 4000 --no-pager 2>/dev/null"),
     ("mcelog", "cat /var/log/mcelog 2>/dev/null | tail -n 2000"),
     ("messages", "(cat /var/log/messages 2>/dev/null || cat /var/log/syslog 2>/dev/null) | tail -n 4000"),
     ("ipmi_sel", "ipmitool sel elist 2>/dev/null | tail -n 800"),
-    ("edac", "grep -r . /sys/devices/system/edac/mc/*/ 2>/dev/null | tail -n 500"),
-    ("ras_mc", "ras-mc-ctl --errors 2>/dev/null | tail -n 500"),
 ]
+
+# Targeted evidence-collection profiles (Rec 4): only pull the extra artifacts
+# that matter for the failure type parsed from the HSD title. Cuts runtime.
+_PROFILE_CMDS: Dict[str, List[Tuple[str, str]]] = {
+    "kernel_panic": [
+        ("crashdump", "ls -lt /var/crash 2>/dev/null | head -n 20"),
+        ("edac", "grep -r . /sys/devices/system/edac/mc/*/ 2>/dev/null | tail -n 500"),
+        ("ras_mc", "ras-mc-ctl --errors 2>/dev/null | tail -n 500"),
+    ],
+    "pcie_cxl": [
+        ("lspci", "lspci -vvv 2>/dev/null | tail -n 4000"),
+        ("lspci_tree", "lspci -tv 2>/dev/null"),
+        ("pcie_aer", "dmesg -T 2>/dev/null | grep -iE 'aer|pcieport|corrected|uncorrect' | tail -n 500"),
+    ],
+    "tor_timeout": [
+        ("cha_upi", "dmesg -T 2>/dev/null | grep -iE 'cha|tor|upi|kti|mesh' | tail -n 500"),
+        ("lspci", "lspci -vvv 2>/dev/null | tail -n 2000"),
+    ],
+    "memory": [
+        ("edac", "grep -r . /sys/devices/system/edac/mc/*/ 2>/dev/null | tail -n 500"),
+        ("ras_mc", "ras-mc-ctl --errors 2>/dev/null | tail -n 500"),
+        ("mem_dmesg", "dmesg -T 2>/dev/null | grep -iE 'mce|ecc|memory|patrol|ucna|poison' | tail -n 500"),
+    ],
+    "hw_error": [
+        ("lspci", "lspci -nn 2>/dev/null"),
+        ("hw_dmesg", "dmesg -T 2>/dev/null | grep -iE 'hardware error|mce|corrected|uncorrect|aer' | tail -n 500"),
+    ],
+}
+
+
+def classify_failure(title: str) -> List[str]:
+    """Classify the HSD title into evidence-collection profile(s). Returns the
+    ordered list of profile keys whose extra artifacts should be collected."""
+    t = (title or "").lower()
+    hits: List[str] = []
+    if re.search(r"kernel panic|not syncing|call trace|oops|bug:\s", t):
+        hits.append("kernel_panic")
+    if re.search(r"pcie|cxl|\baer\b|ltssm|pxp|endpoint|\brootport\b", t):
+        hits.append("pcie_cxl")
+    if re.search(r"tor[_ ]?timeout|3.?strike|three.?strike|watchdog|internal.?timer|ierr|caterr", t):
+        hits.append("tor_timeout")
+    if re.search(r"\bmemory\b|\bdimm\b|\becc\b|\bmca\b|patrol|ucna|poison|\bimc\b|\bddr\b", t):
+        hits.append("memory")
+    if re.search(r"hardware error|vendor_id|device_id|machine check", t):
+        hits.append("hw_error")
+    return hits
+
+
+def _cmds_for(title: str) -> List[Tuple[str, str]]:
+    """Base commands + de-duplicated profile commands for the title's failure type."""
+    cmds = list(_LOG_CMDS)
+    seen = {n for n, _ in cmds}
+    for prof in classify_failure(title):
+        for name, cmd in _PROFILE_CMDS.get(prof, []):
+            if name not in seen:
+                cmds.append((name, cmd))
+                seen.add(name)
+    return cmds
+
 
 # A hostname-like bracket token: starts with letters, followed by digits, and has
 # at least 3 digits overall (rules out rev/config codes like B3, 2S, UPLR6).
@@ -72,7 +130,7 @@ def _tcp_open(host: str, port: int, timeout: float = 5.0) -> bool:
         return False
 
 
-def _collect_sync(host: str) -> Dict[str, Any]:
+def _collect_sync(host: str, title: str = "") -> Dict[str, Any]:
     port = config.SUT_SSH_PORT
     fqdn = _resolve_host(host)
     if not _tcp_open(fqdn, port):
@@ -94,9 +152,10 @@ def _collect_sync(host: str) -> Dict[str, Any]:
         # Never include the password; only the exception type/host.
         return {"reachable": False, "host": fqdn,
                 "error": f"SSH connect/auth failed ({type(exc).__name__})"}
+    cmds = _cmds_for(title)
     logs: Dict[str, str] = {}
     try:
-        for name, cmd in _LOG_CMDS:
+        for name, cmd in cmds:
             try:
                 _in, out, _err = cli.exec_command(cmd, timeout=30)
                 logs[name] = out.read().decode("utf-8", "replace")
@@ -105,12 +164,13 @@ def _collect_sync(host: str) -> Dict[str, Any]:
     finally:
         cli.close()
     combined = "\n".join(f"===== {n} =====\n{t}" for n, t in logs.items() if t.strip())
-    return {"reachable": True, "host": fqdn, "logs": logs, "combined": combined}
+    return {"reachable": True, "host": fqdn, "logs": logs, "combined": combined,
+            "profiles": classify_failure(title)}
 
 
-async def collect_node_logs(host: str) -> Dict[str, Any]:
-    """Reachability check + SSH log collection, off the event loop."""
-    return await asyncio.to_thread(_collect_sync, host)
+async def collect_node_logs(host: str, title: str = "") -> Dict[str, Any]:
+    """Reachability check + profile-targeted SSH log collection, off the event loop."""
+    return await asyncio.to_thread(_collect_sync, host, title)
 
 
 def _esc(s: Any) -> str:
@@ -129,10 +189,11 @@ def _node_down_comment(host: str, err: str) -> str:
     )
 
 
-async def triage_auto_hsd(hsd_id: str, post: bool = False) -> Dict[str, Any]:
+async def triage_auto_hsd(hsd_id: str, post: bool = False, force: bool = False) -> Dict[str, Any]:
     """Full AutoHSD flow: read the ticket title, SSH the named node, collect logs,
     analyze, and (optionally) post the RCA comment. When ``post`` is False nothing
-    is written to HSDES — the comment is returned for review (dry-run)."""
+    is written to HSDES — the comment is returned for review (dry-run). The
+    validation gate blocks auto-posting weak verdicts unless ``force`` is set."""
     from .analyzer import analyze, update_hsd_report
     from .hsdes_client import HSDESClient
 
@@ -148,7 +209,7 @@ async def triage_auto_hsd(hsd_id: str, post: bool = False) -> Dict[str, Any]:
         return {"ok": False, "hsd_id": hsd_id, "host": None, "title": title,
                 "error": "Could not parse a node hostname from the HSD title"}
 
-    node = await collect_node_logs(host)
+    node = await collect_node_logs(host, title)
     if not node.get("reachable"):
         comment = _node_down_comment(node.get("host", host), node.get("error", ""))
         out = {"ok": True, "hsd_id": hsd_id, "host": node.get("host", host),
@@ -162,8 +223,9 @@ async def triage_auto_hsd(hsd_id: str, post: bool = False) -> Dict[str, Any]:
     collected = [k for k, v in node["logs"].items() if v.strip()]
     analysis = await analyze(hsd_id, f"AutoHSD triage: {title}",
                              log_text=node["combined"], fetch_attachments=True)
-    upd = await update_hsd_report(hsd_id, result=analysis, dry_run=not post)
+    upd = await update_hsd_report(hsd_id, result=analysis, dry_run=not post, force=force)
     return {**analysis, "ok": True, "hsd_id": hsd_id, "host": node["host"],
             "node_down": False, "autohsd": True, "logs_collected": collected,
+            "profiles": node.get("profiles", []),
             "comment_html": upd.get("comment_html"),
             "posted": (upd if post else None)}

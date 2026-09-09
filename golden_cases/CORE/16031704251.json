@@ -1,0 +1,9 @@
+{
+  "hsd_id": "16031704251",
+  "platform": "GNR",
+  "expected_owner": "DCU",
+  "expected_first_error": "",
+  "expected_verdict": "WORKING HYPOTHESIS",
+  "min_confidence": 0,
+  "notes": "DCU load-poison consumption (MCACOD 0x0134/MSCOD 0x0010); poison source upstream, unproven. Example golden case."
+}

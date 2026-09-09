@@ -85,10 +85,12 @@ def _cmd_update_hsd(args: argparse.Namespace) -> int:
 
     async def _run_it():
         return await update_hsd_report(args.hsd_id, args.symptoms or "Automated triage",
-                                       dry_run=not args.post)
+                                       dry_run=not args.post, force=args.force)
     res = asyncio.run(_run_it())
     print(json.dumps({k: v for k, v in res.items() if k != "payload"}, indent=2, default=str))
-    if not args.post:
+    if res.get("gated"):
+        print("\n[GATED] " + str(res.get("reason")) + " Re-run with --force to post anyway.")
+    elif not args.post:
         print("\n[DRY-RUN] Nothing was written. Re-run with --post to add this comment.")
     return 0 if res.get("ok") else 1
 
@@ -100,10 +102,10 @@ def _cmd_autohsd(args: argparse.Namespace) -> int:
 
     from .node_triage import triage_auto_hsd
 
-    res = asyncio.run(triage_auto_hsd(args.hsd_id, post=args.post))
+    res = asyncio.run(triage_auto_hsd(args.hsd_id, post=args.post, force=args.force))
     slim = {k: v for k, v in res.items()
             if k in ("ok", "hsd_id", "host", "node_down", "message",
-                     "logs_collected", "comment_html", "error")}
+                     "logs_collected", "profiles", "comment_html", "error")}
     print(json.dumps(slim, indent=2, default=str))
     if res.get("node_down"):
         print(f"\nNODE DOWN: {res.get('host')} is unreachable over SSH.")
@@ -274,12 +276,14 @@ def build_parser() -> argparse.ArgumentParser:
     p_upd.add_argument("hsd_id")
     p_upd.add_argument("symptoms", nargs="?", default="")
     p_upd.add_argument("--post", action="store_true", help="Actually write the comment to HSDES")
+    p_upd.add_argument("--force", action="store_true", help="Override the validation gate (post weak/low-confidence verdicts)")
     p_upd.set_defaults(func=_cmd_update_hsd)
 
     p_auto = sub.add_parser("autohsd",
                             help="Phase 2: SSH the node named in the HSD title, collect logs, triage, update (dry-run unless --post)")
     p_auto.add_argument("hsd_id")
     p_auto.add_argument("--post", action="store_true", help="Actually update the ticket with the RCA")
+    p_auto.add_argument("--force", action="store_true", help="Override the validation gate (post weak/low-confidence verdicts)")
     p_auto.set_defaults(func=_cmd_autohsd)
 
     p_opt = sub.add_parser("optiond", help="Run OptionD utilities from one entrypoint")

@@ -1071,6 +1071,11 @@ def build_hsd_comment(result: Dict[str, Any]) -> str:
     pb_sec = _md_section(md, "## Engineer Playbook")
     next_action = _md_line(pb_sec, "Highest-value next action")
 
+    # Ownership confidence + suggested routing from the evidence ladder.
+    ladder_sec = _md_section(md, "## Ownership Evidence Ladder")
+    own_conf = _md_line(ladder_sec, "Ownership Confidence")
+    suggested = _md_line(ladder_sec, "Suggested owner / routing") or _suggested_team(owning_ip)
+
     # Required missing data (first few rows).
     miss_sec = _md_section(md, "## Required Missing Data")
     missing = re.findall(r"\|\s*\d+\s*\|\s*([^|]+?)\s*\|", miss_sec)[:4]
@@ -1086,9 +1091,13 @@ def build_hsd_comment(result: Dict[str, Any]) -> str:
         rows.append(f"<li><b>Decoded failure:</b> {esc(mca_line)}</li>")
     if primary:
         rows.append(f"<li><b>Primary error / owning IP:</b> {esc(primary)}</li>")
+    if suggested:
+        rows.append(f"<li><b>Suggested owner / routing:</b> {esc(suggested)}</li>")
     rows.append(f"<li><b>Verdict:</b> {esc(vtype)}" + (f" — {esc(vreason)}" if vreason else "") + "</li>")
     if conf_line:
         rows.append(f"<li><b>Confidence:</b> {esc(conf_line)}</li>")
+    if own_conf:
+        rows.append(f"<li><b>Ownership confidence:</b> {esc(own_conf)}</li>")
     if next_action:
         rows.append(f"<li><b>Highest-value next step:</b> {esc(next_action)}</li>")
     if missing:
@@ -1099,13 +1108,43 @@ def build_hsd_comment(result: Dict[str, Any]) -> str:
     return "\n".join(rows)
 
 
+def extract_ownership(result: Dict[str, Any]) -> Dict[str, Any]:
+    """Pull the machine-readable ownership verdict from an analyze() result for
+    benchmarking: owning IP, first-error source, verdict type, confidence %,
+    ownership-confidence band, and suggested team."""
+    md = result.get("report_markdown") or ""
+    lf = result.get("log_findings") or {}
+    ev = (lf.get("decoded") or {}).get("evidence") or {}
+    mcs = ev.get("mc_status") or {}
+    ierr = [r for r in ((lf.get("decoded") or {}).get("ierr_table") or [])
+            if _ierr_has_source(r)]
+    first_error = (ierr[0].get("source_unit") if ierr else "") or ""
+    owning_ip = mcs.get("bank_unit") or first_error or ""
+    verdict = _md_line(_md_section(md, "## Engineer Verdict Audit"), "Verdict type")
+    ladder = _md_section(md, "## Ownership Evidence Ladder")
+    own_conf = _md_line(ladder, "Ownership Confidence")
+    conf_sec = _md_section(md, "## Root-Cause Confidence")
+    m = re.search(r"(\d{1,3})\s*%", conf_sec)
+    return {
+        "owning_ip": owning_ip,
+        "first_error": first_error,
+        "verdict": verdict,
+        "confidence": int(m.group(1)) if m else 0,
+        "ownership_confidence": own_conf,
+        "suggested_team": _suggested_team(owning_ip),
+    }
+
+
 async def update_hsd_report(hsd_id: str, symptoms: str = "Automated triage",
                             dry_run: bool = True,
                             result: Optional[Dict[str, Any]] = None,
-                            fetch_attachments: bool = True) -> Dict[str, Any]:
+                            fetch_attachments: bool = True,
+                            force: bool = False) -> Dict[str, Any]:
     """Run (or reuse) an analysis and post the condensed RCA as a ticket comment.
     When dry_run=True (default) nothing is written — the exact comment + payload
-    are returned for review."""
+    are returned for review. A validation gate blocks auto-posting weak verdicts
+    (WORKING HYPOTHESIS, or confidence < 70% with an unproven owner) unless
+    force=True; a gated result returns the draft comment instead of posting."""
     hsd_id = re.sub(r"\D", "", str(hsd_id))
     if result is None:
         result = await analyze(hsd_id, symptoms, fetch_attachments=fetch_attachments)
@@ -1113,17 +1152,44 @@ async def update_hsd_report(hsd_id: str, symptoms: str = "Automated triage",
     client = HSDESClient()
     meta = await client._article_meta(hsd_id)
     payload = client.build_comment_payload(hsd_id, comment, meta.get("tenant", "server_platf"))
+    gate = _post_gate(result)
     if dry_run:
         return {"ok": True, "dry_run": True, "hsd_id": hsd_id,
                 "comment_html": comment, "payload": payload,
-                "hsdes_enabled": client.enabled}
+                "gate": gate, "hsdes_enabled": client.enabled}
+    if not force and not gate["allow"]:
+        return {"ok": False, "dry_run": False, "gated": True, "hsd_id": hsd_id,
+                "reason": gate["reason"], "gate": gate,
+                "comment_html": comment, "payload": payload}
     if not client.enabled:
         return {"ok": False, "dry_run": False, "hsd_id": hsd_id,
                 "error": "HSDES not enabled (no auth configured)", "comment_html": comment}
     posted = await client.add_comment(hsd_id, comment, meta=meta)
     return {"ok": posted.get("ok", False), "dry_run": False, "hsd_id": hsd_id,
-            "comment_html": comment, "payload": payload,
+            "comment_html": comment, "payload": payload, "gate": gate,
             "error": posted.get("error"), "response": posted.get("response")}
+
+
+def _post_gate(result: Dict[str, Any]) -> Dict[str, Any]:
+    """Validation gate (Rec 6): auto-post only when the conclusion is strong.
+    Allow if verdict is CONFIRMED/LIKELY with a proven owner, OR confidence >= 70%.
+    Block WORKING HYPOTHESIS / low-confidence unproven-owner conclusions."""
+    md = result.get("report_markdown") or ""
+    verdict = _md_line(_md_section(md, "## Engineer Verdict Audit"), "Verdict type").upper()
+    ladder = _md_section(md, "## Ownership Evidence Ladder")
+    owner_conf = _md_line(ladder, "Ownership Confidence").upper()
+    conf_sec = _md_section(md, "## Root-Cause Confidence")
+    m = re.search(r"(\d{1,3})\s*%", conf_sec)
+    conf_pct = int(m.group(1)) if m else 0
+    owner_proven = "CONFIRMED" in verdict or owner_conf.startswith("HIGH")
+    if owner_proven or conf_pct >= 70:
+        return {"allow": True, "verdict": verdict, "confidence": conf_pct,
+                "reason": "strong conclusion (proven owner or confidence ≥ 70%)"}
+    reason = ("verdict is WORKING HYPOTHESIS" if "HYPOTHESIS" in verdict
+              else f"confidence {conf_pct}% < 70% and owner not proven")
+    return {"allow": False, "verdict": verdict, "confidence": conf_pct,
+            "reason": f"auto-post blocked — {reason}; posting as draft for review"}
+
 
 
 async def _llm_report(hsd_id, symptoms, platform, recall, target, similar,
@@ -1930,6 +1996,38 @@ def _ip_branch(unit: str) -> Optional[Tuple[str, str, str, str, str]]:
     return None
 
 
+# Owning-IP → suggested triage team (routes the ticket to reduce triage latency).
+_OWNER_TEAM: List[Tuple[str, str]] = [
+    ("cha", "CHA / Mesh (Uncore) team"),
+    ("mesh", "CHA / Mesh (Uncore) team"),
+    ("upi", "Fabric team (UPI/KTI)"),
+    ("kti", "Fabric team (UPI/KTI)"),
+    ("pcie", "PV.Domain.IO (PCIe/PXP)"),
+    ("pxp", "PV.Domain.IO (PCIe/PXP)"),
+    ("cxl", "PV.Domain.IO (CXL)"),
+    ("imc", "RAS / Memory team"),
+    ("ddr", "RAS / Memory team"),
+    ("memory", "RAS / Memory team"),
+    ("m2m", "RAS / Memory team"),
+    ("b2cmi", "RAS / Memory team"),
+    ("dcu", "Core team (L1/L2 cache)"),
+    ("mlc", "Core team (L1/L2 cache)"),
+    ("ifu", "Core team (front-end)"),
+    ("dtlb", "Core team (TLB)"),
+    ("ubox", "Uncore / UBOX team"),
+    ("punit", "Power Management / PUnit team"),
+    ("pcu", "Power Management / PUnit team"),
+]
+
+
+def _suggested_team(unit: str) -> str:
+    u = (unit or "").lower()
+    for key, team in _OWNER_TEAM:
+        if key in u:
+            return team
+    return ""
+
+
 def _render_causality_sections(L: List[str], target: Dict[str, Any],
                                log_findings: Optional[Dict[str, Any]],
                                recall: Dict[str, Any],
@@ -2141,6 +2239,44 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         L.append("Command:   check IMC banks + UCNA list; map MC_ADDR to channel/rank or MMIO region")
         L.append("Expected:  a source MCA (IMC UE / CXL AER) OR an unlogged mesh path")
         L.append("```")
+        L.append("")
+
+    # ---------- Ownership Evidence Ladder (trust calibration) ----------
+    if mcs.get("status") or ierr or have_owning_ip:
+        _ss = "statusscope" in txt.lower()
+        _sig = bool(sigs)
+        _hist = recall.get("confidence") in ("High", "Medium")
+        _kb = bool(recall.get("matches"))
+        L.append("## Ownership Evidence Ladder")
+        def _tick(b):
+            return "✓" if b else "·"
+        L.append(f"- **Level 1 — Direct:** {_tick(have_first_error)} first-error register (UBOX IERR/MCerr)  |  "
+                 f"{_tick(have_tor_dump)} TOR owner register")
+        L.append(f"- **Level 2 — Strong:** {_tick(have_crashdump)} crashdump owner  |  "
+                 f"{_tick(_ss)} StatusScope corroboration")
+        L.append(f"- **Level 3 — Supporting:** {_tick(_sig)} log signatures  |  "
+                 f"{_tick(_hist)} historical pattern")
+        L.append(f"- **Level 4 — Weak:** {_tick(_kb)} KB similarity")
+        # Derive confidence strictly from the highest evidence level present.
+        if have_first_error or have_tor_dump:
+            _lvl, _oconf, _why = 1, "HIGH", "explicit first-error / TOR owner register"
+        elif have_crashdump or _ss:
+            _lvl, _oconf, _why = 2, "MEDIUM-HIGH", "crashdump / StatusScope corroboration (no first-error register yet)"
+        elif _sig or _hist:
+            _lvl, _oconf, _why = 3, "MEDIUM", "log-signature / historical pattern only — owner inferred, not proven"
+        elif _kb:
+            _lvl, _oconf, _why = 4, "LOW", "KB similarity only"
+        else:
+            _lvl, _oconf, _why = 0, "INSUFFICIENT", "no ownership evidence captured"
+        if poison and _lvl == 1 and not have_first_error:
+            _oconf, _why = "MEDIUM", "poison consumer captured, but the source owner is not proven"
+        L.append(f"- **Ownership Confidence:** {_oconf} — determined from "
+                 + (f"Level-{_lvl} evidence ({_why})." if _lvl else f"{_why}."))
+        _team = _suggested_team(mcs.get("bank_unit") or (first_ierr.get("source_unit") or ""))
+        if _team:
+            _proven = have_first_error or have_tor_dump
+            L.append(f"- **Suggested owner / routing:** {_team}"
+                     + ("" if _proven else " _(tentative — owner not yet proven)_"))
         L.append("")
 
     # ---------- Cause vs Noise ----------
