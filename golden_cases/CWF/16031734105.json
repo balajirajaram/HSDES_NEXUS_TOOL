@@ -1,0 +1,13 @@
+{
+  "hsd_id": "16031734105",
+  "platform": "CWF",
+  "expected_owner": "",
+  "expected_first_error": "PUNIT",
+  "expected_socket": "1",
+  "expected_banks": ["4", "6"],
+  "expected_decoder_state": "AMBIGUOUS_DECODER",
+  "expected_verdict": "WORKING HYPOTHESIS",
+  "min_confidence": 0,
+  "expected_contradiction": true,
+  "notes": "Bank 4 PUNIT and Bank 6 CCF report MCACOD 0x0402 / MSCOD 0x4A00; first-error PUNIT conflicts with reporting owner and decoder interpretations remain ambiguous. Human VR claim is unvalidated. Socket 1 is the reported socket."
+}

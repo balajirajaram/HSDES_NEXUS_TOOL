@@ -1,0 +1,171 @@
+{
+  "schema_version": "1.0",
+  "last_audited": "2026-09-09",
+  "entries": [
+    {
+      "path": "app/decoders/mca_codes_database.json",
+      "owner": "UNKNOWN",
+      "purpose": "Bulk MCA MCACOD/MSCOD decode table",
+      "origin": "UNKNOWN",
+      "source_document": "UNKNOWN",
+      "version": "UNKNOWN",
+      "last_validated": "UNKNOWN",
+      "trust": "UNKNOWN",
+      "validation_method": "Not yet audited"
+    },
+    {
+      "path": "app/decoders/ewl_codes_database.json",
+      "owner": "UNKNOWN",
+      "purpose": "Enhanced Warning Log and BIOS error decode table",
+      "origin": "UNKNOWN",
+      "source_document": "UNKNOWN",
+      "version": "UNKNOWN",
+      "last_validated": "UNKNOWN",
+      "trust": "UNKNOWN",
+      "validation_method": "Not yet audited"
+    },
+    {
+      "path": "app/decoders/rc_fatal_errors_database.json",
+      "owner": "UNKNOWN",
+      "purpose": "RC-Fatal error decode table",
+      "origin": "UNKNOWN",
+      "source_document": "UNKNOWN",
+      "version": "UNKNOWN",
+      "last_validated": "UNKNOWN",
+      "trust": "UNKNOWN",
+      "validation_method": "Not yet audited"
+    },
+    {
+      "path": "app/decoders/mcheck_codes_database.json",
+      "owner": "UNKNOWN",
+      "purpose": "MCHECK error decode table",
+      "origin": "UNKNOWN",
+      "source_document": "UNKNOWN",
+      "version": "UNKNOWN",
+      "last_validated": "UNKNOWN",
+      "trust": "UNKNOWN",
+      "validation_method": "Not yet audited"
+    },
+    {
+      "path": "app/decoders/bank_mapping.json",
+      "owner": "UNKNOWN",
+      "purpose": "Generic MCA bank ownership mapping",
+      "origin": "UNKNOWN",
+      "source_document": "UNKNOWN",
+      "version": "UNKNOWN",
+      "last_validated": "UNKNOWN",
+      "trust": "UNKNOWN",
+      "validation_method": "Not yet audited"
+    },
+    {
+      "path": "app/decoders/bank_mapping_gnr.json",
+      "owner": "Balaji",
+      "purpose": "GNR MCA bank ownership mapping",
+      "origin": "Manual curation",
+      "source_document": "SPIV wiki page 4410944659",
+      "version": "UNKNOWN",
+      "last_validated": "2026-09-03",
+      "trust": "AUTHORITATIVE",
+      "validation_method": "Cross-checked against SPIV wiki and BHS family bank tables"
+    },
+    {
+      "path": "app/decoders/bank_mapping_srf.json",
+      "owner": "Balaji",
+      "purpose": "SRF MCA bank ownership mapping",
+      "origin": "Manual curation",
+      "source_document": "SRF RAS / BHS RAS 728644",
+      "version": "UNKNOWN",
+      "last_validated": "2026-09-03",
+      "trust": "AUTHORITATIVE",
+      "validation_method": "Cross-checked against SRF RAS and BHS RAS tables"
+    },
+    {
+      "path": "app/decoders/bank_mapping_cwf.json",
+      "owner": "Balaji",
+      "purpose": "CWF MCA bank ownership mapping",
+      "origin": "Manual curation",
+      "source_document": "BHS Error Architecture and RAS 728644",
+      "version": "UNKNOWN",
+      "last_validated": "2026-09-03",
+      "trust": "AUTHORITATIVE",
+      "validation_method": "Cross-checked against BHS RAS family bank tables"
+    },
+    {
+      "path": "app/decoders/mca_codes_supplemental.json",
+      "owner": "Balaji",
+      "purpose": "Verified supplemental MCA meanings and recovery classes",
+      "origin": "Curated from Intel specifications and field observations",
+      "source_document": "GNR EDS-R 637776; SRF EDS-R 737845; BHS RAS 728644; BWG RAS 647898",
+      "version": "UNKNOWN",
+      "last_validated": "2026-09-03",
+      "trust": "AUTHORITATIVE",
+      "validation_method": "Source citations embedded in file; unresolved values intentionally omitted"
+    },
+    {
+      "path": "app/decoders/dmr_punit_mca.json",
+      "owner": "Balaji",
+      "purpose": "DMR PUNIT and MCTile MCA sub-decode table",
+      "origin": "Curated from bugninja MCA parser and DMR source data",
+      "source_document": "DMR primecode_mca.xml / EDS-R source pending direct citation",
+      "version": "UNKNOWN",
+      "last_validated": "2026-09-03",
+      "trust": "UNKNOWN",
+      "validation_method": "Field decode smoke test; direct authoritative document citation pending"
+    },
+    {
+      "path": "app/knowledge/spec_corpus.json",
+      "owner": "Balaji",
+      "purpose": "Product specification corpus and reference links",
+      "origin": "Curated document index",
+      "source_document": "Intel EDS-R, Error Architecture/RAS, BWG RAS, product SOC/HAS documents",
+      "version": "Per-document",
+      "last_validated": "2026-09-03",
+      "trust": "AUTHORITATIVE",
+      "validation_method": "URLs verified where present; missing product documents remain empty"
+    },
+    {
+      "path": "app/knowledge/debug_kb.json",
+      "owner": "UNKNOWN",
+      "purpose": "Debug knowledge pack",
+      "origin": "UNKNOWN",
+      "source_document": "UNKNOWN",
+      "version": "UNKNOWN",
+      "last_validated": "UNKNOWN",
+      "trust": "UNKNOWN",
+      "validation_method": "Not yet audited"
+    },
+    {
+      "path": "app/decoders/ipsd_codes_database.json",
+      "owner": "UNKNOWN",
+      "purpose": "IPSD BIOS error decode table",
+      "origin": "UNKNOWN",
+      "source_document": "UNKNOWN",
+      "version": "UNKNOWN",
+      "last_validated": "UNKNOWN",
+      "trust": "UNKNOWN",
+      "validation_method": "Not yet audited"
+    },
+    {
+      "path": "app/decoders/post_codes_database.json",
+      "owner": "UNKNOWN",
+      "purpose": "BIOS POST/checkpoint decode table",
+      "origin": "UNKNOWN",
+      "source_document": "UNKNOWN",
+      "version": "UNKNOWN",
+      "last_validated": "UNKNOWN",
+      "trust": "UNKNOWN",
+      "validation_method": "Not yet audited"
+    },
+    {
+      "path": "app/knowledge/source_inventory.json",
+      "owner": "Balaji",
+      "purpose": "Source trust inventory for decoder and knowledge resources",
+      "origin": "NEXUS audit record",
+      "source_document": "docs/source_audit.md",
+      "version": "1.0",
+      "last_validated": "2026-09-09",
+      "trust": "OFFICIAL_INTERNAL",
+      "validation_method": "Machine-checked by tools/verify_decoders.py"
+    }
+  ]
+}

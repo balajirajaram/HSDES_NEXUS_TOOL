@@ -387,11 +387,21 @@ def _collect_sources(target: Optional[Dict[str, Any]], recall: Dict[str, Any],
             "ref": "app/decoders/ewl_codes_database.json · rc_fatal_errors_database.json · mcheck_codes_database.json",
         })
     if decoded.get("mca"):
+        _mca_prov = []
+        try:
+            from .source_provenance import provenance_for
+            _mca_prov = [provenance_for("app/decoders/mca_codes_database.json")]
+        except Exception:
+            pass
         sources.append({
             "name": "MCA (Machine Check Architecture) code database",
             "kind": "Decoder DB",
             "detail": "Bank-specific MSCOD/MCACOD decode of MCi_STATUS from SOL RAS and PythonSV register dumps.",
             "ref": "app/decoders/mca_codes_database.json",
+            "trust": (_mca_prov[0].get("trust", "UNKNOWN") if _mca_prov else "UNKNOWN"),
+            "trust_score": str(_mca_prov[0].get("score", 0) if _mca_prov else 0),
+            "source_document": (_mca_prov[0].get("source_document", "UNKNOWN")
+                                if _mca_prov else "UNKNOWN"),
         })
     _ev = decoded.get("evidence") or {}
     if _ev.get("bank_units"):
@@ -417,6 +427,9 @@ def _collect_sources(target: Optional[Dict[str, Any]], recall: Dict[str, Any],
             "detail": "Maps the failing MCA bank number to its silicon unit "
                       f"({', '.join(f'{b}->{u}' for b, u in list(_ev['bank_units'].items())[:4])}).",
             "ref": _src_ref,
+            "trust": "AUTHORITATIVE" if _src_ref != "app/decoders/bank_mapping.json" else "UNKNOWN",
+            "trust_score": "100" if _src_ref != "app/decoders/bank_mapping.json" else "0",
+            "source_document": _src_name,
         })
     if decoded.get("post"):
         sources.append({
@@ -511,15 +524,17 @@ def _render_sources_md(sources: List[Dict[str, str]]) -> str:
         "",
         "Documents and datasets consulted to decode the failure signatures and derive the next steps:",
         "",
-        "| # | Source | Type | How it was used | Reference |",
-        "|---|--------|------|-----------------|-----------|",
+        "| # | Source | Type | How it was used | Reference | Trust |",
+        "|---|--------|------|-----------------|-----------|-------|",
     ]
     for i, s in enumerate(sources, 1):
         name = str(s.get("name", "")).replace("|", "\\|")
         kind = str(s.get("kind", "")).replace("|", "\\|")
         detail = _short(s.get("detail", ""), 160).replace("|", "\\|")
         ref = str(s.get("ref", "")).replace("|", "\\|")
-        lines.append(f"| {i} | {name} | {kind} | {detail} | `{ref}` |")
+        trust = str(s.get("trust", "UNKNOWN")).replace("|", "\\|")
+        score = str(s.get("trust_score", "0"))
+        lines.append(f"| {i} | {name} | {kind} | {detail} | `{ref}` | {trust} ({score}) |")
     lines.append("")
     return "\n".join(lines)
 
@@ -1414,12 +1429,13 @@ def _post_gate(result: Dict[str, Any]) -> Dict[str, Any]:
     # The Contradiction Detector section is emitted ONLY when a contradiction was
     # found, so its presence is the signal (robust to emoji encoding).
     contradiction = "## Contradiction Detector" in md
+    ambiguity = "AMBIGUOUS_DECODER" in md
     owner_proven = "CONFIRMED" in verdict or owner_conf.startswith("HIGH")
-    if contradiction:
+    if contradiction or ambiguity:
         return {"allow": False, "verdict": verdict, "confidence": conf_pct,
-                "contradiction": True,
-                "reason": "auto-post blocked — unresolved contradiction with the leading "
-                          "hypothesis; draft only until resolved"}
+                "contradiction": contradiction, "ambiguity": ambiguity,
+                "reason": "auto-post blocked — unresolved decoder ambiguity or contradiction; "
+                          "draft only until resolved"}
     if owner_proven or conf_pct >= 70:
         return {"allow": True, "verdict": verdict, "confidence": conf_pct,
                 "contradiction": False,
@@ -2058,6 +2074,9 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
     versions = _extract_versions(target)
     axon_sigs = (target or {}).get("axon_svtools_signatures") or []
     sim = similar or []
+    _socket_info = ev.get("socket_provenance") or {}
+    _socket = _socket_info.get("resolved_socket")
+    _sv_socket = f"socket{_socket}" if _socket is not None else "socket<N>  # resolve from socket provenance"
 
     # Resolve the implicated MCA bank so MC_ADDR/MC_MISC MSR offsets are exact.
     bank_n: Optional[int] = None
@@ -2106,7 +2125,7 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
     audit.append(item("MC_STATUS / MCACOD / MSCOD", have_status, detail2,
                       "capture the full 64-bit MCi_STATUS (VAL/UC/PCC/ADDRV/MISCV + MCACOD/MSCOD)",
                       [f"rdmsr -a {_sbank}  # MC{bank_n if bank_n is not None else 'N'}_STATUS (OS)",
-                       "sv.socket0.uncore.mca.dump()  # PythonSV — decode MCACOD/MSCOD + flags"]))
+                       f"sv.{_sv_socket}.uncore.mca.dump()  # PythonSV — decode MCACOD/MSCOD + flags"]))
 
     # 3. MC_ADDR
     _addr = f"0x{0x402 + 4*bank_n:X}" if bank_n is not None else "0x402+4*N"
@@ -2114,7 +2133,7 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
                       ev.get("mc_addr", ""),
                       "read MCi_ADDR when ADDRV=1 to locate the offending address/transaction",
                       [f"rdmsr -a {_addr}  # MC{bank_n if bank_n is not None else 'N'}_ADDR (OS)",
-                       "sv.socket0.uncore.mca.dump()  # PythonSV — MCi_ADDR field"]))
+                       f"sv.{_sv_socket}.uncore.mca.dump()  # PythonSV — MCi_ADDR field"]))
 
     # 4. MC_MISC
     _misc = f"0x{0x403 + 4*bank_n:X}" if bank_n is not None else "0x403+4*N"
@@ -2122,7 +2141,7 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
                       ev.get("mc_misc", ""),
                       "read MCi_MISC when MISCV=1 for request type / source / channel hints",
                       [f"rdmsr -a {_misc}  # MC{bank_n if bank_n is not None else 'N'}_MISC (OS)",
-                       "sv.socket0.uncore.mca.dump()  # PythonSV — MCi_MISC field"]))
+                       f"sv.{_sv_socket}.uncore.mca.dump()  # PythonSV — MCi_MISC field"]))
 
     # 5. RC-Fatal source agent
     audit.append(item("RC-Fatal / EWL Source Agent", ev.get("rc_fatal_agent"),
@@ -2153,7 +2172,9 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
                       ("socket(s) " + ", ".join(sockets)) if sockets else "",
                       "note which socket(s) fail — a socket-localized pattern points at CPU/board vs firmware",
                       ["sv.sockets  # enumerate sockets",
-                       "sv.socket0.uncore.mca.dump(); sv.socket1.uncore.mca.dump()  # per-socket"]))
+                                             (f"sv.{_sv_socket}.uncore.mca.dump()  # selected by socket provenance"
+                                                if _socket is not None else
+                                                "sv.sockets.uncore.mca.dump()  # resolve socket before reading; no Socket 0 default")]))
 
     # 9. Historical signature match
     hist = bool(axon_sigs) or recall.get("confidence") in ("High", "Medium") or bool(sim)
@@ -2678,6 +2699,19 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
             f"**OWNERSHIP_EVIDENCE_CONFLICT** — first-error source (**{_fe_unit}**) differs "
             f"from the reporting MCA bank owner (**{_bank_unit}**); the originating IP is "
             "unresolved (reporting IP ≠ first-error source). Reconcile before naming an owner")
+    decoder_ambiguity = bool((mcs.get("decoder_ambiguity") or {}).get("state"))
+    _decoder_sources = mcs.get("source_provenance") or []
+    provenance_unknown = bool(_decoder_sources) and any(
+        str(s.get("trust", "UNKNOWN")) == "UNKNOWN" for s in _decoder_sources)
+    if provenance_unknown:
+        contradictions.append(
+            "**SOURCE_PROVENANCE_UNKNOWN** — one or more decoder databases lack an "
+            "audited authoritative source; RCA cannot be promoted beyond WORKING HYPOTHESIS")
+    if decoder_ambiguity:
+        _candidates = ", ".join((mcs.get("decoder_ambiguity") or {}).get("candidates", []))
+        contradictions.append(
+            f"**AMBIGUOUS_DECODER** — MCACOD/MSCOD has competing interpretations: {_candidates}; "
+            "do not confirm an owner or cause until the platform/IP decode is resolved")
     if contradictions:
         L.append("## Contradiction Detector")
         for c in contradictions:
@@ -2709,6 +2743,10 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         ceilings.append((60, "owning IP not determined"))
     if poison:
         ceilings.append((70, "poison source not identified — only the consuming unit was captured"))
+    if decoder_ambiguity:
+        ceilings.append((65, "decoder ambiguity remains unresolved for the MCA code pair"))
+    if provenance_unknown:
+        ceilings.append((60, "decoder source provenance is not fully audited"))
     if not have_crashdump:
         ceilings.append((75, "no crashdump attached"))
     if contradictions:
@@ -2755,7 +2793,8 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
     # Verdict type: proven ownership vs likely vs hypothesis.
     # Poison consumption never proves the origin — the consumer is only the victim.
     ownership_proven = (have_first_error and (have_tor_dump or have_crashdump)
-                        and not poison and not ownership_conflict)
+                        and not poison and not ownership_conflict and not decoder_ambiguity
+                        and not provenance_unknown)
     # A comment-thread claim is an OBSERVATION, never proof — it can never set CONFIRMED
     # and never lifts the verdict on its own; it is only noted in the reason.
     _cf_note = ("; a comment-thread claim exists but is NOT independently verified by "
@@ -2767,7 +2806,9 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         vtype, vreason = "WORKING HYPOTHESIS", (
             f"poison was CONSUMED at {mcs.get('bank_unit','the core cache')} (victim); the "
             "upstream poison SOURCE that is the true root cause is not yet identified" + _cf_note)
-    elif have_owning_ip and not contradictions and not (three_strike and not have_first_error):
+    elif (have_owning_ip and not contradictions and not decoder_ambiguity
+          and not provenance_unknown
+          and not (three_strike and not have_first_error)):
         vtype, vreason = "LIKELY ROOT CAUSE", (
             "owning IP identified from decoded MCA, but direct ownership (TOR owner / "
             "first-error register) not yet proven" + _cf_note)
