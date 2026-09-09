@@ -295,6 +295,58 @@ _CHAT_SYSTEM = (
     "values. Prefer concrete PythonSV reads over generic advice."
 )
 
+_CHAT_STOP = {
+    "the", "a", "an", "is", "are", "was", "were", "of", "to", "in", "on", "and", "or",
+    "for", "with", "what", "why", "how", "which", "this", "that", "it", "related",
+    "issue", "due", "did", "does", "do", "we", "i", "you", "about", "from", "at", "by",
+    "be", "as", "if", "then", "there", "here", "any", "can", "could", "would", "should",
+}
+
+
+def _offline_chat_reply(question: str, context: str) -> str:
+    """Deterministic, grounded Q&A when no LLM is configured: retrieve the most
+    relevant sections of the current report for the question's keywords, and always
+    lead with the Executive Summary. Never fabricates — retrieval only."""
+    if not context.strip():
+        return ("**Offline mode** (no LLM configured). Run an analysis on the Analyse tab "
+                "first, then ask again — I'll answer from that report.")
+
+    tokens = [w for w in re.findall(r"[a-zA-Z0-9_]+", question.lower())
+              if len(w) > 2 and w not in _CHAT_STOP]
+
+    # Split the report into '## ' sections.
+    sections: List[tuple] = []
+    cur_title, cur_body = "(intro)", []
+    for ln in context.splitlines():
+        if ln.startswith("## "):
+            sections.append((cur_title, cur_body))
+            cur_title, cur_body = ln[3:].strip(), [ln]
+        else:
+            cur_body.append(ln)
+    sections.append((cur_title, cur_body))
+
+    def score(body_lines):
+        blob = " ".join(body_lines).lower()
+        return sum(blob.count(t) for t in tokens)
+
+    ranked = sorted(((score(b), t, b) for t, b in sections), key=lambda x: x[0], reverse=True)
+    top = [(t, b) for s, t, b in ranked if s > 0][:3]
+
+    exec_body = next((b for t, b in sections if t.lower().startswith("executive summary")), None)
+
+    out = ["**Offline answer** — deterministic retrieval from the current report (no LLM). "
+           "For free-form reasoning, set LLM_BASE_URL / LLM_API_KEY / LLM_MODEL in .env."]
+    if exec_body:
+        out.append("\n".join(exec_body).strip())
+    if top:
+        out.append("**Most relevant to your question:**")
+        for t, b in top:
+            snippet = "\n".join(b).strip()
+            out.append(snippet[:1100] + ("…" if len(snippet) > 1100 else ""))
+    elif not exec_body:
+        out.append("_No section matched your keywords — see the full report on the Analyse tab._")
+    return "\n\n".join(out)
+
 
 @app.post("/api/chat")
 async def api_chat(request: Request, body: ChatRequest):
@@ -304,10 +356,12 @@ async def api_chat(request: Request, body: ChatRequest):
     if not body.messages:
         return JSONResponse(status_code=400, content={"error": "No messages provided."})
     if not llm.enabled:
-        return JSONResponse(status_code=503, content={
-            "error": "Interactive mode needs an LLM/Copilot endpoint. Set LLM_BASE_URL, "
-                     "LLM_API_KEY and LLM_MODEL in .env (an OpenAI-compatible or "
-                     "Copilot-compatible gateway)."})
+        # Offline fallback: deterministic, grounded retrieval from the current report
+        # (no LLM). Keeps the Interactive tab useful in the tool's default OFFLINE mode.
+        question = next((m.content for m in reversed(body.messages)
+                         if m.role == "user"), "")
+        return {"reply": _offline_chat_reply(question, (body.context or "").strip()),
+                "offline": True}
     system = _CHAT_SYSTEM
     ctx = (body.context or "").strip()
     if body.hsd_id:

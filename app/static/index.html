@@ -80,6 +80,27 @@
       </div>
       <div id="meta" class="meta hidden"></div>
       <div id="report" class="report"></div>
+
+      <div id="hsd-post" class="card">
+        <h3>Publish to HSD</h3>
+        <p class="muted">Posts a condensed <b>executive RCA summary</b> as a comment on the ticket.
+          This is <b>off by default</b> — nothing is posted until you click. Weak or contradicted
+          conclusions are held back by the validation gate.</p>
+        <div class="stack">
+          <button id="hsd-preview-btn" type="button" disabled>Preview comment</button>
+          <div id="hsd-post-hint" class="muted">Run an analysis above first, then preview and post.</div>
+          <div id="hsd-gate" class="hsd-gate hidden"></div>
+          <div id="hsd-preview" class="hsd-preview hidden"></div>
+          <div class="inline">
+            <button id="hsd-post-btn" type="button" disabled>Post comment to HSD</button>
+            <label class="inline">
+              <input id="hsd-force" type="checkbox" />
+              <span>Override validation gate (force)</span>
+            </label>
+          </div>
+          <div id="hsd-post-status" class="hsd-status"></div>
+        </div>
+      </div>
     </section>
 
     <section id="tab-interactive" class="panel">
