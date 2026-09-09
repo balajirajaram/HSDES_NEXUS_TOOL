@@ -124,6 +124,9 @@ document.querySelectorAll(".tab").forEach((tab) => {
     if (tab.dataset.tab === "kb") {
       loadKB();
     }
+    if (tab.dataset.tab === "interactive") {
+      updateChatContextHint();
+    }
   });
 });
 
@@ -218,6 +221,12 @@ if (analyseForm) {
       if (report) {
         report.innerHTML = renderMarkdown(data.report_markdown || "No report returned.");
       }
+      // Keep the last analysis so the Interactive tab can ground its answers.
+      window.__lastAnalysis = {
+        hsd_id: _normalizeHsd(document.getElementById("hsd_id").value),
+        report: data.report_markdown || "",
+      };
+      updateChatContextHint();
       loadHealth();
       loadKB();
     } catch (err) {
@@ -229,6 +238,77 @@ if (analyseForm) {
         btn.disabled = false;
         btn.textContent = "Run Analysis";
       }
+    }
+  });
+}
+
+// ---- Interactive chat (live analysis Q&A) ----
+function _normalizeHsd(v) {
+  const s = String(v || "").trim();
+  const m = s.match(/(\d{8,})/);
+  return m ? m[1] : s;
+}
+
+function updateChatContextHint() {
+  const hint = document.getElementById("chat_ctx_hint");
+  if (!hint) return;
+  const a = window.__lastAnalysis;
+  hint.textContent = a && a.report
+    ? `Context: HSD ${a.hsd_id} analysis loaded (${a.report.length.toLocaleString()} chars).`
+    : "No analysis loaded yet — run one on the Analyse tab.";
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function appendChat(role, text) {
+  const log = document.getElementById("chat-log");
+  if (!log) return null;
+  const row = document.createElement("div");
+  row.className = "chat-msg " + (role === "user" ? "chat-user" : "chat-assistant");
+  const who = document.createElement("div");
+  who.className = "chat-who";
+  who.textContent = role === "user" ? "You" : "NEXUS";
+  const body = document.createElement("div");
+  body.className = "chat-body";
+  body.innerHTML = role === "user" ? escapeHtml(text) : renderMarkdown(text);
+  row.appendChild(who);
+  row.appendChild(body);
+  log.appendChild(row);
+  log.scrollTop = log.scrollHeight;
+  return body;
+}
+
+const chatHistory = [];
+const chatForm = document.getElementById("chat-form");
+if (chatForm) {
+  chatForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = document.getElementById("chat_text");
+    const sendBtn = document.getElementById("chat-send");
+    const text = (input.value || "").trim();
+    if (!text) return;
+    input.value = "";
+    appendChat("user", text);
+    chatHistory.push({ role: "user", content: text });
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = "..."; }
+    const thinking = appendChat("assistant", "_thinking…_");
+    try {
+      const useReport = document.getElementById("chat_use_report").checked;
+      const a = window.__lastAnalysis || {};
+      const data = await api("/api/chat", {
+        messages: chatHistory.slice(-16),
+        hsd_id: a.hsd_id || _normalizeHsd(document.getElementById("hsd_id").value),
+        context: useReport ? (a.report || "") : "",
+      });
+      const reply = data.reply || "(no reply)";
+      if (thinking) thinking.innerHTML = renderMarkdown(reply);
+      chatHistory.push({ role: "assistant", content: reply });
+    } catch (err) {
+      if (thinking) thinking.innerHTML = `<p class="error">${String(err)}</p>`;
+    } finally {
+      if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = "Send"; }
     }
   });
 }

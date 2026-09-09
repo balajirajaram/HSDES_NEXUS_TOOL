@@ -108,6 +108,15 @@ class HSDESClient:
             r.raise_for_status()
             return r.json()
 
+    async def _put_json(self, url: str, payload: Dict[str, Any]) -> Any:
+        if self._use_kerberos():
+            return await asyncio.to_thread(self._kerberos_request, "PUT", url, json=payload)
+        async with httpx.AsyncClient(timeout=45, auth=self._auth) as cx:
+            r = await cx.put(url, headers={**self._headers(),
+                                           "Content-Type": "application/json"}, json=payload)
+            r.raise_for_status()
+            return r.json()
+
     # ---- reads ----
     async def get_article(self, hsd_id: str) -> Optional[Dict[str, Any]]:
         if not self.enabled:
@@ -120,6 +129,46 @@ class HSDESClient:
         except Exception as exc:
             return {"id": hsd_id, "error": str(exc)}
         return self._normalize(hsd_id, data)
+
+    # ---- writes ----
+    async def _article_meta(self, hsd_id: str) -> Dict[str, str]:
+        """Fetch the tenant + subject an update payload must echo back. Falls back
+        to the server_platf/sighting defaults when the record can't be read."""
+        try:
+            data = await self._get_json(f"{self.base}/article/{hsd_id}")
+            rec = (data.get("data") or [{}])[0] if isinstance(data, dict) else {}
+        except Exception:
+            rec = {}
+        tenant = str(rec.get("tenant") or "server_platf")
+        subject = str(rec.get("subject") or "sighting")
+        return {"tenant": tenant, "subject": subject}
+
+    def build_comment_payload(self, hsd_id: str, comment: str,
+                              tenant: str = "server_platf") -> Dict[str, Any]:
+        """HSDES comment contract: a comment is a CHILD article (subject
+        'comments') created via POST /article, linked by parent_id, with the HTML
+        body in 'description'. The parent's own 'comments' field is read-only."""
+        return {
+            "tenant": tenant,
+            "subject": "comments",
+            "fieldValues": [{"parent_id": re.sub(r"\D", "", str(hsd_id))},
+                            {"description": comment}],
+        }
+
+    async def add_comment(self, hsd_id: str, comment: str,
+                          meta: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+        """Append a comment to the ticket thread. Returns {ok, new_id/error}."""
+        if not self.enabled:
+            return {"ok": False, "error": "HSDES not enabled (no auth configured)"}
+        hsd_id = re.sub(r"\D", "", str(hsd_id))
+        meta = meta or await self._article_meta(hsd_id)
+        payload = self.build_comment_payload(hsd_id, comment, meta.get("tenant", "server_platf"))
+        try:
+            resp = await self._post_json(f"{self.base}/article", payload)
+            new_id = resp.get("new_id") if isinstance(resp, dict) else None
+            return {"ok": bool(new_id), "new_id": new_id, "response": resp}
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
 
     @staticmethod
     def _clean(text: Any) -> str:

@@ -432,3 +432,26 @@ footer {
   .nav .tab.active { border-left: none; border-bottom-color: var(--intel-energy); }
   .stack.two-col, .stack.three-col { grid-template-columns: 1fr; }
 }
+
+/* ---- Interactive chat (live analysis Q&A) ---- */
+.chat-context { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 6px 0 12px; }
+.chat-hint { color: var(--muted); font-size: 12px; }
+.chat-log {
+  min-height: 220px; max-height: 52vh; overflow-y: auto;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface-2); padding: 14px; display: flex; flex-direction: column; gap: 12px;
+}
+.chat-msg { display: flex; flex-direction: column; gap: 4px; max-width: 92%; }
+.chat-user { align-self: flex-end; align-items: flex-end; }
+.chat-assistant { align-self: flex-start; align-items: flex-start; }
+.chat-who { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.chat-body {
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: var(--surface);
+  font-size: 14px; line-height: 1.5; word-break: break-word;
+}
+.chat-user .chat-body { background: var(--intel-blue); color: #fff; border-color: var(--intel-blue); }
+.chat-user .chat-body code { background: rgba(255,255,255,.18); color: #fff; }
+.chat-assistant .chat-body pre { max-width: 100%; overflow-x: auto; }
+.chat-input { display: flex; gap: 10px; margin-top: 12px; align-items: flex-end; }
+.chat-input textarea { flex: 1; resize: vertical; }
+.chat-input button { white-space: nowrap; }

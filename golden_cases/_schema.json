@@ -1,0 +1,16 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "NEXUS RCA golden case",
+  "type": "object",
+  "required": ["hsd_id", "expected_owner"],
+  "properties": {
+    "hsd_id": {"type": "string", "description": "HSD/sighting numeric id"},
+    "platform": {"type": "string", "description": "GNR/SRF/CWF/DMR/COR"},
+    "expected_owner": {"type": "string", "description": "Validated owning IP (CHA/UPI/PCIe/IMC/DCU/...)"},
+    "expected_first_error": {"type": "string", "description": "First-error source unit if captured"},
+    "expected_verdict": {"type": "string", "enum": ["CONFIRMED", "LIKELY", "WORKING HYPOTHESIS", ""]},
+    "min_confidence": {"type": "integer", "minimum": 0, "maximum": 100},
+    "expected_contradiction": {"type": "boolean", "description": "True if the case has a known contradiction the tool should flag (scores contradiction-miss)"},
+    "notes": {"type": "string"}
+  }
+}

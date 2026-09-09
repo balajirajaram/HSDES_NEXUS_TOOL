@@ -14,6 +14,8 @@ os.makedirs(OUT, exist_ok=True)
 PNG = os.path.join(OUT, "auto_hsd_analyser_flow.png")
 SHOT = os.path.join(OUT, "report_screenshot.png")
 PPTX = os.path.join(OUT, "Auto_HSD_Analyser.pptx")
+ROADMAP_PNG = os.path.join(OUT, "nexus_roadmap.png")
+NEXUS_PPTX = os.path.join(OUT, "HSDES_NEXUS_Presentation.pptx")
 
 # Intel-ish palette
 INK = "#1b2a4a"
@@ -127,6 +129,122 @@ def build_png():
     fig.savefig(PNG, bbox_inches="tight", facecolor="white")
     plt.close(fig)
     print("PNG :", PNG)
+
+
+def build_roadmap_png():
+    """Management roadmap graphic: Phases 0-5 with status, as a two-row timeline."""
+    # status -> (fill, edge, ribbon color, label)
+    DONE = ("#dcefe0", GREEN, GREEN, "COMPLETED")
+    CUR = (LAMBER, AMBER, AMBER, "CURRENT FOCUS")
+    NEXT = (LBLUE, BLUE, BLUE, "NEXT MILESTONE")
+    FUT = (LGREY, GREY, GREY, "FUTURE")
+
+    phases = [
+        ("PHASE 0", "HSD Offline RCA Generator", DONE,
+         ["Read HSD + attachments + comments",
+          "MCA / serial / PythonSV decode",
+          "Signature → hypothesis report"]),
+        ("PHASE 1", "Engineer-Grade RCA Engine", DONE,
+         ["Scorecard · timeline · MCA ownership",
+          "Cause-vs-noise · competing hypotheses",
+          "Verdict audit · playbook · decision tree"]),
+        ("PHASE 1.5", "HSD Automation Layer", DONE,
+         ["Ownership Evidence Ladder",
+          "Owner → team routing (suggestion)",
+          "Validation gate · auto-comment · publish"]),
+        ("PHASE 2", "AutoHSD Triage Engine", CUR,
+         ["Parse title → classify failure type",
+          "Node reachability → profile log collect",
+          "Run RCA → gate → update / draft"]),
+        ("PHASE 3", "Ownership Validation", NEXT,
+         ["20-30 root-caused HSD corpus",
+          "RCA benchmark runner (5 metrics)",
+          "Gate to Phase 4 at > 85% owner accuracy"]),
+        ("PHASE 4", "Knowledge Graph", FUT,
+         ["MCACOD + MSCOD + platform → cause DB",
+          "Cause-frequency model (TOR→UPI 43%…)",
+          "Suggested next investigation"]),
+        ("PHASE 5", "Debug Advisor", FUT,
+         ["Signature → root-cause candidate",
+          "Recommended experiments + outcomes",
+          "Suggested owner · auto-HSD investigation"]),
+    ]
+
+    fig, ax = plt.subplots(figsize=(16, 9), dpi=150)
+    ax.set_xlim(0, 1); ax.set_ylim(0, 1); ax.axis("off")
+    fig.patch.set_facecolor("white")
+
+    # Header band
+    ax.add_patch(FancyBboxPatch((0.0, 0.905), 1.0, 0.095,
+                 boxstyle="square,pad=0", linewidth=0, facecolor=INK, zorder=0))
+    ax.text(0.5, 0.963, "HSDES NEXUS — Product Roadmap",
+            ha="center", va="center", fontsize=22, fontweight="bold", color="white")
+    ax.text(0.5, 0.925, "From offline RCA generator → engineer-grade triage → automated, "
+            "validated ownership → debug advisor",
+            ha="center", va="center", fontsize=11.5, color="#c9d6ea")
+
+    def card(x, y, w, h, ph, name, status, bullets):
+        fill, edge, ribbon, label = status
+        ax.add_patch(FancyBboxPatch(
+            (x, y), w, h, boxstyle="round,pad=0.004,rounding_size=0.012",
+            linewidth=2, edgecolor=edge, facecolor=fill, zorder=2))
+        # status ribbon
+        ax.add_patch(FancyBboxPatch(
+            (x, y + h - 0.03), w, 0.03, boxstyle="square,pad=0",
+            linewidth=0, facecolor=ribbon, zorder=3))
+        ax.text(x + w / 2, y + h - 0.015, label, ha="center", va="center",
+                fontsize=7.6, fontweight="bold", color="white", zorder=4)
+        ax.text(x + 0.012, y + h - 0.052, ph, ha="left", va="top",
+                fontsize=10.5, fontweight="bold", color=edge, zorder=4)
+        ax.text(x + 0.012, y + h - 0.083, name, ha="left", va="top",
+                fontsize=9.6, fontweight="bold", color=INK, zorder=4)
+        ax.text(x + 0.012, y + h - 0.115, "\n".join("• " + b for b in bullets),
+                ha="left", va="top", fontsize=7.7, color="#26364f",
+                zorder=4, linespacing=1.5)
+
+    # Row 1: phases 0,1,1.5,2  |  Row 2: phases 3,4,5
+    w, h = 0.228, 0.30
+    gap = 0.02
+    row1 = phases[:4]
+    row2 = phases[4:]
+    x0 = 0.02
+    y1 = 0.50
+    r1x = []
+    for i, p in enumerate(row1):
+        x = x0 + i * (w + gap)
+        r1x.append(x)
+        card(x, y1, w, h, *p)
+    # arrows across row 1
+    for i in range(len(row1) - 1):
+        _arrow(ax, (r1x[i] + w, y1 + h / 2), (r1x[i + 1], y1 + h / 2), color=INK)
+
+    y2 = 0.10
+    r2x = []
+    for i, p in enumerate(row2):
+        x = x0 + i * (w + gap)
+        r2x.append(x)
+        card(x, y2, w, h, *p)
+    for i in range(len(row2) - 1):
+        _arrow(ax, (r2x[i] + w, y2 + h / 2), (r2x[i + 1], y2 + h / 2), color=INK)
+    # elbow arrow: Phase 2 (row1 last) down to Phase 3 (row2 first)
+    _arrow(ax, (r1x[3] + w / 2, y1), (r2x[0] + w / 2, y2 + h), color=AMBER, rad=-0.3, lw=2.6)
+
+    # "You are here" marker under Phase 2
+    ax.text(r1x[3] + w / 2, y1 - 0.03, "◀ You are here",
+            ha="center", va="top", fontsize=11, fontweight="bold", color=AMBER)
+
+    # Legend
+    lx = 0.52
+    for i, (lab, col) in enumerate([("Completed", GREEN), ("Current", AMBER),
+                                     ("Next", BLUE), ("Future", GREY)]):
+        ax.add_patch(FancyBboxPatch((lx + i * 0.11, 0.035), 0.02, 0.02,
+                     boxstyle="square,pad=0", linewidth=0, facecolor=col, zorder=3))
+        ax.text(lx + i * 0.11 + 0.026, 0.045, lab, ha="left", va="center",
+                fontsize=9.5, color=INK)
+
+    fig.savefig(ROADMAP_PNG, bbox_inches="tight", facecolor="white")
+    plt.close(fig)
+    print("PNG :", ROADMAP_PNG)
 
 
 def build_pptx():
@@ -300,14 +418,37 @@ def build_pptx():
         "All processing is local; the report labels each cause with its source and how proven it is.",
     ], size=16)
 
-    # ---- 9 Roadmap ----
-    s = add_slide(); band(s, "Roadmap")
+    # ---- 9 Roadmap (Phases 0-5 graphic) ----
+    s = add_slide(); band(s, "Product Roadmap", "Phase 0 → Phase 5 · where we are and where we're going")
+    if os.path.exists(ROADMAP_PNG):
+        s.shapes.add_picture(ROADMAP_PNG, Inches(0.3), Inches(1.3), width=Inches(12.7))
+
+    # ---- 9b What's new this cycle ----
+    s = add_slide(); band(s, "What's New — Automation, Validation & Phase 2",
+                          "Shipped since the engineer-grade RCA engine")
     bullets(s, [
-        "Broaden product coverage (DMR / COR) and seed the KB from more master queries.",
-        "Deeper Axon / PythonSV automation and richer decoder databases.",
-        "Optional LLM reasoning layer enabled by default where an endpoint is available.",
-        "One-click ticket update: write the converged root cause back to the HSDES field.",
-        "Team rollout + feedback loop to keep improving accuracy.",
+        "HSD write-back — posts an executive RCA summary straight into the ticket comment thread (root cause · owner · confidence · evidence · next action); full report saved as HTML/MD. Dry-run + preview first.",
+        "Validation Gate — blocks auto-posting weak conclusions: WORKING HYPOTHESIS, confidence < 70%, unproven owner, OR an unresolved contradiction → draft-only (explicit --force override).",
+        "Ownership Evidence Ladder — Level 1 direct (first-error / TOR owner) → Level 4 weak (KB similarity), so confidence is explained, not a black box.",
+        "Owner → Team routing (suggestion only) — CHA→Uncore, UPI→Fabric, PCIe→PV.Domain.IO, IMC→RAS/Memory, DCU→Core; never auto-reassigns.",
+        "Phase 2 AutoHSD triage — parse node from the title → SSH → collect failure-type evidence profiles → run RCA → gate → update; node-down handled gracefully.",
+        "RCA Regression Framework — golden_cases/ corpus + tools/rca_benchmark.py scoring owning-IP accuracy, precision/recall, overconfidence, false-attribution, contradiction-miss.",
+    ], size=15)
+
+    # ---- 9c Phase 2 AutoHSD flow ----
+    s = add_slide(); band(s, "Phase 2 — AutoHSD Triage Engine", "Current focus: one-liner HSD → live node triage")
+    panel(s, 0.55, 5.9, "Flow", BLU, [
+        "New HSD created → parse title → classify failure type.",
+        "Kernel Panic · PCIe/CXL · TOR Timeout · Memory Poison · Hardware Error.",
+        "Node reachability check (SSH) — up or down.",
+        "Node up → collect profile logs → run NEXUS RCA → validation gate.",
+        "Gate PASS → auto-update HSD · DRAFT → store RCA for review.",
+    ])
+    panel(s, 6.9, 5.9, "Safety & efficiency", RGBColor(0x00, 0x85, 0x7D), [
+        "Node down → post 'Node unreachable, analysis not possible' (no empty report).",
+        "Evidence profiles collect only artifacts relevant to the failure type.",
+        "Secrets (SSH) read from environment only — never logged or committed.",
+        "Weak / contradicted RCA never auto-posts — stays a draft.",
     ])
 
     def qa(slide, pairs, top=1.45, size=15):
@@ -334,7 +475,7 @@ def build_pptx():
         ("Can we trust the root cause it reports?",
          "Yes — it doesn't guess. It repeats the root cause the engineers actually wrote in the ticket, cites who said it, and labels how proven it is (e.g. 'unvalidated hypothesis' vs 'confirmed'). If no cause is stated, it says so instead of inventing one."),
         ("Does it modify or close the HSD ticket?",
-         "No — it is read-only today. Writing the root cause back to the HSDES field is on the roadmap as an explicit, opt-in action."),
+         "It posts an executive RCA summary as a ticket comment (opt-in) — it never closes or overwrites fields. A validation gate blocks weak/contradicted conclusions, which stay drafts until reviewed."),
     ])
 
     # ---- 11 Anticipated Q&A (part 2) ----
@@ -363,10 +504,20 @@ def build_pptx():
     p = tf.add_paragraph(); p.text = "Questions & discussion"
     p.font.size = Pt(20); p.font.color.rgb = RGBColor(0x9F, 0xC3, 0xE8)
 
-    prs.save(PPTX)
-    print("PPTX:", PPTX)
+    def _save(path):
+        try:
+            prs.save(path)
+            print("PPTX:", path)
+        except PermissionError:
+            alt = path[:-5] + ".new.pptx"
+            prs.save(alt)
+            print(f"PPTX: {path} was LOCKED (close it in PowerPoint) — wrote {alt} instead")
+
+    _save(PPTX)
+    _save(NEXUS_PPTX)
 
 
 if __name__ == "__main__":
     build_png()
+    build_roadmap_png()
     build_pptx()

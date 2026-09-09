@@ -18,6 +18,7 @@
       </div>
       <nav class="nav">
         <button class="tab active" data-tab="analyse">Analyse</button>
+        <button class="tab" data-tab="interactive">Interactive</button>
         <button class="tab" data-tab="batchlearn">Batch Learn</button>
         <button class="tab" data-tab="livedebug">Live Debug</button>
         <button class="tab" data-tab="pythonsv">PythonSV</button>
@@ -79,6 +80,26 @@
       </div>
       <div id="meta" class="meta hidden"></div>
       <div id="report" class="report"></div>
+    </section>
+
+    <section id="tab-interactive" class="panel">
+      <div class="card">
+        <h2>Interactive Analysis <span class="scope">live Q&amp;A</span></h2>
+        <p class="sub">Ask follow-up questions about the current HSD analysis. The assistant is
+          grounded in the most recent report generated on the Analyse tab.</p>
+        <div class="chat-context">
+          <label class="inline">
+            <input id="chat_use_report" type="checkbox" checked />
+            <span>Use the last analysis report as context</span>
+          </label>
+          <span id="chat_ctx_hint" class="chat-hint">No analysis loaded yet — run one on the Analyse tab.</span>
+        </div>
+        <div id="chat-log" class="chat-log"></div>
+        <form id="chat-form" class="chat-input">
+          <textarea id="chat_text" rows="2" placeholder="Ask about the root cause, a register, POST code, next steps..."></textarea>
+          <button type="submit" id="chat-send">Send</button>
+        </form>
+      </div>
     </section>
 
     <section id="tab-batchlearn" class="panel">
