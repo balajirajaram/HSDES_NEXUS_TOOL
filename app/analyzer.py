@@ -1032,6 +1032,7 @@ def _md_line(section: str, key: str) -> str:
 
 def _strip_md(text: str) -> str:
     text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"\*(.+?)\*", r"\1", text)
     text = re.sub(r"`(.+?)`", r"\1", text)
     return text.strip()
 
@@ -1048,64 +1049,223 @@ def build_hsd_comment(result: Dict[str, Any]) -> str:
 
     verdict_sec = _md_section(md, "## Engineer Verdict Audit")
     vtype = _md_line(verdict_sec, "Verdict type") or "see report"
-    vreason = _md_line(verdict_sec, "Reason")
 
     conf_sec = _md_section(md, "## Root-Cause Confidence")
-    conf_line = ""
-    for ln in conf_sec.splitlines()[1:]:
-        if ln.strip() and not ln.startswith("- **Ceiling"):
-            conf_line = _strip_md(ln.strip())
-            break
+    _cm = re.search(r"(\d{1,3})\s*%", conf_sec)
+    conf_pct = _cm.group(1) if _cm else ""
 
     # Owning IP / primary error from the MCA Ownership section.
     own_sec = _md_section(md, "## MCA Ownership Analysis")
     primary = _md_line(own_sec, "PRIMARY_ERROR")
     owning_ip = mcs.get("bank_unit") or ""
+    poison = _is_poison_consumption(mcs)
+
+    # Ownership confidence band + suggested routing from the evidence ladder.
+    ladder_sec = _md_section(md, "## Ownership Evidence Ladder")
+    own_conf_full = _md_line(ladder_sec, "Ownership Confidence")
+    own_conf = own_conf_full.split("—")[0].strip() if own_conf_full else ""
+    suggested = _md_line(ladder_sec, "Suggested owner / routing") or _suggested_team(owning_ip)
+    suggested = re.sub(r"\s*_\(.*?\)_\s*$", "", suggested).strip()
+    owner_proven = "CONFIRMED" in vtype.upper() or own_conf.upper().startswith("HIGH")
+
+    # RCA completeness + comment-thread cause (for the manager status indicator).
+    _sm = re.search(r"RCA completeness:\s*(\d{1,3})\s*%", _md_section(md, "## RCA Scorecard"))
+    completeness = _sm.group(1) if _sm else ""
+    cf_root = (result.get("comment_findings") or {}).get("root_cause")
+
+    # Present (✓) vs missing (✗) evidence — from the Verdict Audit, with the
+    # Required-Missing-Data table as a fallback.
+    def _split(s):
+        return [x.strip() for x in re.split(r",|·|;", s or "")
+                if x.strip() and x.strip().lower() not in ("_none_", "none")]
+    present_items = _split(_md_line(verdict_sec, "Evidence directly proving root cause"))
+    missing_items = _split(_md_line(verdict_sec, "Evidence missing"))
+    if not missing_items:
+        missing_items = re.findall(r"\|\s*\d+\s*\|\s*([^|]+?)\s*\|",
+                                   _md_section(md, "## Required Missing Data"))
+
+    # Highest-value next step from the Engineer Playbook.
+    pb_sec = _md_section(md, "## Engineer Playbook")
+    next_action = _md_line(pb_sec, "Highest-value next action")
+    pb_command = _md_line(pb_sec, "Command")
+    pb_gain = _md_line(pb_sec, "Confidence gain")
+    pb_expected = _md_line(pb_sec, "Expected evidence")
+    if not pb_expected:
+        _exp, _cap = [], False
+        for ln in pb_sec.splitlines():
+            if "Expected outcomes" in ln:
+                _cap = True
+                continue
+            if _cap:
+                s = ln.strip()
+                if s.startswith("- **"):
+                    break
+                cleaned = re.sub(r"^[\-•├└│\s]+", "", s)
+                if cleaned:
+                    _exp.append(cleaned)
+        pb_expected = "; ".join(_exp[:3])
+
     mca_line = ""
     if mcs.get("status"):
         mca_line = (f"MCA bank {mcs.get('bank','?')} ({owning_ip}) "
-                    f"{mcs.get('mcacod','')}/{mcs.get('mscod','')} — "
-                    f"{mcs.get('decode','')}").strip()
+                    f"{mcs.get('mcacod','')}/{mcs.get('mscod','')}").strip()
 
-    # Top next action from the Engineer Playbook.
-    pb_sec = _md_section(md, "## Engineer Playbook")
-    next_action = _md_line(pb_sec, "Highest-value next action")
+    # Manager-facing status indicator. A comment-thread claim (Tier-3) never marks
+    # the ticket 'Root Cause Identified' on its own — only hardware ownership does.
+    if owner_proven:
+        status = "🟢 Root Cause Identified"
+    elif mcs.get("status") or primary:
+        status = "🟡 Investigation In Progress"
+    else:
+        status = "🔴 Insufficient Evidence"
 
-    # Ownership confidence + suggested routing from the evidence ladder.
-    ladder_sec = _md_section(md, "## Ownership Evidence Ladder")
-    own_conf = _md_line(ladder_sec, "Ownership Confidence")
-    suggested = _md_line(ladder_sec, "Suggested owner / routing") or _suggested_team(owning_ip)
-
-    # Required missing data (first few rows).
-    miss_sec = _md_section(md, "## Required Missing Data")
-    missing = re.findall(r"\|\s*\d+\s*\|\s*([^|]+?)\s*\|", miss_sec)[:4]
-
-    def esc(s: str) -> str:
+    def esc(s):
         return (str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;"))
 
-    rows = []
-    rows.append("<b>NEXUS Automated Root-Cause Analysis</b>")
-    rows.append("<i>Auto-generated by HSDES NEXUS — deterministic decode of the ticket + attached logs. Please verify before closing.</i>")
-    rows.append("<ul>")
+    R = []
+    R.append("<b>NEXUS Automated Root-Cause Analysis</b>")
+    R.append(f"<b>Status: {esc(status)}</b>"
+             + (f" &middot; <b>RCA completeness {completeness}%</b>" if completeness else ""))
+    R.append("<i>Auto-generated by HSDES NEXUS — deterministic decode of the ticket + "
+             "attached logs. Verify before closing.</i>")
+
+    R.append("<br/><b>Decoded Failure</b><ul>")
     if mca_line:
-        rows.append(f"<li><b>Decoded failure:</b> {esc(mca_line)}</li>")
-    if primary:
-        rows.append(f"<li><b>Primary error / owning IP:</b> {esc(primary)}</li>")
-    if suggested:
-        rows.append(f"<li><b>Suggested owner / routing:</b> {esc(suggested)}</li>")
-    rows.append(f"<li><b>Verdict:</b> {esc(vtype)}" + (f" — {esc(vreason)}" if vreason else "") + "</li>")
-    if conf_line:
-        rows.append(f"<li><b>Confidence:</b> {esc(conf_line)}</li>")
+        R.append(f"<li>MCA Bank {esc(mcs.get('bank','?'))} ({esc(owning_ip or '?')}) — "
+                 f"MCACOD {esc(mcs.get('mcacod','?'))} / MSCOD {esc(mcs.get('mscod','?'))}</li>")
+        if mcs.get("decode"):
+            R.append(f"<li>{esc(mcs['decode'])}</li>")
+    else:
+        R.append("<li>No decoded MCA — see full report.</li>")
+    R.append("</ul>")
+
+    R.append("<b>Ownership</b><ul>")
+    R.append(f"<li>Current owner: {esc(owning_ip if (owner_proven and owning_ip) else 'Unknown')}</li>")
+    if poison and owning_ip:
+        R.append(f"<li>Victim: {esc(owning_ip)} (consumed the poison)</li>")
+    if not owner_proven:
+        src = ("Memory / IO-CXL / Uncore (read-return path)" if poison
+               else (primary or "not yet proven"))
+        R.append(f"<li>Suspected source: {esc(src)}</li>")
     if own_conf:
-        rows.append(f"<li><b>Ownership confidence:</b> {esc(own_conf)}</li>")
-    if next_action:
-        rows.append(f"<li><b>Highest-value next step:</b> {esc(next_action)}</li>")
-    if missing:
-        rows.append("<li><b>Data still needed:</b> " + esc(", ".join(m.strip() for m in missing)) + "</li>")
-    rows.append("</ul>")
+        R.append(f"<li>Ownership confidence: {esc(own_conf)}</li>")
+    if suggested:
+        R.append(f"<li>Suggested routing: {esc(suggested)}</li>")
+    R.append("</ul>")
+
+    R.append(f"<b>Verdict:</b> {esc(vtype)}"
+             + (f" &middot; <b>Confidence {conf_pct}%</b>" if conf_pct else ""))
+
+    if present_items or missing_items:
+        R.append("<b>Why not higher?</b><ul>")
+        for p in present_items[:5]:
+            R.append(f"<li>&#10003; {esc(p)}</li>")
+        for m in missing_items[:5]:
+            R.append(f"<li>&#10007; {esc(m.strip())}</li>")
+        R.append("</ul>")
+
+    if next_action or pb_command:
+        R.append("<b>Highest-Value Next Step</b><ul>")
+        if next_action:
+            R.append(f"<li>{esc(next_action)}</li>")
+        if pb_command:
+            R.append(f"<li>Command: <code>{esc(pb_command)}</code></li>")
+        if pb_expected:
+            R.append(f"<li>Expected: {esc(pb_expected)}</li>")
+        if pb_gain:
+            R.append(f"<li>Confidence gain: {esc(pb_gain)}</li>")
+        R.append("</ul>")
+
     if hsd_id:
-        rows.append(f"<i>Full report saved as output/hsd_{esc(hsd_id)}_*.html / .md</i>")
-    return "\n".join(rows)
+        R.append(f"<i>Full report: output/hsd_{esc(hsd_id)}_*.html / .md</i>")
+    return "\n".join(R)
+
+
+def _exec_summary_md(md: str) -> str:
+    """One-screen Executive Summary (markdown bullets) built from the report's own
+    gold sections — leads the report so an engineer/manager gets the answer fast."""
+    verdict = _md_line(_md_section(md, "## Engineer Verdict Audit"), "Verdict type")
+    conf_sec = _md_section(md, "## Root-Cause Confidence")
+    _cm = re.search(r"(\d{1,3})\s*%", conf_sec)
+    conf = _cm.group(1) if _cm else ""
+    _sm = re.search(r"RCA completeness:\s*(\d{1,3})\s*%", _md_section(md, "## RCA Scorecard"))
+    completeness = _sm.group(1) if _sm else ""
+
+    ladder = _md_section(md, "## Ownership Evidence Ladder")
+    own_conf = (_md_line(ladder, "Ownership Confidence").split("—")[0].strip())
+    routing = re.sub(r"\s*_\(.*?\)_\s*$", "", _md_line(ladder, "Suggested owner / routing")).strip()
+    owner_proven = "CONFIRMED" in verdict.upper() or own_conf.upper().startswith("HIGH")
+
+    own_sec = _md_section(md, "## MCA Ownership Analysis")
+    owner_line, unit = "", ""
+    _row = re.search(r"\|\s*([^|]+?)\s*\|\s*(0x[0-9a-fA-F]+|—)\s*\|\s*(0x[0-9a-fA-F]+|—)\s*\|\s*([^|]+?)\s*\|",
+                     own_sec)
+    if _row:
+        bank, mcacod, mscod, unit = (g.strip() for g in _row.groups())
+        owner_line = f"MCA Bank {bank} ({unit}) — MCACOD {mcacod} / MSCOD {mscod}"
+    primary = _md_line(own_sec, "PRIMARY_ERROR")
+
+    va = _md_section(md, "## Engineer Verdict Audit")
+
+    def _split(s):
+        return [x.strip() for x in re.split(r",|·|;", s or "")
+                if x.strip() and x.strip().lower() not in ("_none_", "none")]
+    present = _split(_md_line(va, "Evidence directly proving root cause"))
+    missing = _split(_md_line(va, "Evidence missing"))
+    if not missing:
+        missing = re.findall(r"\|\s*\d+\s*\|\s*([^|]+?)\s*\|",
+                             _md_section(md, "## Required Missing Data"))
+
+    pb = _md_section(md, "## Engineer Playbook")
+    next_action = _md_line(pb, "Highest-value next action")
+    cmd = _md_line(pb, "Command")
+    gain = _md_line(pb, "Confidence gain")
+
+    if not (verdict or owner_line or next_action):
+        return ""  # nothing decoded — skip the exec summary
+
+    if owner_proven:
+        status = "🟢 Root Cause Identified"
+    elif owner_line or primary:
+        status = "🟡 Investigation In Progress"
+    else:
+        status = "🔴 Insufficient Evidence"
+    if owner_proven:
+        owner_disp = (f"{unit} (route: {routing})" if (unit and routing)
+                      else unit or routing or "see report")
+    else:
+        owner_disp = f"Unknown — suspected routing {routing}" if routing else "Unknown"
+
+    E = ["## Executive Summary", ""]
+    E.append(f"**RCA Status:** {status}"
+             + (f" — RCA completeness {completeness}%" if completeness else ""))
+    E.append("")
+    if owner_line:
+        E.append(f"- **Failure:** {owner_line}")
+    if verdict:
+        E.append(f"- **Verdict:** {verdict}" + (f" — Confidence {conf}%" if conf else ""))
+    E.append(f"- **Owner / routing:** {owner_disp}"
+             + (f" · Ownership confidence {own_conf}" if own_conf else ""))
+    if present or missing:
+        _p = " ".join(f"✓ {x}" for x in present[:4])
+        _m = " ".join(f"✗ {x.strip()}" for x in missing[:4])
+        E.append(f"- **Why not higher?** {_p}" + (f"  —  {_m}" if _m else ""))
+    if next_action:
+        E.append(f"- **Highest-value next step:** {next_action}")
+        if cmd:
+            E.append(f"  - Command: `{cmd}`")
+        if gain:
+            E.append(f"  - Confidence gain: {gain}")
+    E.append("")
+    E.append("---")
+    E.append("")
+    return "\n".join(E)
+
+
+def _prepend_exec_summary(md: str) -> str:
+    summary = _exec_summary_md(md)
+    return (summary + "\n" + md) if summary else md
+
 
 
 def extract_ownership(result: Dict[str, Any]) -> Dict[str, Any]:
@@ -1420,7 +1580,11 @@ def _render_investigation_timeline(L: List[str], cf: Dict[str, Any]) -> None:
 
     if cf.get("root_cause"):
         who = cf.get("root_cause_author") or "ticket"
-        L.append(f"**🎯 Converged root cause (per {who}):** {_short(cf['root_cause'], 400)}")
+        L.append(f"**Engineer observation (per {who}, from comment thread — NOT independently "
+                 f"verified):** {_short(cf['root_cause'], 400)}")
+        L.append("- _Evidence type: human claim (Tier-3). Treated as an investigation signal, "
+                 "not proof of root cause — confidence contribution: 0% until hardware evidence "
+                 "validates it._")
         L.append("")
     disp = f"**📌 Disposition:** {cf.get('status_hint', 'unknown')}"
     if cf.get("handoff_team"):
@@ -1667,9 +1831,11 @@ def _render_debug_summary(L: List[str], hsd_id: str, target: Dict[str, Any],
     if decoded.get("mca") and decoded["mca"]["uncorrected"]:
         if has_comment_rc:
             concl.append(f"An uncorrected machine-check was also decoded "
-                         f"({decoded['mca'].get('headline','')}), but it is **incidental "
-                         "background telemetry** — the converged root cause above (from the "
-                         "comment thread) is the actual failure.")
+                         f"({decoded['mca'].get('headline','')}) — this is **hardware evidence**. "
+                         "The comment thread proposes a cause (see the engineer observation "
+                         "above), but that is an unverified human claim; correlate it against "
+                         "this MCA before concluding — the MCA may be the real failure or a "
+                         "related symptom.")
         elif mca_demoted:
             concl.append(f"An uncorrected machine-check was decoded "
                          f"({decoded['mca'].get('headline','')}), but it is **incidental "
@@ -2082,7 +2248,9 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
     reproducible = bool(re.search(r"reproduc|100%\s*repro|consistently\s*fail", txt, re.I))
     fix_validated = bool(cf.get("workaround") and re.search(
         r"validated|resolved|no\s*repro|passes|fixed", txt, re.I))
-    have_root_cause = bool(cf.get("root_cause") or (have_first_error and mcs.get("status")))
+    # A comment-thread claim is a Tier-3 human OBSERVATION, not proof of root cause;
+    # 'root cause identified' requires hardware ownership evidence.
+    have_root_cause = bool(have_first_error and (have_crashdump or have_tor_dump) and not poison)
 
     # ---------- RCA Scorecard (manager-friendly, top of report) ----------
     _present = sum(1 for a in evidence_audit if a.get("present"))
@@ -2408,12 +2576,20 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
     present = sum(1 for a in evidence_audit if a.get("present"))
     total = len(evidence_audit) or 1
     score = 30 + int(60 * present / total)
-    if cf.get("root_cause"):
-        score = min(97, score + 15)
     if have_reg_evidence:
-        score += 15  # direct register evidence
+        score += 15  # direct register evidence (Tier-1)
+    # A comment-thread root cause is a Tier-3 human OBSERVATION — it never raises
+    # confidence on its own; only independent hardware evidence can.
+    cf_rc = bool(cf.get("root_cause"))
     # Confidence ceilings — RCA systems must not read overconfident.
     ceilings: List[Tuple[int, str]] = []
+    if cf_rc and not (have_first_error or have_tor_dump):
+        if have_reg_evidence and have_crashdump:
+            ceilings.append((80, "root cause is a comment-thread claim corroborated by MCA + "
+                                 "crashdump, but ownership is not register-proven"))
+        else:
+            ceilings.append((60, "root cause is an unverified comment-thread claim with no "
+                                 "matching hardware evidence"))
     if not have_tor_dump and ("cha" in (first_ierr.get("source_unit", "").lower()
                                         + mcs.get("bank_unit", "").lower())):
         ceilings.append((70, "no TOR dump to prove the stuck-entry owner"))
@@ -2429,8 +2605,9 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
     capped = min(score, cap)
     L.append("## Root-Cause Confidence")
     L.append(f"{_confidence_band(capped)} — based on {present}/{total} key hardware/firmware "
-             "facts decoded" + (" plus a comment-thread root cause" if cf.get("root_cause") else "")
-             + ".")
+             "facts decoded"
+             + (" (a comment-thread claim is noted but NOT counted toward confidence)"
+                if cf_rc else "") + ".")
     if ceilings and cap < score:
         _why = next(w for c, w in ceilings if c == cap)
         L.append(f"- **Ceiling applied:** capped at {cap}% — {_why}. Raising it requires that data.")
@@ -2466,21 +2643,26 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
     # Verdict type: proven ownership vs likely vs hypothesis.
     # Poison consumption never proves the origin — the consumer is only the victim.
     ownership_proven = have_first_error and (have_tor_dump or have_crashdump) and not poison
-    if cf.get("root_cause") or ownership_proven:
+    # A comment-thread claim is an OBSERVATION, never proof — it can never set CONFIRMED
+    # and never lifts the verdict on its own; it is only noted in the reason.
+    _cf_note = ("; a comment-thread claim exists but is NOT independently verified by "
+                "hardware evidence" if cf.get("root_cause") else "")
+    if ownership_proven:
         vtype, vreason = "CONFIRMED ROOT CAUSE", (
-            "owning IP proven by first-error source plus a TOR/crashdump capture"
-            if ownership_proven else "converged and corroborated in the ticket thread")
+            "owning IP proven by first-error source plus a TOR/crashdump capture")
     elif poison:
         vtype, vreason = "WORKING HYPOTHESIS", (
             f"poison was CONSUMED at {mcs.get('bank_unit','the core cache')} (victim); the "
-            "upstream poison SOURCE that is the true root cause is not yet identified")
+            "upstream poison SOURCE that is the true root cause is not yet identified" + _cf_note)
     elif have_owning_ip and not contradictions and not (three_strike and not have_first_error):
         vtype, vreason = "LIKELY ROOT CAUSE", (
-            "owning IP identified, but direct ownership (TOR owner / crashdump) not yet proven")
+            "owning IP identified from decoded MCA, but direct ownership (TOR owner / "
+            "first-error register) not yet proven" + _cf_note)
     else:
         vtype, vreason = "WORKING HYPOTHESIS", (
             "origin not proven" + (" — active contradiction(s)" if contradictions else
-            " — first-error source not captured" if three_strike else " — insufficient evidence"))
+            " — first-error source not captured" if three_strike else " — insufficient evidence")
+            + _cf_note)
     L.append("## Engineer Verdict Audit")
     L.append("- **Evidence directly proving root cause:** "
              + (", ".join(direct) if direct else "_none_"))
@@ -2743,9 +2925,13 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     # Real Axon recordings actually linked in the ticket (no synthetic search URLs).
     axon_links = sorted(extract_axon_uuids(target.get("full_text", "") or ""))
 
+    L.append("---")
+    L.append("")
+    L.append("<details><summary>📎 Appendix — full detail (findings, methodology, decoded logs, "
+             "KB, similar HSDs, references) · click to expand</summary>")
+    L.append("")
     L.append(f"## Findings Summary  ·  confidence {_exec_confidence()}%")
     L.append("")
-
 
     # 1. Failure signature (attached logs & analysis)
     L.append("**1. Failure signature — from attached logs & analysis**")
@@ -3045,10 +3231,6 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
     # Transferred-ticket sync (sub-team findings pulled back to this sighting).
     _render_transferred(L, transferred)
 
-    L.append("---")
-    L.append("")
-    L.append("<details><summary>Appendix — full evidence (narrative, logs, KB, similar HSDs, knowledge)</summary>")
-    L.append("")
     L.append("> **OFFLINE mode** — deterministic report from KB + ticket data. "
              "Configure `LLM_BASE_URL` / `LLM_API_KEY` for full LLM reasoning.")
     L.append("")
@@ -3101,7 +3283,7 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
 
         if cf.get("root_cause"):
             who = cf.get("root_cause_author") or "ticket"
-            L.append(f"- **🎯 Converged root cause ({who}):** {_short(cf['root_cause'], 320)}")
+            L.append(f"- **Engineer observation ({who}, from comment thread — unverified):** {_short(cf['root_cause'], 320)}")
         if cf.get("workaround"):
             L.append(f"- **🛠️ Workaround / fix:** {_short(cf['workaround'], 240)}")
         if cf.get("tried"):
@@ -3437,5 +3619,5 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
 
     L.append("</details>")
 
-    return "\n".join(L), _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled,
-                                         comment_findings)
+    return _prepend_exec_summary("\n".join(L)), _fallback_entry(
+        hsd_id, symptoms, platform, target, hsdes_enabled, comment_findings)

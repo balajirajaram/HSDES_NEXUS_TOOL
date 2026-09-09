@@ -39,6 +39,13 @@ function renderMarkdown(md) {
 
   while (i < lines.length) {
     const line = lines[i];
+    // Pass raw <details>/<summary> HTML through so the collapsible appendix works.
+    const t = line.trim();
+    if (t.startsWith("<details") || t.startsWith("</details") || t.startsWith("<summary")) {
+      html += t;
+      i += 1;
+      continue;
+    }
     if (line.startsWith("```")) {
       let code = "";
       i += 1;
@@ -199,6 +206,7 @@ if (analyseForm) {
       meta.classList.add("hidden");
       meta.innerHTML = "";
     }
+    resetHsdPost();
 
     try {
       const data = await api("/api/analyze", {
@@ -227,6 +235,7 @@ if (analyseForm) {
         report: data.report_markdown || "",
       };
       updateChatContextHint();
+      showHsdPost(window.__lastAnalysis.hsd_id);
       loadHealth();
       loadKB();
     } catch (err) {
@@ -238,6 +247,103 @@ if (analyseForm) {
         btn.disabled = false;
         btn.textContent = "Run Analysis";
       }
+    }
+  });
+}
+
+// ---- Publish RCA to HSD (explicit, non-default) ----
+let _hsdPostId = "";
+
+function resetHsdPost() {
+  _hsdPostId = "";
+  const prev = document.getElementById("hsd-preview");
+  if (prev) { prev.classList.add("hidden"); prev.innerHTML = ""; }
+  const gate = document.getElementById("hsd-gate");
+  if (gate) { gate.classList.add("hidden"); gate.innerHTML = ""; }
+  const status = document.getElementById("hsd-post-status");
+  if (status) status.innerHTML = "";
+  const previewBtn = document.getElementById("hsd-preview-btn");
+  if (previewBtn) previewBtn.disabled = true;
+  const postBtn = document.getElementById("hsd-post-btn");
+  if (postBtn) postBtn.disabled = true;
+  const force = document.getElementById("hsd-force");
+  if (force) force.checked = false;
+  const hint = document.getElementById("hsd-post-hint");
+  if (hint) hint.classList.remove("hidden");
+}
+
+function showHsdPost(hsdId) {
+  _hsdPostId = hsdId || "";
+  const previewBtn = document.getElementById("hsd-preview-btn");
+  if (previewBtn) previewBtn.disabled = !_hsdPostId;
+  const hint = document.getElementById("hsd-post-hint");
+  if (hint) hint.classList.toggle("hidden", !!_hsdPostId);
+}
+
+function _renderGate(gate) {
+  const el = document.getElementById("hsd-gate");
+  if (!el || !gate) return;
+  el.classList.remove("hidden");
+  const ok = gate.allow;
+  el.className = "hsd-gate " + (ok ? "gate-ok" : "gate-block");
+  el.innerHTML = `<b>Validation gate:</b> ${ok ? "PASS — safe to auto-post" : "HOLD"} `
+    + `<span class="gate-reason">${gate.reason || ""}</span>`
+    + (ok ? "" : `<br/><small>Tick “Override validation gate (force)” to post anyway.</small>`);
+}
+
+const hsdPreviewBtn = document.getElementById("hsd-preview-btn");
+if (hsdPreviewBtn) {
+  hsdPreviewBtn.addEventListener("click", async () => {
+    if (!_hsdPostId) return;
+    hsdPreviewBtn.disabled = true;
+    hsdPreviewBtn.textContent = "Building preview...";
+    const prev = document.getElementById("hsd-preview");
+    const status = document.getElementById("hsd-post-status");
+    if (status) status.innerHTML = "";
+    try {
+      const data = await api("/api/hsd/update", { hsd_id: _hsdPostId, dry_run: true });
+      if (prev) {
+        prev.classList.remove("hidden");
+        prev.innerHTML = `<div class="hsd-preview-label">Comment preview (not posted)</div>`
+          + `<div class="hsd-preview-body">${data.comment_html || "(empty)"}</div>`;
+      }
+      _renderGate(data.gate);
+      const postBtn = document.getElementById("hsd-post-btn");
+      if (postBtn) postBtn.disabled = false;
+    } catch (err) {
+      if (prev) { prev.classList.remove("hidden"); prev.innerHTML = `<p class="error">${String(err)}</p>`; }
+    } finally {
+      hsdPreviewBtn.disabled = false;
+      hsdPreviewBtn.textContent = "Preview comment";
+    }
+  });
+}
+
+const hsdPostBtn = document.getElementById("hsd-post-btn");
+if (hsdPostBtn) {
+  hsdPostBtn.addEventListener("click", async () => {
+    if (!_hsdPostId) return;
+    const force = !!(document.getElementById("hsd-force") || {}).checked;
+    const status = document.getElementById("hsd-post-status");
+    hsdPostBtn.disabled = true;
+    hsdPostBtn.textContent = "Posting...";
+    if (status) status.innerHTML = "";
+    try {
+      const data = await api("/api/hsd/update", { hsd_id: _hsdPostId, dry_run: false, force });
+      if (data.gated && !data.ok) {
+        _renderGate(data.gate || { allow: false, reason: data.reason });
+        if (status) status.innerHTML = `<span class="warn">Held back — not posted. ${data.reason || ""}</span>`;
+      } else if (data.ok) {
+        const nid = (data.response && data.response.new_id) || "";
+        if (status) status.innerHTML = `<span class="ok">Posted to HSD ${_hsdPostId}${nid ? " (comment " + nid + ")" : ""}.</span>`;
+      } else {
+        if (status) status.innerHTML = `<span class="error">${data.error || "Post failed."}</span>`;
+      }
+    } catch (err) {
+      if (status) status.innerHTML = `<span class="error">${String(err)}</span>`;
+    } finally {
+      hsdPostBtn.disabled = false;
+      hsdPostBtn.textContent = "Post comment to HSD";
     }
   });
 }

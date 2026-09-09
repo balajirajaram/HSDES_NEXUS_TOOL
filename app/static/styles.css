@@ -455,3 +455,27 @@ footer {
 .chat-input { display: flex; gap: 10px; margin-top: 12px; align-items: flex-end; }
 .chat-input textarea { flex: 1; resize: vertical; }
 .chat-input button { white-space: nowrap; }
+
+/* ---- Publish to HSD panel ---- */
+.hidden { display: none !important; }
+.muted { color: var(--muted); font-size: 13px; margin: 4px 0 12px; }
+#hsd-post { margin-top: 16px; max-width: 980px; }
+#hsd-post h3 { margin: 0 0 4px; color: var(--intel-blue-dk); font-size: 16px; }
+.hsd-gate {
+  border-radius: var(--radius); padding: 9px 12px; font-size: 13px; border: 1px solid var(--line);
+}
+.hsd-gate.gate-ok { background: var(--ok-weak); border-color: var(--ok); color: var(--text); }
+.hsd-gate.gate-block { background: var(--warn-weak); border-color: var(--warn); color: var(--text); }
+.hsd-gate .gate-reason { color: var(--muted); }
+.hsd-preview { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface-2); }
+.hsd-preview-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--line);
+}
+.hsd-preview-body { padding: 12px 14px; font-size: 13.5px; line-height: 1.55; }
+.hsd-preview-body ul { margin: 6px 0; padding-left: 20px; }
+.hsd-status { font-size: 13px; min-height: 18px; }
+.hsd-status .ok { color: var(--ok); font-weight: 600; }
+.hsd-status .warn { color: var(--warn); font-weight: 600; }
+.hsd-status .error { color: var(--bad); font-weight: 600; }
+#hsd-post-btn { background: var(--ok); }
