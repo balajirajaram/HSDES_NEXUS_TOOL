@@ -1132,6 +1132,7 @@ def extract_ownership(result: Dict[str, Any]) -> Dict[str, Any]:
         "confidence": int(m.group(1)) if m else 0,
         "ownership_confidence": own_conf,
         "suggested_team": _suggested_team(owning_ip),
+        "contradiction": "## Contradiction Detector" in md,
     }
 
 
@@ -1173,7 +1174,9 @@ async def update_hsd_report(hsd_id: str, symptoms: str = "Automated triage",
 def _post_gate(result: Dict[str, Any]) -> Dict[str, Any]:
     """Validation gate (Rec 6): auto-post only when the conclusion is strong.
     Allow if verdict is CONFIRMED/LIKELY with a proven owner, OR confidence >= 70%.
-    Block WORKING HYPOTHESIS / low-confidence unproven-owner conclusions."""
+    Block WORKING HYPOTHESIS / low-confidence unproven-owner conclusions, AND block
+    ANY report with an unresolved contradiction (draft-only until resolved, even at
+    >= 70% confidence)."""
     md = result.get("report_markdown") or ""
     verdict = _md_line(_md_section(md, "## Engineer Verdict Audit"), "Verdict type").upper()
     ladder = _md_section(md, "## Ownership Evidence Ladder")
@@ -1181,13 +1184,23 @@ def _post_gate(result: Dict[str, Any]) -> Dict[str, Any]:
     conf_sec = _md_section(md, "## Root-Cause Confidence")
     m = re.search(r"(\d{1,3})\s*%", conf_sec)
     conf_pct = int(m.group(1)) if m else 0
+    # The Contradiction Detector section is emitted ONLY when a contradiction was
+    # found, so its presence is the signal (robust to emoji encoding).
+    contradiction = "## Contradiction Detector" in md
     owner_proven = "CONFIRMED" in verdict or owner_conf.startswith("HIGH")
+    if contradiction:
+        return {"allow": False, "verdict": verdict, "confidence": conf_pct,
+                "contradiction": True,
+                "reason": "auto-post blocked — unresolved contradiction with the leading "
+                          "hypothesis; draft only until resolved"}
     if owner_proven or conf_pct >= 70:
         return {"allow": True, "verdict": verdict, "confidence": conf_pct,
+                "contradiction": False,
                 "reason": "strong conclusion (proven owner or confidence ≥ 70%)"}
     reason = ("verdict is WORKING HYPOTHESIS" if "HYPOTHESIS" in verdict
               else f"confidence {conf_pct}% < 70% and owner not proven")
     return {"allow": False, "verdict": verdict, "confidence": conf_pct,
+            "contradiction": False,
             "reason": f"auto-post blocked — {reason}; posting as draft for review"}
 
 

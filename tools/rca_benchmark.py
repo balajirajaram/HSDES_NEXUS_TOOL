@@ -69,13 +69,18 @@ async def _score_case(case: Dict[str, Any], fetch_attachments: bool) -> Dict[str
     overconfident = ("CONFIRMED" in (own["verdict"] or "").upper()) and not owner_ok
     # False attribution = named a specific (non-empty) owner that is wrong.
     false_attr = bool(own["owning_ip"]) and not owner_ok
+    # Contradiction miss = corpus says a contradiction exists but the tool didn't flag it.
+    exp_contra = bool(case.get("expected_contradiction"))
+    contra_miss = exp_contra and not own.get("contradiction")
     passed = owner_ok and (fe_ok is not False) and (verdict_ok is not False) and (conf_ok is not False)
     return {
         "hsd_id": hsd_id, "file": case.get("_file", ""),
         "expected_owner": case["expected_owner"], "detected_owner": own["owning_ip"],
         "owner_ok": owner_ok, "fe_ok": fe_ok, "verdict_ok": verdict_ok, "conf_ok": conf_ok,
         "verdict": own["verdict"], "confidence": own["confidence"],
-        "overconfident": overconfident, "false_attr": false_attr, "passed": passed,
+        "overconfident": overconfident, "false_attr": false_attr,
+        "named_owner": bool(own["owning_ip"]), "exp_contra": exp_contra,
+        "contra_miss": contra_miss, "passed": passed,
     }
 
 
@@ -99,7 +104,8 @@ async def run(dir_path: str, fetch_attachments: bool) -> int:
                          "expected_owner": case["expected_owner"], "detected_owner": f"ERROR: {exc}",
                          "owner_ok": False, "fe_ok": None, "verdict_ok": None, "conf_ok": None,
                          "verdict": "", "confidence": 0, "overconfident": False,
-                         "false_attr": False, "passed": False})
+                         "false_attr": False, "named_owner": False, "exp_contra": False,
+                         "contra_miss": False, "passed": False})
 
     print(f"{'HSD':<14}{'Expected':<10}{'Detected':<12}{'Owner':<7}{'Verdict':<20}{'Conf':<6}{'Result'}")
     print("-" * 78)
@@ -114,13 +120,22 @@ async def run(dir_path: str, fetch_attachments: bool) -> int:
     fe_acc = (100 * sum(1 for r in fe_rows if r["fe_ok"]) / len(fe_rows)) if fe_rows else None
     overconf = 100 * sum(1 for r in rows if r["overconfident"]) / n
     false_attr = 100 * sum(1 for r in rows if r["false_attr"]) / n
+    # Precision = correct / (cases where the tool named an owner). Recall = correct / all.
+    named = [r for r in rows if r["named_owner"]]
+    precision = (100 * sum(1 for r in named if r["owner_ok"]) / len(named)) if named else None
+    recall = 100 * sum(1 for r in rows if r["owner_ok"]) / n
+    contra_cases = [r for r in rows if r["exp_contra"]]
+    contra_miss = (100 * sum(1 for r in contra_cases if r["contra_miss"]) / len(contra_cases)) if contra_cases else None
     passed = sum(1 for r in rows if r["passed"])
 
     print("\n=== Metrics ===")
     print(f"Owning-IP accuracy      : {owner_acc:5.1f}%   (target > 80-85%)")
+    print(f"Ownership precision     : " + (f"{precision:5.1f}%   (correct / named)" if precision is not None else "  n/a"))
+    print(f"Ownership recall        : {recall:5.1f}%   (correct / all cases)")
     print(f"First-error accuracy    : " + (f"{fe_acc:5.1f}%   (target > 90%)" if fe_acc is not None else "  n/a   (no labels)"))
     print(f"Overconfidence rate     : {overconf:5.1f}%   (target ~0%)")
     print(f"False-attribution rate  : {false_attr:5.1f}%   (target < 10%)")
+    print(f"Contradiction miss rate : " + (f"{contra_miss:5.1f}%   (target < 5%)" if contra_miss is not None else "  n/a   (no labels)"))
     print(f"Cases passed            : {passed}/{n}")
     return 0 if passed == n else 1
 

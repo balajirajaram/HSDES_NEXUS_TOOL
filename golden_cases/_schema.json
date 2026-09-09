@@ -10,6 +10,7 @@
     "expected_first_error": {"type": "string", "description": "First-error source unit if captured"},
     "expected_verdict": {"type": "string", "enum": ["CONFIRMED", "LIKELY", "WORKING HYPOTHESIS", ""]},
     "min_confidence": {"type": "integer", "minimum": 0, "maximum": 100},
+    "expected_contradiction": {"type": "boolean", "description": "True if the case has a known contradiction the tool should flag (scores contradiction-miss)"},
     "notes": {"type": "string"}
   }
 }
