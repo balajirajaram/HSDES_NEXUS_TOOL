@@ -128,6 +128,64 @@ def _is_poison_consumption(mcs: Dict[str, Any]) -> bool:
     return unit in {"DCU", "MLC", "IFU", "DTLB"} and "0134" in str(mcs.get("mcacod", ""))
 
 
+# Intel SDM MCi_STATUS architectural bits (bit -> flag).
+_MCI_STATUS_BITS = [(63, "VAL"), (62, "OVER"), (61, "UC"), (60, "EN"),
+                    (59, "MISCV"), (58, "ADDRV"), (57, "PCC"), (56, "S"), (55, "AR")]
+
+
+def classify_mca_status(status: Any) -> Dict[str, Any]:
+    """Single source of truth for MCA severity/recovery from a 64-bit MCi_STATUS.
+    Rule: UC=1 & PCC=1 => UNCORRECTED_FATAL (never 'corrected'). All report
+    sections must consume this rather than re-deriving fatality."""
+    try:
+        val = int(str(status), 16) if not isinstance(status, int) else status
+    except (TypeError, ValueError):
+        return {"flags": {}, "severity": "unknown", "recovery_class": "unknown",
+                "is_corrected": False, "is_uncorrected": False, "is_fatal": False,
+                "valid": False}
+    flags = {name: bool((val >> bit) & 1) for bit, name in _MCI_STATUS_BITS}
+    uc, pcc, en, s, ar = (flags["UC"], flags["PCC"], flags["EN"], flags["S"], flags["AR"])
+    if not flags["VAL"]:
+        sev, corrected, uncorrected, fatal = "invalid", False, False, False
+    elif uc and pcc:
+        sev, corrected, uncorrected, fatal = "UNCORRECTED_FATAL", False, True, True
+    elif uc:
+        sev, corrected, uncorrected, fatal = "UNCORRECTED", False, True, False
+    else:
+        sev, corrected, uncorrected, fatal = "CORRECTED", True, False, False
+    if not uc:
+        recovery = "corrected — no OS action"
+    elif pcc:
+        recovery = "UCR/fatal — context corrupt, not recoverable (reset expected)"
+    elif s and ar:
+        recovery = "SRAR — software recoverable action required"
+    elif s and not ar:
+        recovery = "SRAO — software recoverable action optional"
+    else:
+        recovery = "UCNA — uncorrected no action (deferred)"
+    return {"flags": flags, "severity": sev, "recovery_class": recovery,
+            "is_corrected": corrected, "is_uncorrected": uncorrected,
+            "is_fatal": fatal, "valid": True}
+
+
+def mci_register_addrs(bank: Any) -> Dict[str, Any]:
+    """IA32_MCi_* MSR addresses for a bank: CTL/STATUS/ADDR/MISC = 0x400/1/2/3 + 4*bank."""
+    try:
+        b = int(bank)
+    except (TypeError, ValueError):
+        return {"bank": bank, "MCi_CTL": None, "MCi_STATUS": None,
+                "MCi_ADDR": None, "MCi_MISC": None}
+    base = 0x400 + 4 * b
+    return {"bank": b,
+            "MCi_CTL": f"0x{base:X}", "MCi_STATUS": f"0x{base + 1:X}",
+            "MCi_ADDR": f"0x{base + 2:X}", "MCi_MISC": f"0x{base + 3:X}"}
+
+
+def _norm_ip(unit: str) -> str:
+    """Normalise an IP/unit name for comparison (alpha prefix only)."""
+    return re.sub(r"[^a-z]", "", str(unit or "").lower())[:4]
+
+
 def _specific_root_cause(decoded: Optional[Dict[str, Any]],
                          target: Optional[Dict[str, Any]] = None) -> Optional[str]:
     """Narrowed, evidence-grounded root-cause line, or None when nothing decoded."""
@@ -2363,11 +2421,14 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         L.append("## MCA Ownership Analysis")
         L.append("| Bank | MCACOD | MSCOD | Owning IP | Socket | Fatality | Class |")
         L.append("|------|--------|-------|-----------|--------|----------|-------|")
-        fatal = "FATAL" if (flags.get("UC") and flags.get("PCC")) else (
+        # Central fatality classification (UC & PCC => uncorrected fatal, never corrected).
+        _cls = classify_mca_status(mcs.get("status"))
+        fatal = _cls["severity"] if _cls.get("valid") else (
+            "FATAL" if (flags.get("UC") and flags.get("PCC")) else
             "uncorrected" if flags.get("UC") else "corrected")
         recov = _recovery_str(mcs.get("recovery"))
         if recov:
-            fatal = recov
+            fatal = f"{_cls['severity']} · {recov}" if _cls.get("valid") else recov
         # 3-strike Internal Timer AND poison consumption are VICTIM/symptom, not
         # the origin; a real IP/source fault is PRIMARY.
         cls = ("SECONDARY (symptom)" if three_strike
@@ -2605,6 +2666,18 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         contradictions.append("A 3-strike is decoded but the **first-error source is not "
                               "captured** — origin attribution is unproven (do not name a "
                               "specific IP as root cause yet)")
+    # OWNERSHIP_EVIDENCE_CONFLICT: the first-error source IP differs from the
+    # reporting MCA bank owner — reporting IP is not the originating IP.
+    _fe_unit = (first_ierr.get("source_unit") or "").strip()
+    _bank_unit = (mcs.get("bank_unit") or "").strip()
+    ownership_conflict = bool(
+        _fe_unit and _bank_unit and _norm_ip(_fe_unit) and _norm_ip(_bank_unit)
+        and _norm_ip(_fe_unit) != _norm_ip(_bank_unit))
+    if ownership_conflict:
+        contradictions.append(
+            f"**OWNERSHIP_EVIDENCE_CONFLICT** — first-error source (**{_fe_unit}**) differs "
+            f"from the reporting MCA bank owner (**{_bank_unit}**); the originating IP is "
+            "unresolved (reporting IP ≠ first-error source). Reconcile before naming an owner")
     if contradictions:
         L.append("## Contradiction Detector")
         for c in contradictions:
@@ -2681,7 +2754,8 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         missing_key.append("poison source trace (MC_ADDR → IMC UE / CXL AER / uncore path)")
     # Verdict type: proven ownership vs likely vs hypothesis.
     # Poison consumption never proves the origin — the consumer is only the victim.
-    ownership_proven = have_first_error and (have_tor_dump or have_crashdump) and not poison
+    ownership_proven = (have_first_error and (have_tor_dump or have_crashdump)
+                        and not poison and not ownership_conflict)
     # A comment-thread claim is an OBSERVATION, never proof — it can never set CONFIRMED
     # and never lifts the verdict on its own; it is only noted in the reason.
     _cf_note = ("; a comment-thread claim exists but is NOT independently verified by "
