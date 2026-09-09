@@ -706,9 +706,10 @@ def _extract_findings(target: Optional[Dict[str, Any]],
     resolution = cf.get("workaround") or " ".join(fix_lines) or gf(
         "closed_reason", "status_reason")
     status = (target.get("status") or "").lower()
-    strong_comment_rc = bool(cf.get("root_cause") and cf.get("workaround"))
+    # A comment claim (even one that also proposes a fix) is a human observation,
+    # not validated proof — it must not grade the finding 'confirmed' on its own.
     confirmed = (status in ("closed", "complete", "verified")
-                 and bool(root_cause or resolution)) or strong_comment_rc
+                 and bool(root_cause or resolution))
     return {
         "root_cause": root_cause[:400],
         "resolution": resolution[:400],
@@ -979,6 +980,14 @@ async def analyze(hsd_id: str, symptoms: str,
         )
 
     # Step 3 - WRITE-BACK
+    _kb_state, _kb_eligible = _kb_validation_state(log_findings, comment_findings)
+    if isinstance(kb_entry, dict):
+        kb_entry["validation_state"] = _kb_state
+        kb_entry["eligible_for_root_cause_recall"] = _kb_eligible
+        # A comment-only (unvalidated) entry must never be stored as a confirmed cause.
+        if not _kb_eligible and isinstance(kb_entry.get("root_cause"), dict):
+            if kb_entry["root_cause"].get("confidence") == "confirmed":
+                kb_entry["root_cause"]["confidence"] = "hypothesis"
     kb_action = kb.upsert(kb_entry) if kb_entry else {"action": "skipped"}
 
     # Provenance — the reference materials this analysis actually drew on, so the
@@ -1405,6 +1414,36 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
             except Exception:
                 return None
     return None
+
+
+def _kb_validation_state(log_findings: Optional[Dict[str, Any]],
+                         comment_findings: Optional[Dict[str, Any]]) -> Tuple[str, bool]:
+    """KB validation state (Part 10): a self-analyzed ticket is never stored as a
+    validated root cause. Comment claims are UNVALIDATED; machine-decoded evidence
+    is at most MACHINE_SUPPORTED. Only curated/fix-validated outcomes (set out of
+    band) are eligible for root-cause recall. Returns (state, eligible)."""
+    lf = log_findings or {}
+    ev = (lf.get("decoded") or {}).get("evidence") or {}
+    mcs = ev.get("mc_status") or {}
+    ierr = [r for r in ((lf.get("decoded") or {}).get("ierr_table") or [])
+            if _ierr_has_source(r)]
+    has_machine = bool(mcs.get("status")) or (lf.get("lines_scanned") or 0) > 0
+    owner_proven = bool(ierr) and not _is_poison_consumption(mcs)
+    cf = comment_findings or {}
+    if not has_machine:
+        state = "OBSERVATION_ONLY"
+    elif owner_proven:
+        state = "MACHINE_SUPPORTED"
+    elif cf.get("root_cause"):
+        state = "UNVALIDATED_HYPOTHESIS"
+    elif mcs.get("status"):
+        state = "MACHINE_SUPPORTED"
+    else:
+        state = "OBSERVATION_ONLY"
+    # Nothing produced by automated analysis alone is eligible for validated
+    # root-cause recall — that requires curation or fix/repro validation.
+    eligible = state in ("VALIDATED_ROOT_CAUSE", "FIX_VALIDATED", "CURATED_GOLDEN_CASE")
+    return state, eligible
 
 
 def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled,
