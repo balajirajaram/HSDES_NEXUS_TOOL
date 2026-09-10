@@ -13,8 +13,13 @@ never logged, returned to the UI, or written to any report/session file.
 """
 
 import asyncio
+import json
+import os
 import re
 import socket
+import time
+import uuid
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .config import config
@@ -62,6 +67,17 @@ _PROFILE_CMDS: Dict[str, List[Tuple[str, str]]] = {
         ("lspci", "lspci -nn 2>/dev/null"),
         ("hw_dmesg", "dmesg -T 2>/dev/null | grep -iE 'hardware error|mce|corrected|uncorrect|aer' | tail -n 500"),
     ],
+}
+
+_PROFILE_REFERENCE = {
+    "BASE": "app/node_triage.py:_LOG_CMDS (read-only baseline)",
+    "KERNEL_PANIC": "app/node_triage.py:_PROFILE_CMDS.kernel_panic",
+    "PCIE_CXL": "app/node_triage.py:_PROFILE_CMDS.pcie_cxl",
+    "UPI_FABRIC": "app/node_triage.py:_PROFILE_CMDS.tor_timeout",
+    "MEMORY_IMC": "app/node_triage.py:_PROFILE_CMDS.memory",
+    "TOR_TIMEOUT": "app/node_triage.py:_PROFILE_CMDS.tor_timeout",
+    "BIOS_BOOT": "app/node_triage.py:_PROFILE_CMDS.kernel_panic",
+    "POWER_PUNIT": "app/node_triage.py:_PROFILE_CMDS.hw_error",
 }
 
 
@@ -116,6 +132,15 @@ def extract_node_host(title: str) -> Optional[str]:
     return m.group(1).lower() if m else None
 
 
+def extract_node_host_from_text(*values: Any) -> Optional[str]:
+    """Extract a node from title/description/structured HSD text."""
+    for value in values:
+        host = extract_node_host(str(value or ""))
+        if host:
+            return host
+    return None
+
+
 def _resolve_host(host: str) -> str:
     if config.SUT_SSH_DOMAIN and "." not in host:
         return f"{host}.{config.SUT_SSH_DOMAIN.lstrip('.')}"
@@ -154,18 +179,35 @@ def _collect_sync(host: str, title: str = "") -> Dict[str, Any]:
                 "error": f"SSH connect/auth failed ({type(exc).__name__})"}
     cmds = _cmds_for(title)
     logs: Dict[str, str] = {}
+    audit: List[Dict[str, Any]] = []
+    started_all = time.time()
+    max_total = 180
+    max_output = 512 * 1024
     try:
         for name, cmd in cmds:
+            if time.time() - started_all > max_total:
+                audit.append({"name": name, "command": cmd, "status": "SKIPPED_TOTAL_TIMEOUT"})
+                continue
+            started = time.time()
             try:
-                _in, out, _err = cli.exec_command(cmd, timeout=30)
-                logs[name] = out.read().decode("utf-8", "replace")
+                _in, out, err = cli.exec_command(cmd, timeout=30)
+                stdout = out.read(max_output + 1).decode("utf-8", "replace")
+                stderr = err.read(32 * 1024).decode("utf-8", "replace")
+                truncated = len(stdout) > max_output
+                logs[name] = stdout[:max_output]
+                audit.append({"name": name, "command": cmd, "return_code": out.channel.recv_exit_status(),
+                              "stdout_bytes": len(stdout), "stderr": stderr[:2000],
+                              "truncated": truncated, "started": started, "ended": time.time(), "host": fqdn})
             except Exception as exc:
                 logs[name] = f"[collect error: {type(exc).__name__}]"
+                audit.append({"name": name, "command": cmd, "status": "ERROR",
+                              "error": type(exc).__name__, "started": started,
+                              "ended": time.time(), "host": fqdn})
     finally:
         cli.close()
     combined = "\n".join(f"===== {n} =====\n{t}" for n, t in logs.items() if t.strip())
     return {"reachable": True, "host": fqdn, "logs": logs, "combined": combined,
-            "profiles": classify_failure(title)}
+            "profiles": classify_failure(title), "command_audit": audit}
 
 
 async def collect_node_logs(host: str, title: str = "") -> Dict[str, Any]:
@@ -229,3 +271,75 @@ async def triage_auto_hsd(hsd_id: str, post: bool = False, force: bool = False) 
             "profiles": node.get("profiles", []),
             "comment_html": upd.get("comment_html"),
             "posted": (upd if post else None)}
+
+
+def _ownership_snapshot(result: Dict[str, Any]) -> Dict[str, Any]:
+    from .analyzer import extract_ownership
+    own = extract_ownership(result)
+    return {key: own.get(key, "") for key in
+            ("owning_ip", "reporting_ip", "first_error", "bank", "socket",
+             "mcacod", "mscod", "verdict", "confidence", "contradiction")}
+
+
+async def triage_auto_hsd_end_to_end(hsd_id: str, dry_run: bool = True,
+                                     force: bool = False) -> Dict[str, Any]:
+    """Auditable HSD -> collect -> re-analyze -> gate loop.
+
+    Collection is restricted to this module's read-only allow-list. The run is
+    always persisted under autohsd_runs and HSDES writes occur only when
+    ``dry_run`` is false and the existing validation gate allows them.
+    """
+    from .analyzer import analyze, update_hsd_report, _post_gate
+    from .hsdes_client import HSDESClient
+    hsd_id = re.sub(r"\D", "", str(hsd_id))
+    run_id = time.strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
+    run_dir = Path(os.getenv("AUTOHSD_RUN_ROOT", "autohsd_runs")) / hsd_id / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "collected_artifacts").mkdir(exist_ok=True)
+    client = HSDESClient()
+    target = await client.get_article(hsd_id)
+    if not target or target.get("error"):
+        outcome = {"ok": False, "hsd_id": hsd_id, "error": (target or {}).get("error", "HSD not found")}
+        (run_dir / "run_manifest.json").write_text(json.dumps(outcome, indent=2), encoding="utf-8")
+        return outcome
+    title = target.get("title", "") or ""
+    description = target.get("description", "") or ""
+    initial = await analyze(hsd_id, f"AutoHSD: {title}", fetch_attachments=True)
+    host = extract_node_host_from_text(title, description, target.get("raw", {}))
+    plan = {"hsd_id": hsd_id, "host": host, "profiles": classify_failure(title),
+            "profile_reference": _PROFILE_REFERENCE, "execution_policy": "READ_ONLY_ALLOWLIST"}
+    (run_dir / "collection_plan.json").write_text(json.dumps(plan, indent=2), encoding="utf-8")
+    (run_dir / "initial_report.md").write_text(initial.get("report_markdown", ""), encoding="utf-8")
+    collection_enabled = os.getenv("AUTOHSD_ALLOW_SSH_COLLECTION", "false").lower() in {"1", "true", "yes"}
+    if host and collection_enabled:
+        node = await collect_node_logs(host, title)
+    elif host:
+        node = {"reachable": False, "host": _resolve_host(host),
+                "error": "SSH collection disabled by AUTOHSD_ALLOW_SSH_COLLECTION=false"}
+    else:
+        node = {"reachable": False, "error": "Node hostname not found"}
+    (run_dir / "command_audit.jsonl").write_text("\n".join(json.dumps(item) for item in node.get("command_audit", [])), encoding="utf-8")
+    for name, content in (node.get("logs") or {}).items():
+        (run_dir / "collected_artifacts" / f"{name}.log").write_text(str(content), encoding="utf-8")
+    if node.get("reachable"):
+        final = await analyze(hsd_id, f"AutoHSD re-analysis: {title}",
+                              log_text=node.get("combined", ""), fetch_attachments=True)
+    else:
+        final = initial
+    before_after = {"initial": _ownership_snapshot(initial), "final": _ownership_snapshot(final),
+                    "node_status": "REACHABLE" if node.get("reachable") else "UNAVAILABLE",
+                    "collection_status": "RUN" if node.get("reachable") else "NOT RUN",
+                    "remaining_blockers": [node.get("error")] if not node.get("reachable") else []}
+    before_after["rca_changed_after_collection"] = before_after["initial"] != before_after["final"]
+    (run_dir / "before_after.json").write_text(json.dumps(before_after, indent=2), encoding="utf-8")
+    (run_dir / "final_report.md").write_text(final.get("report_markdown", ""), encoding="utf-8")
+    gate = _post_gate(final)
+    update = await update_hsd_report(hsd_id, result=final, dry_run=(dry_run or not gate.get("allow")), force=force)
+    (run_dir / "hsd_comment_preview.html").write_text(update.get("comment_html", ""), encoding="utf-8")
+    manifest = {"hsd_id": hsd_id, "run_id": run_id, "dry_run": dry_run,
+                "force": force, "host": node.get("host", host), "gate": gate,
+                "posted": bool(update.get("posted")), "execution_policy": "READ_ONLY_ALLOWLIST"}
+    (run_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return {"ok": True, **manifest, "before_after": before_after,
+            "initial": initial, "final": final, "collection": node, "update": update,
+            "run_dir": str(run_dir)}

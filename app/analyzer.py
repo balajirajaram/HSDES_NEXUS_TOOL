@@ -1369,6 +1369,13 @@ def extract_ownership(result: Dict[str, Any]) -> Dict[str, Any]:
     m = re.search(r"(\d{1,3})\s*%", conf_sec)
     return {
         "owning_ip": owning_ip,
+        "reporting_ip": mcs.get("bank_unit", "") or "",
+        "bank": str(mcs.get("bank", "")) if mcs.get("bank") not in (None, "") else "",
+        "socket": ((ev.get("socket_provenance") or {}).get("resolved_socket")
+                   or (ev.get("sockets") or [""])[0]),
+        "mcacod": mcs.get("mcacod", "") or "",
+        "mscod": mcs.get("mscod", "") or "",
+        "decoder_state": (mcs.get("decoder_ambiguity") or {}).get("state", ""),
         "first_error": first_error,
         "verdict": verdict,
         "confidence": int(m.group(1)) if m else 0,
