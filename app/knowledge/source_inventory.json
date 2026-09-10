@@ -11,7 +11,8 @@
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
       "trust": "UNKNOWN",
-      "validation_method": "Not yet audited"
+      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
+      "production_eligible": false
     },
     {
       "path": "app/decoders/ewl_codes_database.json",
@@ -22,7 +23,8 @@
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
       "trust": "UNKNOWN",
-      "validation_method": "Not yet audited"
+      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
+      "production_eligible": false
     },
     {
       "path": "app/decoders/rc_fatal_errors_database.json",
@@ -33,7 +35,8 @@
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
       "trust": "UNKNOWN",
-      "validation_method": "Not yet audited"
+      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
+      "production_eligible": false
     },
     {
       "path": "app/decoders/mcheck_codes_database.json",
@@ -44,7 +47,8 @@
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
       "trust": "UNKNOWN",
-      "validation_method": "Not yet audited"
+      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
+      "production_eligible": false
     },
     {
       "path": "app/decoders/bank_mapping.json",
@@ -55,7 +59,8 @@
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
       "trust": "UNKNOWN",
-      "validation_method": "Not yet audited"
+      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
+      "production_eligible": false
     },
     {
       "path": "app/decoders/bank_mapping_gnr.json",
@@ -109,8 +114,9 @@
       "source_document": "DMR primecode_mca.xml / EDS-R source pending direct citation",
       "version": "UNKNOWN",
       "last_validated": "2026-09-03",
-      "trust": "UNKNOWN",
-      "validation_method": "Field decode smoke test; direct authoritative document citation pending"
+      "trust": "INTERNAL_VALIDATED",
+      "validation_method": "Git history confirms Rajaram, Balaji commit ffef2403 on 2026-09-03; field decode smoke test; direct authoritative document citation pending",
+      "production_eligible": true
     },
     {
       "path": "app/knowledge/spec_corpus.json",
@@ -125,14 +131,15 @@
     },
     {
       "path": "app/knowledge/debug_kb.json",
-      "owner": "UNKNOWN",
+      "owner": "Rajaram, Balaji",
       "purpose": "Debug knowledge pack",
-      "origin": "UNKNOWN",
-      "source_document": "UNKNOWN",
+      "origin": "Manually curated by Balaji Rajaram",
+      "source_document": "Embedded BIOSBKM Debug CookBook and DebugEncyclopedia wiki references",
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
-      "trust": "UNKNOWN",
-      "validation_method": "Not yet audited"
+      "trust": "INTERNAL_VALIDATED",
+      "validation_method": "Git history confirms Rajaram, Balaji commit df8936d on 2026-07-21; embedded Intel wiki links inspected; internal use only",
+      "production_eligible": true
     },
     {
       "path": "app/decoders/ipsd_codes_database.json",
@@ -143,7 +150,8 @@
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
       "trust": "UNKNOWN",
-      "validation_method": "Not yet audited"
+      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
+      "production_eligible": false
     },
     {
       "path": "app/decoders/post_codes_database.json",
@@ -154,7 +162,8 @@
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
       "trust": "UNKNOWN",
-      "validation_method": "Not yet audited"
+      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
+      "production_eligible": false
     },
     {
       "path": "app/knowledge/source_inventory.json",

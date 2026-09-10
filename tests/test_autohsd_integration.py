@@ -62,6 +62,42 @@ class TestAutoHsdClosedLoop(unittest.TestCase):
             for _, command in commands:
                 self.assertFalse(any(token in command.lower() for token in dangerous), command)
 
+    def test_force_true_cannot_bypass_write_disabled(self):
+        fake_client = type("Client", (), {
+            "enabled": True,
+            "_article_meta": AsyncMock(return_value={"tenant": "server_platf"}),
+            "build_comment_payload": lambda self, hsd_id, comment, tenant: {"hsd_id": hsd_id},
+            "add_comment": AsyncMock(return_value={"ok": True}),
+        })()
+        with patch.dict("os.environ", {"HSDES_WRITE_ENABLED": "false"}, clear=False), \
+             patch.object(analyzer, "HSDESClient", return_value=fake_client), \
+             patch.object(analyzer, "build_hsd_comment", return_value="draft"), \
+             patch.object(analyzer, "_post_gate", return_value={"allow": True}):
+            result = asyncio.run(analyzer.update_hsd_report(
+                "16031734105", result={"report_markdown": "strong"},
+                dry_run=False, force=True))
+        self.assertTrue(result["draft_only"])
+        self.assertEqual(result["reason"], "HSDES_WRITE_ENABLED is not set to true")
+        fake_client.add_comment.assert_not_awaited()
+
+    def test_write_enabled_allows_gate_passing_post(self):
+        fake_client = type("Client", (), {
+            "enabled": True,
+            "_article_meta": AsyncMock(return_value={"tenant": "server_platf"}),
+            "build_comment_payload": lambda self, hsd_id, comment, tenant: {"hsd_id": hsd_id},
+            "add_comment": AsyncMock(return_value={"ok": True, "new_id": "123"}),
+        })()
+        with patch.dict("os.environ", {"HSDES_WRITE_ENABLED": "true"}, clear=False), \
+             patch.object(analyzer, "HSDESClient", return_value=fake_client), \
+             patch.object(analyzer, "build_hsd_comment", return_value="posted"), \
+             patch.object(analyzer, "_post_gate", return_value={"allow": True}):
+            result = asyncio.run(analyzer.update_hsd_report(
+                "16031734105", result={"report_markdown": "strong"},
+                dry_run=False, force=False))
+        self.assertFalse(result["dry_run"])
+        self.assertTrue(result["ok"])
+        fake_client.add_comment.assert_awaited_once()
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

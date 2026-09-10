@@ -17,6 +17,7 @@ fabricates HSD IDs, register names, or commands.
 """
 
 import json
+import os
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -1407,6 +1408,11 @@ async def update_hsd_report(hsd_id: str, symptoms: str = "Automated triage",
         return {"ok": True, "dry_run": True, "hsd_id": hsd_id,
                 "comment_html": comment, "payload": payload,
                 "gate": gate, "hsdes_enabled": client.enabled}
+    if os.getenv("HSDES_WRITE_ENABLED", "false").lower() != "true":
+        return {"ok": True, "dry_run": True, "draft_only": True, "hsd_id": hsd_id,
+                "reason": "HSDES_WRITE_ENABLED is not set to true",
+                "comment_html": comment, "payload": payload, "gate": gate,
+                "hsdes_enabled": client.enabled}
     if not force and not gate["allow"]:
         return {"ok": False, "dry_run": False, "gated": True, "hsd_id": hsd_id,
                 "reason": gate["reason"], "gate": gate,
