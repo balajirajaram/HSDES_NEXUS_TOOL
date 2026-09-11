@@ -1,0 +1,6 @@
+{
+  "exit_code": 0,
+  "status": "PASS",
+  "unknown_trust": [],
+  "output": "Resources discovered: 20\nInventory entries: 20\nInventory coverage: 100.0%\nMissing inventory: 0\nUnknown trust: 0\nDuplicate JSON keys: 0\nQUALITY: PASS\n"
+}

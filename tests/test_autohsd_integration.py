@@ -28,6 +28,17 @@ class TestAutoHsdClosedLoop(unittest.TestCase):
         self.assertIn("journalctl -k --no-pager -n 2000", commands.values())
         self.assertIn("dmesg -T", commands.values())
         self.assertNotIn("sol-", " ".join(commands.values()))
+        self.assertEqual(set(commands), {"kernel_panic_ssh_1", "kernel_panic_ssh_2"})
+
+    def test_mce_title_selects_only_mce_commands(self):
+        commands = dict(nt._cmds_for("Fatal MCE / MCERR on CPU"))
+        self.assertEqual(set(commands), {"mce_mca_ssh_1"})
+        self.assertEqual(commands["mce_mca_ssh_1"], "mcelog --client")
+
+    def test_unmatched_title_uses_generic_profile(self):
+        commands = dict(nt._cmds_for("Unexpected platform symptom"))
+        self.assertEqual(set(commands), {"unknown_generic_ssh_1", "unknown_generic_ssh_2"})
+        self.assertTrue(all(command for command in commands.values()))
 
     def test_unreachable_kernel_reports_insufficient_evidence(self):
         result = nt._collect_bmc_sync.__name__
@@ -36,7 +47,7 @@ class TestAutoHsdClosedLoop(unittest.TestCase):
         kernel = dict(requirements)["kernel_panic"]
         self.assertTrue(kernel["requires_node_reachable"])
         self.assertIn("Node unavailable", kernel["if_unreachable"])
-        self.assertIn("centralized Elastic", kernel["if_unreachable"])
+        self.assertIn("direct SSH", kernel["if_unreachable"])
 
     def test_unreachable_bmc_management_attempts_independent_bmc_path(self):
         fake_proc = type("Proc", (), {"stdout": "SEL event", "returncode": 0})()

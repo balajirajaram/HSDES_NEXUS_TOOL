@@ -11,18 +11,19 @@ typing your domain password. Always serve over HTTPS in any shared deployment.
 """
 
 import os
+import json
 import re
 import secrets
 import time
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from fastapi import FastAPI, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from .analyzer import analyze, kb, update_hsd_report
+from .analyzer import analyze, extract_ownership, kb, update_hsd_report
 from .batch_learn import batch_learn
 from .bugscout_bridge import (
     bugscout_finalize_batch,
@@ -70,6 +71,18 @@ def _normalize_hsd_id(value: str) -> str:
     return number_match.group(1) if number_match else text
 
 
+def _dedupe_batch_ids(values: List[str]) -> List[str]:
+    ids = []
+    seen = set()
+    for value in values:
+        hsd_id = _normalize_hsd_id(value)
+        if not hsd_id or hsd_id in seen:
+            continue
+        seen.add(hsd_id)
+        ids.append(hsd_id)
+    return ids
+
+
 def _save_report(hsd_id: str, markdown: str, result: Optional[Dict] = None) -> tuple[str, str]:
     """Persist every analysis to output/hsd_<id>_<timestamp>.md and .html."""
     os.makedirs(_OUTPUT_DIR, exist_ok=True)
@@ -87,6 +100,18 @@ def _save_report(hsd_id: str, markdown: str, result: Optional[Dict] = None) -> t
         f.write(html_doc)
     return md_path, html_path
 
+
+def _repro_summary(result: Dict[str, Any]) -> str:
+    repro = result.get("suggested_repro") or {}
+    rows = repro.get("results") or []
+    if not rows:
+        return repro.get("message") or "No sufficiently similar historical case found"
+    top = rows[0]
+    tool = str(top.get("tool_name") or "unclassified")
+    mode = str(top.get("subtest_or_mode") or "unclassified")
+    match_type = str(top.get("match_type") or "UNKNOWN")
+    return f"{tool} {mode} ({match_type})"
+
 # Server-side credential store: session_id -> {"username","password"}.
 # In-memory only; cleared on logout and on process restart.
 _SESSIONS: Dict[str, Dict[str, str]] = {}
@@ -96,6 +121,12 @@ class AnalyzeRequest(BaseModel):
     hsd_id: str
     symptoms: str
     log_text: Optional[str] = None
+    fetch_attachments: bool = True
+
+
+class BatchAnalyzeRequest(BaseModel):
+    hsd_ids: List[str]
+    symptoms: str = "Automated triage"
     fetch_attachments: bool = True
 
 
@@ -216,6 +247,16 @@ async def index():
     )
 
 
+@app.get("/api/report/{filename}")
+async def api_report(filename: str):
+    """Serve a saved report by basename only; never accept an arbitrary path."""
+    safe_name = os.path.basename(filename)
+    path = os.path.join(_OUTPUT_DIR, safe_name)
+    if safe_name != filename or not os.path.isfile(path):
+        return JSONResponse(status_code=404, content={"error": "Report not found."})
+    return FileResponse(path)
+
+
 @app.get("/api/health")
 async def health():
     return {
@@ -283,6 +324,65 @@ async def api_analyze(request: Request, req: AnalyzeRequest):
         result["saved_path"] = md_path
         result["saved_html_path"] = html_path
     return result
+
+
+@app.post("/api/batch/analyze")
+async def api_batch_analyze(request: Request, req: BatchAnalyzeRequest):
+    """Analyze normalized IDs sequentially and stream one completed row at a time."""
+    if not _creds(request) and not _kerberos():
+        return JSONResponse(status_code=401, content={"error": "Please sign in first."})
+    ids = _dedupe_batch_ids(req.hsd_ids)
+    if not ids:
+        return JSONResponse(status_code=400, content={"error": "No valid HSD IDs provided."})
+
+    async def rows():
+        for hsd_id in ids:
+            yield json.dumps({"hsd_id": hsd_id, "status": "Analyzing"}) + "\n"
+            try:
+                result = await analyze(
+                    hsd_id, req.symptoms.strip() or "Automated triage",
+                    username=(_creds(request) or {}).get("username"),
+                    password=(_creds(request) or {}).get("password"),
+                    fetch_attachments=req.fetch_attachments,
+                )
+                saved_path = saved_html_path = ""
+                if result.get("report_markdown"):
+                    saved_path, saved_html_path = _save_report(
+                        hsd_id, result["report_markdown"], result)
+                action = await update_hsd_report(
+                    hsd_id, req.symptoms.strip() or "Automated triage",
+                    dry_run=False, result=result,
+                    fetch_attachments=req.fetch_attachments,
+                )
+                own = extract_ownership(result)
+                gate = action.get("gate") or {}
+                if action.get("ok") and not action.get("dry_run"):
+                    action_name = "Posted"
+                elif action.get("gated"):
+                    action_name = "Draft"
+                elif action.get("draft_only") or action.get("dry_run"):
+                    action_name = "Draft"
+                else:
+                    action_name = "Skipped"
+                yield json.dumps({
+                    "hsd_id": hsd_id, "status": "Done",
+                    "verdict": own.get("verdict") or "couldn't be analyzed",
+                    "confidence": own.get("confidence", 0),
+                    "owning_ip": own.get("owning_ip", ""),
+                    "action": action_name,
+                    "repro": _repro_summary(result),
+                    "report_url": f"/api/report/{os.path.basename(saved_html_path)}" if saved_html_path else "",
+                    "gate": gate, "reason": action.get("reason") or action.get("error", ""),
+                }) + "\n"
+            except Exception as exc:
+                yield json.dumps({
+                    "hsd_id": hsd_id, "status": "Failed",
+                    "verdict": "couldn't be analyzed", "confidence": 0,
+                    "owning_ip": "", "action": "Skipped", "repro": "—", "report_url": "",
+                    "reason": f"{type(exc).__name__}: {exc}",
+                }) + "\n"
+
+    return StreamingResponse(rows(), media_type="application/x-ndjson")
 
 
 _CHAT_SYSTEM = (

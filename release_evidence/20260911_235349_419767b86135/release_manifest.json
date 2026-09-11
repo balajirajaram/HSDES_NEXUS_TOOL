@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-09-11T23:53:58+0530",
+  "git_branch": "nexus-tool-import",
+  "commit_hash": "419767b8613523f9c839dc4af8c6ecbf18784a2a",
+  "dirty_worktree": true,
+  "python_version": "3.14.3",
+  "config_fingerprint": "73dad1fc8f973a8d94acdb6f04220b2b45255b0dfd8354f371621650cc6f58d2",
+  "test_count": 97,
+  "test_exit_code": 0,
+  "provenance": {
+    "exit_code": 0,
+    "status": "PASS",
+    "unknown_trust": [],
+    "output": "Resources discovered: 20\nInventory entries: 20\nInventory coverage: 100.0%\nMissing inventory: 0\nUnknown trust: 0\nDuplicate JSON keys: 0\nQUALITY: PASS\n"
+  },
+  "reference_case_count": 50,
+  "strict_golden_case_count": 47,
+  "benchmark": {
+    "status": "FAIL",
+    "gate_policy": "normalized_owner_accuracy_with_all_other_checks_strict",
+    "exit_code": 1,
+    "qualified_golden_cases": 47,
+    "reference_cases": 50,
+    "cases_passed_strict": "0/47",
+    "cases_passed_normalized": "0/47",
+    "first_error_accuracy": "2.7%",
+    "first_error_note": "First-error accuracy measures a different, harder question (earliest register to raise an error) than owner accuracy (which physical unit owns the failure) -- do not average these into one score.",
+    "output": "Running 47 golden case(s) from C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\golden_cases (offline fixture-only)\n\nHSD           Expected  Detected    Owner  Verdict             Conf  Result\n------------------------------------------------------------------------------\n14026093607   DSA                   FAIL                       0%    FAIL\n14026464067   Core      MLC (Module FAIL   WORKING HYPOTHESIS  35%   FAIL\n14028507593   Core/FE/HAM            FAIL                       0%    FAIL\n14028507593   Core/FE/HAM            FAIL                       0%    FAIL\n15019342741   Core      IFU (Core)  PASS   WORKING HYPOTHESIS  35%   FAIL\n15019342741   Core/FE/BPUIFU (Core)  FAIL   WORKING HYPOTHESIS  35%   FAIL\n15019357856   Core      IFU (Core)  PASS   WORKING HYPOTHESIS  35%   FAIL\n15019357856   Core/FE/BPUIFU (Core)  FAIL   WORKING HYPOTHESIS  35%   FAIL\n15019358385   Core      IFU (Core)  PASS   WORKING HYPOTHESIS  35%   FAIL\n15019358385   Core/FE/BPUIFU (Core)  FAIL   WORKING HYPOTHESIS  35%   FAIL\n15019382716   Core      IFU (Core)  PASS   WORKING HYPOTHESIS  35%   FAIL\n15019382716   Core/FE/BPUIFU (Core)  FAIL   WORKING HYPOTHESIS  35%   FAIL\n15019383400   Core      IFU (Core)  PASS   WORKING HYPOTHESIS  35%   FAIL\n15019383400   Core/FE/BPUIFU (Core)  FAIL   WORKING HYPOTHESIS  35%   FAIL\n21044871638   Core/FE/HAM            FAIL   INSUFFICIENT_EVIDEN 0%    FAIL\n21044871638   Core/FE/HAM            FAIL   INSUFFICIENT_EVIDEN 0%    FAIL\n14020056414   Security  MSE         FAIL   WORKING HYPOTHESIS  35%   FAIL\n16024409170   MDF                   FAIL   WORKING HYPOTHESIS  35%   FAIL\n22019405820   Uncore    MLC (Module FAIL   WORKING HYPOTHESIS  35%   FAIL\n22019405820   Acode     MLC (Module FAIL   WORKING HYPOTHESIS  35%   FAIL\n14011352071   Core                  FAIL   INSUFFICIENT_EVIDEN 0%    FAIL\n14011439924   Core                  FAIL   INSUFFICIENT_EVIDEN 0%    FAIL\n1707238410    Core      MLC (Module FAIL   WORKING HYPOTHESIS  35%   FAIL\n22010039282   Core                  FAIL   INSUFFICIENT_EVIDEN 0%    FAIL\n22010039282   uCode                 FAIL   INSUFFICIENT_EVIDEN 0%    FAIL\n14012462331   ConfigROM             FAIL                       0%    FAIL\n14013775827   Core      DTLB        FAIL   WORKING HYPOTHESIS  35%   FAIL\n14013789944   Core      MLC (Module FAIL   WORKING HYPOTHESIS  35%   FAIL\n14014613214   CHA                   FAIL                       0%    FAIL\n14014613214   Uncore                FAIL                       0%    FAIL\n14015032086   UNKNOWN               FAIL                       0%    FAIL\n14015143476   MDF       MLC (Module FAIL   WORKING HYPOTHESIS  35%   FAIL\n14015196045   RAS       CCF         FAIL   WORKING HYPOTHESIS  35%   FAIL\n14015263050   DSA       MLC (Module FAIL   WORKING HYPOTHESIS  35%   FAIL\n14015800984   UPI       NCU         FAIL   WORKING HYPOTHESIS  35%   FAIL\n14015800984   UPI InitializationNCU         FAIL   WORKING HYPOTHESIS  35%   FAIL\n14016376372   UPI                   FAIL   WORKING HYPOTHESIS  35%   FAIL\n14016417265   Memory/IMC            FAIL                       0%    FAIL\n1404503208    uCode                 FAIL   INSUFFICIENT_EVIDEN 0%    FAIL\n22011493992   Core                  FAIL                       0%    FAIL\n22012724143   UPI                   FAIL                       0%    FAIL\n22014056631   Core                  FAIL   INSUFFICIENT_EVIDEN 0%    FAIL\n22014056631   Core/BPU              FAIL   INSUFFICIENT_EVIDEN 0%    FAIL\n22015416586   Mesh/FabricNCU         FAIL   WORKING HYPOTHESIS  35%   FAIL\n14019137156   Core                  FAIL                       0%    FAIL\n15016126803   Core                  FAIL                       0%    FAIL\n16022337351   Core      MSE         FAIL   WORKING HYPOTHESIS  35%   FAIL\n\n=== Metrics ===\nOwning-IP accuracy (strict)     :  20.8%   (5/24 actionable predictions, literal string match)\nOwning-IP accuracy (normalized)  :  83.3%   (20/24 actionable predictions, abstraction-aware synonym match)\nOwnership precision     :  20.8%   (correct / named)\nOwnership recall        :  13.2%   (correct / labeled cases)\nBank accuracy           : 100.0%\nSocket accuracy         :   0.0%\nFirst-error accuracy    :   2.7%   (target > 90%)\nOverconfidence rate     :   0.0%   (target ~0%)\nFalse-attribution rate  :  40.4%   (target < 10%)\nFalse-attribution count : 19\nFalse Confirmed RCA count: 0\nConfidence calibration  : 0/47 overconfident cases\nContradiction miss rate :   n/a   (no labels)\nCases passed (strict)     : 0/47\nCases passed (normalized) : 0/47\nActual predictions      : 38/47\nActionable owner preds  : 24/47\nInsufficient evidence   : 9/47\nAnalyzer errors         : 0/47\nTimed-out cases         : none\nOutcome buckets          : ACTIONABLE=24, INSUFFICIENT_EVIDENCE=9, NO_BANK_PROVENANCE=1, NO_OWNERSHIP_SIGNAL=13\n"
+  },
+  "autohsd_integration": {
+    "exit_code": 0,
+    "status": "PASS",
+    "output": "............\n----------------------------------------------------------------------\nRan 12 tests in 0.160s\n\nOK\n"
+  },
+  "hsd_post_gate": "existing analyzer._post_gate; no write performed",
+  "blockers": [
+    "Golden Case benchmark failed"
+  ]
+}

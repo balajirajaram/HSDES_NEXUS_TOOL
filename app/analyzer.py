@@ -396,35 +396,11 @@ def _post_verdict(decoded: Optional[Dict[str, Any]],
             "captured at this point; otherwise treat it as a firmware/config hang.")
 
 
-def _historical_repro_section(platform: str, target: Optional[Dict[str, Any]],
-                              log_findings: Optional[Dict[str, Any]]) -> str:
-    """Build the additive historical-repro section without changing RCA state."""
-    from pathlib import Path
-    from .historical_repro import load_cases, match_historical_repro, render_section
-
-    target = target or {}
-    decoded = (log_findings or {}).get("decoded") or {}
-    evidence = decoded.get("evidence") or {}
-    mca = evidence.get("mc_status") or {}
-    signature = {
-        "platform": platform,
-        "owner": target.get("component") or target.get("suspect_area") or "",
-        "mcacod": mca.get("mcacod"),
-        "mscod": mca.get("mscod"),
-        "bank": mca.get("bank"),
-        "socket": (evidence.get("sockets") or [None])[0],
-        "keywords": " ".join(str(target.get(key) or "") for key in
-                               ("title", "description", "full_text")),
-    }
-    root = Path(__file__).resolve().parents[1] / "golden_cases"
-    return render_section(match_historical_repro(signature, load_cases(root)))
-
-
-def _repro_vector_section(platform: str, target: Optional[Dict[str, Any]],
-                          log_findings: Optional[Dict[str, Any]],
-                          report_md: str) -> str:
-    """Append ranked stress vectors as research context only."""
-    from .repro_recommender import recommend_repro_vectors
+def _suggested_repro(platform: str, target: Optional[Dict[str, Any]],
+                     log_findings: Optional[Dict[str, Any]],
+                     report_md: str) -> Dict[str, Any]:
+    """Compute read-only historical repro suggestions from current RCA output."""
+    from .repro_recommender import recommend_repro
     from .repro_signature_extractor import extract_failure_mechanism
 
     ownership = extract_ownership({"report_markdown": report_md,
@@ -433,30 +409,14 @@ def _repro_vector_section(platform: str, target: Optional[Dict[str, Any]],
     decoded = (log_findings or {}).get("decoded") or {}
     labels = " ".join(str(item.get("label", "")) for item in
                       (log_findings or {}).get("signatures", []))
-    target["keywords"] = " ".join(filter(None, [target.get("title", ""),
-                                                   target.get("description", ""), labels]))
+    target["keywords"] = " ".join(filter(None, [
+        target.get("title", ""), target.get("description", ""), labels,
+    ]))
     mechanism = (decoded.get("failure_mechanism") or
-                 target.get("failure_mechanism") or extract_failure_mechanism(target))
-    recommendations = recommend_repro_vectors(
-        ownership.get("owning_ip", ""), mechanism, platform or "", top_n=5)
-    lines = ["## Suggested Reproduction Vectors", "",
-             "Historical reference only -- not used in confidence or verdict calculation.", ""]
-    if not recommendations:
-        lines.append("No historical reproduction vector found.")
-        return "\n".join(lines) + "\n"
-    for index, recommendation in enumerate(recommendations, 1):
-        lines.extend([
-            f"### Recommendation {index}",
-            f"- **Tool:** {recommendation.get('tool_name', 'unclassified')}",
-            f"- **Subtest / mode:** {recommendation.get('subtest_or_mode', 'unknown')}",
-            f"- **Trigger context:** {', '.join(recommendation.get('trigger_context', []))}",
-            f"- **Match:** {recommendation.get('match_type')}",
-            f"- **Hit count:** {recommendation.get('hit_count', 0)}",
-            f"- **Evidence tier:** {recommendation.get('evidence_tier', 'UNKNOWN')}",
-            f"- **Source HSDs:** {', '.join(recommendation.get('source_hsd_ids', []))}",
-            "",
-        ])
-    return "\n".join(lines)
+                 target.get("failure_mechanism") or
+                 extract_failure_mechanism(target))
+    return recommend_repro(
+        ownership.get("owning_ip", ""), mechanism, platform or "", top_n=3)
 
 
 def _specific_next_steps(decoded: Optional[Dict[str, Any]]) -> List[str]:
@@ -1191,10 +1151,9 @@ async def analyze(hsd_id: str, symptoms: str,
 
     # Historical reproduction is a read-only research aid. Keep it outside the
     # report inputs used for confidence, verdict, KB validation, and post gating.
-    report_md = (report_md or "").rstrip() + "\n\n" + _historical_repro_section(
-        platform, target, log_findings)
-    report_md = (report_md or "").rstrip() + "\n\n" + _repro_vector_section(
-        platform, target, log_findings, report_md)
+    from .repro_recommender import render_repro_section
+    suggested_repro = _suggested_repro(platform, target, log_findings, report_md)
+    report_md = (report_md or "").rstrip() + "\n\n" + render_repro_section(suggested_repro)
 
     # Step 3 - WRITE-BACK
     _kb_state, _kb_eligible = _kb_validation_state(log_findings, comment_findings)
@@ -1235,6 +1194,7 @@ async def analyze(hsd_id: str, symptoms: str,
         "mcp_sources": mcp_sources,
         "sources": sources,
         "axon_records": axon_records,
+        "suggested_repro": suggested_repro,
         "kb_action": kb_action,
         "report_markdown": report_md,
     }
