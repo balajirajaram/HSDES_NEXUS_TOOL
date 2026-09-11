@@ -75,19 +75,32 @@ def main() -> int:
     reference_path = ROOT / "reference_corpus.csv"
     if reference_path.exists():
         reference_count = max(0, len(reference_path.read_text(encoding="utf-8").splitlines()) - 1)
-    benchmark = {"status": "NOT_RUN", "qualified_golden_cases": len(golden),
-                 "reference_cases": reference_count, "reason": "Canonical release gate does not run live benchmark automatically."}
+    benchmark_code, benchmark_output = run_capture(
+        [sys.executable, "-m", "tools.rca_benchmark", "--dir", "golden_cases",
+         "--no-attachments"])
+    passed_match = re.search(r"Cases passed\s+:\s+(\d+)/(\d+)", benchmark_output)
+    benchmark = {
+        "status": "PASS" if benchmark_code == 0 else "FAIL",
+        "exit_code": benchmark_code,
+        "qualified_golden_cases": len(golden),
+        "reference_cases": reference_count,
+        "cases_passed": (f"{passed_match.group(1)}/{passed_match.group(2)}"
+                          if passed_match else "unknown"),
+        "output": benchmark_output[-10000:],
+    }
     (out / "benchmark_results.json").write_text(json.dumps(benchmark, indent=2), encoding="utf-8")
     blockers = []
     if test_code != 0: blockers.append("tests failed")
     if provenance_code != 0: blockers.append(f"unknown provenance resources: {len(unknown)}")
     if len(golden) < 30: blockers.append(f"qualified Golden Cases: {len(golden)}/30")
     if integration_code != 0: blockers.append("AutoHSD integration tests failed")
+    if benchmark_code != 0: blockers.append("Golden Case benchmark failed")
     readiness = ["# NEXUS Release Readiness", "", f"Status: {'NOT APPROVED' if blockers else 'APPROVED'}", "",
                  f"Git branch: {branch}", f"Commit: {commit}", f"Dirty tree: {dirty}",
                  f"Python: {platform.python_version()}", f"Tests: {test_count if test_count is not None else 'unknown'} (exit {test_code})",
                  f"Provenance: {provenance['status']}", f"Reference cases: {reference_count}",
                  f"Strict Golden cases: {len(golden)}/30", f"AutoHSD integration: {integration['status']}",
+                 f"Benchmark: {benchmark['status']} ({benchmark['cases_passed']})",
                  "HSD post-gate: evaluated by existing _post_gate in integration/test paths", "",
                  "## Blockers"] + [f"- {item}" for item in blockers]
     (out / "production_readiness.md").write_text("\n".join(readiness) + "\n", encoding="utf-8")
@@ -95,7 +108,8 @@ def main() -> int:
                 "commit_hash": commit, "dirty_worktree": dirty, "python_version": platform.python_version(),
                 "config_fingerprint": config_fingerprint(), "test_count": test_count,
                 "test_exit_code": test_code, "provenance": provenance, "reference_case_count": reference_count,
-                "strict_golden_case_count": len(golden), "autohsd_integration": integration,
+                "strict_golden_case_count": len(golden), "benchmark": benchmark,
+                "autohsd_integration": integration,
                 "hsd_post_gate": "existing analyzer._post_gate; no write performed", "blockers": blockers}
     (out / "release_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"Release evidence: {out}")

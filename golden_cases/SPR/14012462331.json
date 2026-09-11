@@ -1,0 +1,37 @@
+{
+  "hsd_id": "14012462331",
+  "platform": "SPR",
+  "domain": "hw.configrom",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "ConfigROM",
+  "expected_reporting_ip": "ConfigROM",
+  "expected_first_error": "ConfigROM",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "22011223740; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "22011223740=new.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "22011223740=new.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/14012462331"
+    ]
+  },
+  "expected": {
+    "owner": "ConfigROM",
+    "reporting_ip": "ConfigROM",
+    "originating_ip": "ConfigROM",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "22011223740"
+  }
+}

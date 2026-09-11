@@ -1,0 +1,39 @@
+{
+  "hsd_id": "14014613214",
+  "platform": "SPR",
+  "domain": "Uncore",
+  "validation_level": "LEVEL_4_FIX_VALIDATED",
+  "expected_owner": "Uncore",
+  "expected_reporting_ip": "Uncore",
+  "expected_first_error": "Uncore",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "WA in uCode; fixed in Uncore/CHA.",
+  "evidence": {
+    "source": "RTL Bugeco 1401131480; fixed in Fixed in CHA SPR-A0",
+    "validation_source": "RTL Bugeco 1401131480; fixed in Fixed in CHA SPR-A0",
+    "validated_by": "RTL/Silicon validation (bugeco record)",
+    "fix_validated": true,
+    "source_references": [
+      "1401131480"
+    ]
+  },
+  "expected": {
+    "owner": "Uncore",
+    "reporting_ip": "Uncore",
+    "originating_ip": "Uncore",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "WA in uCode; fixed in Uncore/CHA."
+  },
+  "bugeco_id": "1401131480",
+  "secondary_ip": "Uncore/CHA"
+}

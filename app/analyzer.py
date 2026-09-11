@@ -325,6 +325,30 @@ def _post_verdict(decoded: Optional[Dict[str, Any]],
             "captured at this point; otherwise treat it as a firmware/config hang.")
 
 
+def _historical_repro_section(platform: str, target: Optional[Dict[str, Any]],
+                              log_findings: Optional[Dict[str, Any]]) -> str:
+    """Build the additive historical-repro section without changing RCA state."""
+    from pathlib import Path
+    from .historical_repro import load_cases, match_historical_repro, render_section
+
+    target = target or {}
+    decoded = (log_findings or {}).get("decoded") or {}
+    evidence = decoded.get("evidence") or {}
+    mca = evidence.get("mc_status") or {}
+    signature = {
+        "platform": platform,
+        "owner": target.get("component") or target.get("suspect_area") or "",
+        "mcacod": mca.get("mcacod"),
+        "mscod": mca.get("mscod"),
+        "bank": mca.get("bank"),
+        "socket": (evidence.get("sockets") or [None])[0],
+        "keywords": " ".join(str(target.get(key) or "") for key in
+                               ("title", "description", "full_text")),
+    }
+    root = Path(__file__).resolve().parents[1] / "golden_cases"
+    return render_section(match_historical_repro(signature, load_cases(root)))
+
+
 def _specific_next_steps(decoded: Optional[Dict[str, Any]]) -> List[str]:
     """IP-specific next reads derived from the decoded bank/unit."""
     ev = _mc_evidence(decoded)
@@ -1052,6 +1076,11 @@ async def analyze(hsd_id: str, symptoms: str,
             log_findings, attachments, fetched, attach_files, comment_findings,
             transferred, fetch_attempted=fetch_attachments
         )
+
+    # Historical reproduction is a read-only research aid. Keep it outside the
+    # report inputs used for confidence, verdict, KB validation, and post gating.
+    report_md = (report_md or "").rstrip() + "\n\n" + _historical_repro_section(
+        platform, target, log_findings)
 
     # Step 3 - WRITE-BACK
     _kb_state, _kb_eligible = _kb_validation_state(log_findings, comment_findings)

@@ -1,0 +1,39 @@
+{
+  "hsd_id": "22014056631",
+  "platform": "SPR",
+  "domain": "Core/BPU",
+  "validation_level": "LEVEL_4_FIX_VALIDATED",
+  "expected_owner": "Core/BPU",
+  "expected_reporting_ip": "Core/BPU",
+  "expected_first_error": "Core/BPU",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "WA in ucode; fixed in FE/BPU RTL.",
+  "evidence": {
+    "source": "RTL Bugeco 14015439921; fixed in Fixed in SPR-Q0",
+    "validation_source": "RTL Bugeco 14015439921; fixed in Fixed in SPR-Q0",
+    "validated_by": "RTL/Silicon validation (bugeco record)",
+    "fix_validated": true,
+    "source_references": [
+      "14015439921"
+    ]
+  },
+  "expected": {
+    "owner": "Core/BPU",
+    "reporting_ip": "Core/BPU",
+    "originating_ip": "Core/BPU",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "WA in ucode; fixed in FE/BPU RTL."
+  },
+  "bugeco_id": "14015439921",
+  "secondary_ip": "Core/BPU"
+}

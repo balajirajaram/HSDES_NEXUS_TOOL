@@ -1,0 +1,39 @@
+{
+  "hsd_id": "14015800984",
+  "platform": "SPR",
+  "domain": "UPI Initialization",
+  "validation_level": "LEVEL_4_FIX_VALIDATED",
+  "expected_owner": "UPI Initialization",
+  "expected_reporting_ip": "UPI Initialization",
+  "expected_first_error": "UPI Initialization",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "Fixed in Pcode. This is a firmware/Pcode fix, not a silicon respin; record as FW-only resolution.",
+  "evidence": {
+    "source": "RTL Bugeco 1401585456; fixed in Fixed in SPR-E0",
+    "validation_source": "RTL Bugeco 1401585456; fixed in Fixed in SPR-E0",
+    "validated_by": "RTL/Silicon validation (bugeco record)",
+    "fix_validated": true,
+    "source_references": [
+      "1401585456"
+    ]
+  },
+  "expected": {
+    "owner": "UPI Initialization",
+    "reporting_ip": "UPI Initialization",
+    "originating_ip": "UPI Initialization",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "Fixed in Pcode. This is a firmware/Pcode fix, not a silicon respin; record as FW-only resolution."
+  },
+  "bugeco_id": "1401585456",
+  "secondary_ip": "Fuse Download"
+}

@@ -1,0 +1,39 @@
+{
+  "hsd_id": "22010039282",
+  "platform": "ICX",
+  "domain": "uCode",
+  "validation_level": "LEVEL_4_FIX_VALIDATED",
+  "expected_owner": "uCode",
+  "expected_reporting_ip": "uCode",
+  "expected_first_error": "uCode",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "WA in ucode; fixed in Core/MEU/DCU.; additional RTL Bugeco IDs: 1306055589",
+  "evidence": {
+    "source": "RTL Bugeco 1306993191; fixed in Fixed in SNC E0",
+    "validation_source": "RTL Bugeco 1306993191; fixed in Fixed in SNC E0",
+    "validated_by": "RTL/Silicon validation (bugeco record)",
+    "fix_validated": true,
+    "source_references": [
+      "1306993191"
+    ]
+  },
+  "expected": {
+    "owner": "uCode",
+    "reporting_ip": "uCode",
+    "originating_ip": "uCode",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "WA in ucode; fixed in Core/MEU/DCU.; additional RTL Bugeco IDs: 1306055589"
+  },
+  "bugeco_id": "1306993191",
+  "secondary_ip": "Core/MEU/DCU"
+}

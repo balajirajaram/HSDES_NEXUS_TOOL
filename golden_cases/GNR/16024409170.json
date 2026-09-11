@@ -1,0 +1,37 @@
+{
+  "hsd_id": "16024409170",
+  "platform": "GNR",
+  "domain": "hw.mdf",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "MDF",
+  "expected_reporting_ip": "MDF",
+  "expected_first_error": "MDF",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "16025627513; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "16025627513=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "16025627513=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/16024409170"
+    ]
+  },
+  "expected": {
+    "owner": "MDF",
+    "reporting_ip": "MDF",
+    "originating_ip": "MDF",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "16025627513"
+  }
+}

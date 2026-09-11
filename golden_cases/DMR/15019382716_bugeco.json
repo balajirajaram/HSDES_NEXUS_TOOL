@@ -1,0 +1,38 @@
+{
+  "hsd_id": "15019382716",
+  "platform": "DMR",
+  "domain": "Core/FE/BPU",
+  "validation_level": "LEVEL_4_FIX_VALIDATED",
+  "expected_owner": "Core/FE/BPU",
+  "expected_reporting_ip": "Core/FE/BPU",
+  "expected_first_error": "Core/FE/BPU",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "Root caused to Front End/BPU RTL bug; fixed in PNC C0.",
+  "evidence": {
+    "source": "RTL Bugeco 13013348392; fixed in Fixed in PNC C0",
+    "validation_source": "RTL Bugeco 13013348392; fixed in Fixed in PNC C0",
+    "validated_by": "RTL/Silicon validation (bugeco record)",
+    "fix_validated": true,
+    "source_references": [
+      "13013348392"
+    ]
+  },
+  "expected": {
+    "owner": "Core/FE/BPU",
+    "reporting_ip": "Core/FE/BPU",
+    "originating_ip": "Core/FE/BPU",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "Root caused to Front End/BPU RTL bug; fixed in PNC C0."
+  },
+  "bugeco_id": "13013348392"
+}

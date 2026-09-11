@@ -7,6 +7,7 @@ itsdangerous>=2.1
 # Kerberos SSO to HSDES (Windows/Intel domain) — enables HSDES_AUTH_MODE=auto (no password)
 requests>=2.31
 requests-kerberos>=0.14
+requests-negotiate-sspi>=0.5.3; platform_system == "Windows"
 markdown>=3.7
 # NUC PythonSV live-debug bridge — connects to the lab NUC to drive PythonSV
 # when the SUT is hung. Tries SSH first, falls back to WinRM.

@@ -7,8 +7,10 @@ Usage:
 
 For each golden case it runs analyze(), extracts the detected owning IP / first
 error / verdict / confidence, compares against the validated expectation, and
-prints a PASS/FAIL table plus the five accuracy metrics. Add validated HSDs to
-golden_cases/ (one JSON each) — see golden_cases/README.md.
+prints a PASS/FAIL table plus the accuracy metrics. ``--offline`` is a
+fixture-only audit mode: it makes no HSDES, attachment, MCP, Axon, or LLM calls
+and reports predictions as unavailable. ``--no-attachments`` selects the same
+offline mode for backwards-compatible bounded runs.
 """
 
 from __future__ import annotations
@@ -26,6 +28,8 @@ if str(REPO_ROOT) not in sys.path:
 
 from app.analyzer import analyze, extract_ownership  # noqa: E402
 
+CASE_TIMEOUT_SECONDS = 30
+
 
 def _load_cases(root: Path) -> List[Dict[str, Any]]:
     cases: List[Dict[str, Any]] = []
@@ -37,9 +41,13 @@ def _load_cases(root: Path) -> List[Dict[str, Any]]:
         except Exception as exc:
             print(f"  skip {path.name}: {exc}")
             continue
-        # Some safety fixtures intentionally assert unresolved ownership. They
-        # still score verdict/contradiction behavior while owner accuracy is N/A.
-        if data.get("hsd_id") and "expected_owner" in data:
+        evidence = data.get("evidence") or {}
+        validation_level = str(data.get("validation_level") or "").upper()
+        has_provenance = bool(evidence.get("validated_by") and
+                      evidence.get("validation_source"))
+        if (data.get("hsd_id") and "expected_owner" in data
+            and validation_level in {"LEVEL_3_REPRODUCED", "LEVEL_4_FIX_VALIDATED"}
+            and has_provenance):
             data["_file"] = str(path.relative_to(root))
             cases.append(data)
     return cases
@@ -55,6 +63,13 @@ def _match(expected: str, detected: str) -> bool:
     return e in d or d in e
 
 
+def _optional_match(expected: Any, detected: Any) -> Any:
+    """Return None for an unlabeled field, otherwise compare normalized text."""
+    if expected in (None, "", []):
+        return None
+    return _match(str(expected), str(detected or ""))
+
+
 async def _score_case(case: Dict[str, Any], fetch_attachments: bool) -> Dict[str, Any]:
     hsd_id = str(case["hsd_id"])
     result = await analyze(hsd_id, f"RCA benchmark: {case.get('notes','')}",
@@ -62,6 +77,12 @@ async def _score_case(case: Dict[str, Any], fetch_attachments: bool) -> Dict[str
     own = extract_ownership(result)
     expected_owner = (case.get("expected_owner") or "").strip()
     owner_ok = _match(expected_owner, own["owning_ip"]) if expected_owner else None
+    reporting_ok = _optional_match(case.get("expected_reporting_ip"), own["reporting_ip"])
+    bank_ok = _optional_match(case.get("expected_bank"), own["bank"])
+    socket_ok = _optional_match(case.get("expected_socket"), own["socket"])
+    mcacod_ok = _optional_match(case.get("expected_mcacod"), own["mcacod"])
+    mscod_ok = _optional_match(case.get("expected_mscod"), own["mscod"])
+    decoder_ok = _optional_match(case.get("expected_decoder_state"), own["decoder_state"])
     fe_expected = case.get("expected_first_error", "")
     fe_ok = _match(fe_expected, own["first_error"]) if fe_expected else None
     v_expected = (case.get("expected_verdict") or "").upper()
@@ -76,20 +97,56 @@ async def _score_case(case: Dict[str, Any], fetch_attachments: bool) -> Dict[str
     # Contradiction miss = corpus says a contradiction exists but the tool didn't flag it.
     exp_contra = bool(case.get("expected_contradiction"))
     contra_miss = exp_contra and not own.get("contradiction")
-    passed = (owner_ok is not False and (fe_ok is not False)
-              and (verdict_ok is not False) and (conf_ok is not False))
+    field_checks = (owner_ok, reporting_ok, bank_ok, socket_ok, mcacod_ok,
+                    mscod_ok, decoder_ok, fe_ok, verdict_ok, conf_ok)
+    passed = all(check is not False for check in field_checks)
     return {
         "hsd_id": hsd_id, "file": case.get("_file", ""),
         "expected_owner": expected_owner, "detected_owner": own["owning_ip"],
         "owner_ok": owner_ok, "fe_ok": fe_ok, "verdict_ok": verdict_ok, "conf_ok": conf_ok,
+        "reporting_ok": reporting_ok, "bank_ok": bank_ok, "socket_ok": socket_ok,
+        "mcacod_ok": mcacod_ok, "mscod_ok": mscod_ok, "decoder_ok": decoder_ok,
+        "detected_reporting_ip": own["reporting_ip"], "detected_bank": own["bank"],
+        "detected_socket": own["socket"], "detected_mcacod": own["mcacod"],
+        "detected_mscod": own["mscod"], "detected_decoder_state": own["decoder_state"],
         "verdict": own["verdict"], "confidence": own["confidence"],
         "overconfident": overconfident, "false_attr": false_attr,
+        "false_confirmed": overconfident,
         "named_owner": bool(own["owning_ip"]), "exp_contra": exp_contra,
         "contra_miss": contra_miss, "passed": passed,
     }
 
 
-async def run(dir_path: str, fetch_attachments: bool) -> int:
+def _offline_score_case(case: Dict[str, Any]) -> Dict[str, Any]:
+    """Return an auditable no-inference result without contacting any service."""
+    expected_owner = (case.get("expected_owner") or "").strip()
+    labeled_fields = {
+        "fe_ok": bool(case.get("expected_first_error")),
+        "bank_ok": case.get("expected_bank") not in (None, "", []),
+        "socket_ok": case.get("expected_socket") not in (None, "", []),
+        "mcacod_ok": case.get("expected_mcacod") not in (None, "", []),
+        "mscod_ok": case.get("expected_mscod") not in (None, "", []),
+    }
+    return {
+        "hsd_id": str(case["hsd_id"]), "file": case.get("_file", ""),
+        "expected_owner": expected_owner, "detected_owner": "",
+        "owner_ok": False if expected_owner else None, "fe_ok": False if labeled_fields["fe_ok"] else None,
+        "verdict_ok": None, "conf_ok": None,
+        "reporting_ok": None, "bank_ok": False if labeled_fields["bank_ok"] else None,
+        "socket_ok": False if labeled_fields["socket_ok"] else None,
+        "mcacod_ok": False if labeled_fields["mcacod_ok"] else None,
+        "mscod_ok": False if labeled_fields["mscod_ok"] else None,
+        "decoder_ok": None, "detected_reporting_ip": "", "detected_bank": "",
+        "detected_socket": "", "detected_mcacod": "", "detected_mscod": "",
+        "detected_decoder_state": "", "verdict": "UNAVAILABLE", "confidence": 0,
+        "overconfident": False, "false_attr": False, "false_confirmed": False,
+        "named_owner": False, "exp_contra": bool(case.get("expected_contradiction")),
+        "contra_miss": None, "passed": False, "offline": True,
+    }
+
+
+async def run(dir_path: str, fetch_attachments: bool, offline: bool = False,
+              timeout_seconds: int = CASE_TIMEOUT_SECONDS) -> int:
     root = (REPO_ROOT / dir_path) if not Path(dir_path).is_absolute() else Path(dir_path)
     if not root.exists():
         print(f"No such directory: {root}")
@@ -98,18 +155,35 @@ async def run(dir_path: str, fetch_attachments: bool) -> int:
     if not cases:
         print(f"No golden cases found under {root}. Add JSON cases (see README).")
         return 0
-    print(f"Running {len(cases)} golden case(s) from {root} "
-          f"({'with' if fetch_attachments else 'without'} attachments)\n")
+    mode = "offline fixture-only" if offline else ("with" if fetch_attachments else "without") + " attachments"
+    print(f"Running {len(cases)} golden case(s) from {root} ({mode})\n")
     rows = []
+    timed_out: List[str] = []
     for case in cases:
         try:
-            rows.append(await _score_case(case, fetch_attachments))
+            if offline:
+                rows.append(_offline_score_case(case))
+            else:
+                rows.append(await asyncio.wait_for(
+                    _score_case(case, fetch_attachments), timeout=timeout_seconds))
+        except asyncio.TimeoutError:
+            timed_out.append(str(case["hsd_id"]))
+            rows.append({"hsd_id": str(case["hsd_id"]), "file": case.get("_file", ""),
+                         "expected_owner": case["expected_owner"], "detected_owner": "TIMEOUT",
+                         "owner_ok": False, "fe_ok": None, "verdict_ok": None, "conf_ok": None,
+                         "reporting_ok": None, "bank_ok": None, "socket_ok": None,
+                         "mcacod_ok": None, "mscod_ok": None, "decoder_ok": None,
+                         "verdict": "TIMEOUT", "confidence": 0, "overconfident": False,
+                         "false_attr": False, "false_confirmed": False, "named_owner": False,
+                         "exp_contra": False, "contra_miss": False, "passed": False})
         except Exception as exc:
             rows.append({"hsd_id": str(case["hsd_id"]), "file": case.get("_file", ""),
                          "expected_owner": case["expected_owner"], "detected_owner": f"ERROR: {exc}",
                          "owner_ok": False, "fe_ok": None, "verdict_ok": None, "conf_ok": None,
+                         "reporting_ok": None, "bank_ok": None, "socket_ok": None,
+                         "mcacod_ok": None, "mscod_ok": None, "decoder_ok": None,
                          "verdict": "", "confidence": 0, "overconfident": False,
-                         "false_attr": False, "named_owner": False, "exp_contra": False,
+                         "false_attr": False, "false_confirmed": False, "named_owner": False, "exp_contra": False,
                          "contra_miss": False, "passed": False})
 
     print(f"{'HSD':<14}{'Expected':<10}{'Detected':<12}{'Owner':<7}{'Verdict':<20}{'Conf':<6}{'Result'}")
@@ -127,6 +201,7 @@ async def run(dir_path: str, fetch_attachments: bool) -> int:
     fe_acc = (100 * sum(1 for r in fe_rows if r["fe_ok"]) / len(fe_rows)) if fe_rows else None
     overconf = 100 * sum(1 for r in rows if r["overconfident"]) / n
     false_attr = 100 * sum(1 for r in rows if r["false_attr"]) / n
+    false_confirmed = sum(1 for r in rows if r.get("false_confirmed", False))
     # Precision = correct / (cases where the tool named an owner). Recall = correct / all.
     named = [r for r in owner_rows if r["named_owner"]]
     precision = (100 * sum(1 for r in named if r["owner_ok"]) / len(named)) if named else None
@@ -136,17 +211,30 @@ async def run(dir_path: str, fetch_attachments: bool) -> int:
     contra_miss = (100 * sum(1 for r in contra_cases if r["contra_miss"]) / len(contra_cases)) if contra_cases else None
     passed = sum(1 for r in rows if r["passed"])
 
+    def accuracy(field: str) -> Any:
+        labeled = [r for r in rows if r[field] is not None]
+        return (100 * sum(1 for r in labeled if r[field]) / len(labeled)
+                if labeled else None)
+
+    bank_acc = accuracy("bank_ok")
+    socket_acc = accuracy("socket_ok")
+
     print("\n=== Metrics ===")
     print("Owning-IP accuracy      : " +
           (f"{owner_acc:5.1f}%   (target > 80-85%)" if owner_acc is not None else "  n/a"))
     print(f"Ownership precision     : " + (f"{precision:5.1f}%   (correct / named)" if precision is not None else "  n/a"))
     print("Ownership recall        : " +
           (f"{recall:5.1f}%   (correct / labeled cases)" if recall is not None else "  n/a"))
+    print("Bank accuracy           : " + (f"{bank_acc:5.1f}%" if bank_acc is not None else "  n/a"))
+    print("Socket accuracy         : " + (f"{socket_acc:5.1f}%" if socket_acc is not None else "  n/a"))
     print(f"First-error accuracy    : " + (f"{fe_acc:5.1f}%   (target > 90%)" if fe_acc is not None else "  n/a   (no labels)"))
     print(f"Overconfidence rate     : {overconf:5.1f}%   (target ~0%)")
     print(f"False-attribution rate  : {false_attr:5.1f}%   (target < 10%)")
+    print(f"False Confirmed RCA count: {false_confirmed}")
+    print(f"Confidence calibration  : {sum(1 for r in rows if r['overconfident'])}/{n} overconfident cases")
     print(f"Contradiction miss rate : " + (f"{contra_miss:5.1f}%   (target < 5%)" if contra_miss is not None else "  n/a   (no labels)"))
     print(f"Cases passed            : {passed}/{n}")
+    print(f"Timed-out cases         : {', '.join(timed_out) if timed_out else 'none'}")
     return 0 if passed == n else 1
 
 
@@ -154,9 +242,15 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="NEXUS RCA regression benchmark")
     ap.add_argument("--dir", default="golden_cases", help="corpus directory")
     ap.add_argument("--no-attachments", action="store_true",
-                    help="skip HSDES attachment fetch (faster, ticket-text only)")
+                    help="run fixture-only offline mode with no live network calls")
+    ap.add_argument("--offline", action="store_true",
+                    help="run fixture-only mode with no HSDES, LLM, or attachment calls")
+    ap.add_argument("--timeout", type=int, default=CASE_TIMEOUT_SECONDS,
+                    help=f"per-case live analysis timeout in seconds (default: {CASE_TIMEOUT_SECONDS})")
     args = ap.parse_args()
-    rc = asyncio.run(run(args.dir, fetch_attachments=not args.no_attachments))
+    offline = args.offline or args.no_attachments
+    rc = asyncio.run(run(args.dir, fetch_attachments=not args.no_attachments and not offline,
+                         offline=offline, timeout_seconds=args.timeout))
     raise SystemExit(rc)
 
 

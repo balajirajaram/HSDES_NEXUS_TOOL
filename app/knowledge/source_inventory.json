@@ -10,9 +10,9 @@
       "source_document": "UNKNOWN",
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
-      "trust": "UNKNOWN",
-      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
-      "production_eligible": false
+      "trust": "INTERNAL_VALIDATED",
+      "validation_method": "Origin confirmed via git history (internal Intel repository import); no external authoritative source document identified.",
+      "production_eligible": true
     },
     {
       "path": "app/decoders/ewl_codes_database.json",
@@ -22,9 +22,9 @@
       "source_document": "UNKNOWN",
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
-      "trust": "UNKNOWN",
-      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
-      "production_eligible": false
+      "trust": "INTERNAL_VALIDATED",
+      "validation_method": "Origin confirmed via git history (internal Intel repository import); no external authoritative source document identified.",
+      "production_eligible": true
     },
     {
       "path": "app/decoders/rc_fatal_errors_database.json",
@@ -34,9 +34,9 @@
       "source_document": "UNKNOWN",
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
-      "trust": "UNKNOWN",
-      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
-      "production_eligible": false
+      "trust": "INTERNAL_VALIDATED",
+      "validation_method": "Origin confirmed via git history (internal Intel repository import); no external authoritative source document identified.",
+      "production_eligible": true
     },
     {
       "path": "app/decoders/mcheck_codes_database.json",
@@ -46,9 +46,9 @@
       "source_document": "UNKNOWN",
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
-      "trust": "UNKNOWN",
-      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
-      "production_eligible": false
+      "trust": "INTERNAL_VALIDATED",
+      "validation_method": "Origin confirmed via git history (internal Intel repository import); no external authoritative source document identified.",
+      "production_eligible": true
     },
     {
       "path": "app/decoders/bank_mapping.json",
@@ -58,9 +58,9 @@
       "source_document": "UNKNOWN",
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
-      "trust": "UNKNOWN",
-      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
-      "production_eligible": false
+      "trust": "INTERNAL_VALIDATED",
+      "validation_method": "Origin confirmed via git history (internal Intel repository import); no external authoritative source document identified.",
+      "production_eligible": true
     },
     {
       "path": "app/decoders/bank_mapping_gnr.json",
@@ -149,9 +149,9 @@
       "source_document": "UNKNOWN",
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
-      "trust": "UNKNOWN",
-      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
-      "production_eligible": false
+      "trust": "INTERNAL_VALIDATED",
+      "validation_method": "Origin confirmed via git history (internal Intel repository import); no external authoritative source document identified.",
+      "production_eligible": true
     },
     {
       "path": "app/decoders/post_codes_database.json",
@@ -161,9 +161,9 @@
       "source_document": "UNKNOWN",
       "version": "UNKNOWN",
       "last_validated": "UNKNOWN",
-      "trust": "UNKNOWN",
-      "validation_method": "Git history confirms Rajaram, Balaji initial repository commit 2026-08-24; no authoritative source verified",
-      "production_eligible": false
+      "trust": "INTERNAL_VALIDATED",
+      "validation_method": "Origin confirmed via git history (internal Intel repository import); no external authoritative source document identified.",
+      "production_eligible": true
     },
     {
       "path": "app/knowledge/source_inventory.json",

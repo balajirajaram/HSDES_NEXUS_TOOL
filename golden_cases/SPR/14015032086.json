@@ -1,0 +1,37 @@
+{
+  "hsd_id": "14015032086",
+  "platform": "SPR",
+  "domain": "unknown",
+  "validation_level": "LEVEL_4_FIX_VALIDATED",
+  "expected_owner": "UNKNOWN",
+  "expected_reporting_ip": "",
+  "expected_first_error": "",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "bugeco:1308560873;1309522432;1309345419",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "bugeco:1308560873;1309522432;1309345419",
+    "fix_validated": true,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/14015032086"
+    ]
+  },
+  "expected": {
+    "owner": "UNKNOWN",
+    "reporting_ip": "",
+    "originating_ip": "",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": ""
+  }
+}

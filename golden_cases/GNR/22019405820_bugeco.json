@@ -1,0 +1,39 @@
+{
+  "hsd_id": "22019405820",
+  "platform": "GNR",
+  "domain": "Acode",
+  "validation_level": "LEVEL_4_FIX_VALIDATED",
+  "expected_owner": "Acode",
+  "expected_reporting_ip": "Acode",
+  "expected_first_error": "Acode",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "Fixed in Uncore/Acode.",
+  "evidence": {
+    "source": "RTL Bugeco 14021589581; fixed in Fixed in RWC-R0",
+    "validation_source": "RTL Bugeco 14021589581; fixed in Fixed in RWC-R0",
+    "validated_by": "RTL/Silicon validation (bugeco record)",
+    "fix_validated": true,
+    "source_references": [
+      "14021589581"
+    ]
+  },
+  "expected": {
+    "owner": "Acode",
+    "reporting_ip": "Acode",
+    "originating_ip": "Acode",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "Fixed in Uncore/Acode."
+  },
+  "bugeco_id": "14021589581",
+  "secondary_ip": "Power/FW"
+}

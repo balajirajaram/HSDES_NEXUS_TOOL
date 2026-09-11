@@ -1,0 +1,37 @@
+{
+  "hsd_id": "22019405820",
+  "platform": "GNR",
+  "domain": "hw.uncore",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Uncore",
+  "expected_reporting_ip": "Uncore",
+  "expected_first_error": "Uncore",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "14021492397; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "14021492397=new.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "14021492397=new.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/22019405820"
+    ]
+  },
+  "expected": {
+    "owner": "Uncore",
+    "reporting_ip": "Uncore",
+    "originating_ip": "Uncore",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "14021492397"
+  }
+}

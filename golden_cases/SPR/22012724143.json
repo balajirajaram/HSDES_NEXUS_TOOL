@@ -1,0 +1,37 @@
+{
+  "hsd_id": "22012724143",
+  "platform": "SPR",
+  "domain": "hw.upi",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "UPI",
+  "expected_reporting_ip": "UPI",
+  "expected_first_error": "UPI",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "14014426996; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "14014426996=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "14014426996=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/22012724143"
+    ]
+  },
+  "expected": {
+    "owner": "UPI",
+    "reporting_ip": "UPI",
+    "originating_ip": "UPI",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "14014426996"
+  }
+}

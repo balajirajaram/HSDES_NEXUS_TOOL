@@ -1,0 +1,37 @@
+{
+  "hsd_id": "22015416586",
+  "platform": "SPR",
+  "domain": "hw.mesh",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Mesh/Fabric",
+  "expected_reporting_ip": "Mesh/Fabric",
+  "expected_first_error": "Mesh/Fabric",
+  "expected_bank": null,
+  "expected_socket": "1",
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "14017130518; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "14017130518=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "14017130518=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/22015416586"
+    ]
+  },
+  "expected": {
+    "owner": "Mesh/Fabric",
+    "reporting_ip": "Mesh/Fabric",
+    "originating_ip": "Mesh/Fabric",
+    "bank": null,
+    "socket": "1",
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "14017130518"
+  }
+}
