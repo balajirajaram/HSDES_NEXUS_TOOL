@@ -1,0 +1,18 @@
+...............................Loaded 712 MCA decode entries
+.............................F
+======================================================================
+FAIL: test_inventory_marks_unknown_as_zero_trust (test_source_provenance.TestSourceProvenance.test_inventory_marks_unknown_as_zero_trust)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\tests\test_source_provenance.py", line 17, in test_inventory_marks_unknown_as_zero_trust
+    self.assertEqual(entry["trust"], "UNKNOWN")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'INTERNAL_VALIDATED' != 'UNKNOWN'
+- INTERNAL_VALIDATED
++ UNKNOWN
+
+
+----------------------------------------------------------------------
+Ran 61 tests in 0.247s
+
+FAILED (failures=1)

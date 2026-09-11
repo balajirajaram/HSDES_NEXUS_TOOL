@@ -10,7 +10,9 @@ class Config:
     HSDES_API_TOKEN = os.getenv("HSDES_API_TOKEN", "")
     # Auth mode for HSDES: 'basic' (username+password login), 'token', or
     # 'auto'/'kerberos' (use the logged-in Intel user via Negotiate — no prompt).
-    HSDES_AUTH_MODE = os.getenv("HSDES_AUTH_MODE", "basic")
+    HSDES_AUTH_MODE = os.getenv("HSDES_AUTH_MODE", "auto")
+    # HSDES writes are opt-in. Any value other than the literal "true" disables writes.
+    HSDES_WRITE_ENABLED = os.getenv("HSDES_WRITE_ENABLED", "false").lower() == "true"
     # Signs the session cookie (holds only a random session id, never credentials).
     SESSION_SECRET = os.getenv("SESSION_SECRET", "change-me-dev-secret")
 
@@ -114,6 +116,16 @@ class Config:
     SUT_SSH_KEY = os.getenv("SUT_SSH_KEY", "")   # optional key file path
     SUT_SSH_PORT = int(os.getenv("SUT_SSH_PORT", "22"))
     SUT_SSH_DOMAIN = os.getenv("SUT_SSH_DOMAIN", "")  # optional FQDN suffix
+
+    # Optional independent BMC collection. Credentials are never returned or
+    # written to audit artifacts.
+    BMC_ACCESS_ENABLED = os.getenv("BMC_ACCESS_ENABLED", "false").lower() in {"1", "true", "yes"}
+    BMC_HOST = os.getenv("BMC_HOST", "")
+    BMC_USER = os.getenv("BMC_USER", "")
+
+    @property
+    def BMC_CREDENTIAL(self) -> str:
+        return os.getenv("BMC_CREDENTIAL", "")
 
     @property
     def SUT_SSH_PASSWORD(self) -> str:

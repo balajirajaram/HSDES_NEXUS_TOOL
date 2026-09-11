@@ -1,0 +1,128 @@
+section,tenant,dimension,value,count
+# Report: Issues found by Sandstone (At-Scale validation) - all statuses incl. rejected. Generated 2026-08-14. Match = keyword 'sandstone' in title/executive_summary/description.
+grand_total,all_three_tenants,total,ALL,8802
+tenant_total,server_platf.bug,total,ALL,8092
+tenant_total,sighting_central.sighting,total,ALL,707
+tenant_total,central_firmware.bug,total,ALL,3
+status,server_platf.bug,status,rejected,7364
+status,server_platf.bug,status,open,339
+status,server_platf.bug,status,complete,334
+status,server_platf.bug,status,implemented,53
+status,server_platf.bug,status,future,2
+status_reason,server_platf.bug,status_reason,rejected.transferred,4790
+status_reason,server_platf.bug,status_reason,rejected.cannot_reproduce,665
+status_reason,server_platf.bug,status_reason,rejected.not_a_defect,631
+status_reason,server_platf.bug,status_reason,rejected(bare),521
+status_reason,server_platf.bug,status_reason,rejected.wont_fix,348
+status_reason,server_platf.bug,status_reason,open.new,285
+status_reason,server_platf.bug,status_reason,rejected.duplicate,250
+status_reason,server_platf.bug,status_reason,complete.product_changed,148
+status_reason,server_platf.bug,status_reason,complete,126
+status_reason,server_platf.bug,status_reason,rejected.filed_by_mistake,91
+status_reason,server_platf.bug,status_reason,rejected.expected_behavior,68
+status_reason,server_platf.bug,status_reason,complete.workaround,59
+status_reason,server_platf.bug,status_reason,implemented.await_user_verify,38
+status_reason,server_platf.bug,status_reason,open.assigned,13
+status_reason,server_platf.bug,status_reason,open.awaiting_debug,12
+status_reason,server_platf.bug,status_reason,open.awaiting_triage,12
+status_reason,server_platf.bug,status_reason,open.transferred,12
+status_reason,server_platf.bug,status_reason,implemented,8
+status_reason,server_platf.bug,status_reason,implemented.awaiting_ingredient_release,6
+status_reason,server_platf.bug,status_reason,other_singletons,9
+priority,server_platf.bug,priority,p3-medium,7084
+priority,server_platf.bug,priority,p2-high,870
+priority,server_platf.bug,priority,p4-low,120
+priority,server_platf.bug,priority,p1-showstopper,18
+codename_total,server_platf.bug,codename_in_title,GNR,1645
+codename_total,server_platf.bug,codename_in_title,DMR,3638
+codename_total,server_platf.bug,codename_in_title,SRF,757
+codename_total,server_platf.bug,codename_in_title,CWF,578
+codename_total,server_platf.bug,codename_in_title,SPR,931
+codename_total,server_platf.bug,codename_in_title,EMR,312
+codename_rejected,server_platf.bug,codename_in_title_rejected,GNR,1526
+codename_rejected,server_platf.bug,codename_in_title_rejected,DMR,3445
+codename_rejected,server_platf.bug,codename_in_title_rejected,SRF,684
+codename_rejected,server_platf.bug,codename_in_title_rejected,CWF,445
+codename_rejected,server_platf.bug,codename_in_title_rejected,SPR,842
+codename_rejected,server_platf.bug,codename_in_title_rejected,EMR,260
+codename_nonrejected,server_platf.bug,codename_in_title_nonrejected,GNR,119
+codename_nonrejected,server_platf.bug,codename_in_title_nonrejected,DMR,193
+codename_nonrejected,server_platf.bug,codename_in_title_nonrejected,SRF,73
+codename_nonrejected,server_platf.bug,codename_in_title_nonrejected,CWF,133
+codename_nonrejected,server_platf.bug,codename_in_title_nonrejected,SPR,89
+codename_nonrejected,server_platf.bug,codename_in_title_nonrejected,EMR,52
+platform,server_platf.bug,platform,Oak Stream DMR Platforms,3616
+platform,server_platf.bug,platform,Birch Stream Platform,2968
+platform,server_platf.bug,platform,Eagle Stream SPR SP,921
+platform,server_platf.bug,platform,Eagle Stream EMR SP,251
+platform,server_platf.bug,platform,Whitley Platforms,163
+platform,server_platf.bug,platform,Eagle Stream Platforms,108
+platform,server_platf.bug,platform,agnostic,21
+platform,server_platf.bug,platform,Purley Platforms,18
+platform,server_platf.bug,platform,Loganville Platforms,12
+platform,server_platf.bug,platform,Kaseyville,8
+platform,server_platf.bug,platform,Gem Mountain Platform Family,3
+platform,server_platf.bug,platform,other_singletons,4
+status,sighting_central.sighting,status,rejected,327
+status,sighting_central.sighting,status,complete,203
+status,sighting_central.sighting,status,open,120
+status,sighting_central.sighting,status,root_caused,57
+status_reason,sighting_central.sighting,status_reason,complete.validated,127
+status_reason,sighting_central.sighting,status_reason,rejected.cannot_reproduce,101
+status_reason,sighting_central.sighting,status_reason,rejected.merged,82
+status_reason,sighting_central.sighting,status_reason,rejected.wont_do,82
+status_reason,sighting_central.sighting,status_reason,open.new,66
+status_reason,sighting_central.sighting,status_reason,complete,56
+status_reason,sighting_central.sighting,status_reason,rejected.not_a_defect,49
+status_reason,sighting_central.sighting,status_reason,open.assigned,32
+status_reason,sighting_central.sighting,status_reason,root_caused.validating,22
+status_reason,sighting_central.sighting,status_reason,root_caused.awaiting_fix,21
+status_reason,sighting_central.sighting,status_reason,complete.wont_validate,18
+status_reason,sighting_central.sighting,status_reason,rejected.filed_by_mistake,13
+status_reason,sighting_central.sighting,status_reason,open.awaiting_user,10
+status_reason,sighting_central.sighting,status_reason,open.clone,10
+status_reason,sighting_central.sighting,status_reason,root_caused.pursuing_fix,10
+status_reason,sighting_central.sighting,status_reason,root_caused.awaiting_review,3
+status_reason,sighting_central.sighting,status_reason,complete.broken,2
+status_reason,sighting_central.sighting,status_reason,open.awaiting_3rd_party,2
+status_reason,sighting_central.sighting,status_reason,root_caused.grouped,1
+priority,sighting_central.sighting,priority,3-medium,354
+priority,sighting_central.sighting,priority,2-high,246
+priority,sighting_central.sighting,priority,4-low,81
+priority,sighting_central.sighting,priority,1-showstopper,26
+status,central_firmware.bug,status,rejected,2
+status,central_firmware.bug,status,complete,1
+status_reason,central_firmware.bug,status_reason,rejected.not_a_defect,2
+status_reason,central_firmware.bug,status_reason,complete.product_changed,1
+priority,central_firmware.bug,priority,p2-high,2
+priority,central_firmware.bug,priority,p1-showstopper,1
+# --- CATEGORIZATION (server_platf.bug, non-rejected actionable = 728) by suspect_area ---
+category,server_platf.bug,CONFIRMED_SILICON,suspect_area=silicon,117
+category,server_platf.bug,POTENTIAL_root_cause_pending,suspect_area=unknown_or_blank,429
+category,server_platf.bug,NON_SILICON_OS_kernel,suspect_area=operating_system+os_driver,39
+category,server_platf.bug,NON_SILICON_test_or_tools,suspect_area=test_content+val_tools+script+validation,77
+category,server_platf.bug,NON_SILICON_bmc_fw,suspect_area=bmc_fw+firmware,18
+category,server_platf.bug,NON_SILICON_bios,suspect_area=bios,7
+category,server_platf.bug,HARDWARE_board_dimm,suspect_area=hardware+DDR5+DDR4+platform,19
+category,server_platf.bug,OTHER,suspect_area=misc_singletons,22
+# --- Confirmed silicon issues (117) by platform codename token in title ---
+silicon_by_codename,server_platf.bug,GNR,confirmed_silicon,50
+silicon_by_codename,server_platf.bug,SPR,confirmed_silicon,30
+silicon_by_codename,server_platf.bug,DMR,confirmed_silicon,12
+silicon_by_codename,server_platf.bug,SRF,confirmed_silicon,12
+silicon_by_codename,server_platf.bug,ICX,confirmed_silicon,9
+silicon_by_codename,server_platf.bug,EMR,confirmed_silicon,2
+silicon_by_codename,server_platf.bug,CWF,confirmed_silicon,1
+# --- Confirmed silicon issues (117) by resolution status ---
+silicon_status,server_platf.bug,complete_fixed_or_workaround,complete,106
+silicon_status,server_platf.bug,still_open,open,11
+# --- sighting_central.sighting P1/P2 non-rejected (127) by component ---
+sighting_component,sighting_central.sighting,hw.big_core,silicon_core,28
+sighting_component,sighting_central.sighting,hw.memory.dimm,silicon_memory,7
+sighting_component,sighting_central.sighting,fw.pcode,firmware,5
+sighting_component,sighting_central.sighting,hw.cha+mesh+upi+memory,silicon_uncore,12
+sighting_component,sighting_central.sighting,fw.ucode+acode+ocode,firmware,6
+sighting_component,sighting_central.sighting,sw.os+sw+sw.driver,software,11
+sighting_component,sighting_central.sighting,val.env(test/tool/config/content),test_infra,10
+sighting_component,sighting_central.sighting,bios,bios,3
+sighting_component,sighting_central.sighting,blank_or_other,unclassified,45

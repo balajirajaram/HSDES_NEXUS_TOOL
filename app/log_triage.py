@@ -146,6 +146,30 @@ def _extract_evidence(text: str, recs: List[Dict[str, Any]],
         code_ok = 1 if (mscod or mcacod) else 0
         return bank_ok * 2 + code_ok * 2 + (1 if r.get("matches") else 0)
 
+    # Preserve every valid bank as normalized evidence. `mc_status` remains the
+    # highest-scoring primary record for backwards-compatible report rendering.
+    normalized_banks = []
+    for record in recs or []:
+        bank = record.get("bank")
+        unit = ""
+        if bank not in (None, ""):
+            try:
+                from .decoders.bank_map import bank_label
+                unit = bank_label(str(bank), product) or ""
+            except Exception:
+                pass
+        normalized_banks.append({
+            "bank": str(bank) if bank not in (None, "") else None,
+            "status": record.get("status"),
+            "mcacod": f"0x{record['mcacod']:04X}" if isinstance(record.get("mcacod"), int) else record.get("mcacod"),
+            "mscod": f"0x{record['mscod']:04X}" if isinstance(record.get("mscod"), int) else record.get("mscod"),
+            "bank_unit": unit,
+            "matches": record.get("matches") or [],
+            "context": record.get("context", ""),
+        })
+    if normalized_banks:
+        ev["mca_records"] = normalized_banks
+
     matched = max(recs, key=_rec_score) if recs else None
     if matched:
         st = matched.get("status")
@@ -176,6 +200,14 @@ def _extract_evidence(text: str, recs: List[Dict[str, Any]],
             "bank_unit": _unit,
             "decode": decode,
         }
+        try:
+            from .source_provenance import provenance_for
+            ev["mc_status"]["source_provenance"] = [
+                provenance_for("app/decoders/mca_codes_database.json"),
+                provenance_for("app/decoders/mca_supplemental.json"),
+            ]
+        except Exception:
+            ev["mc_status"]["source_provenance"] = []
         # DMR-only: PUNIT (MCACOD=0x402) UC/HW/FW sub-decode from the raw status word.
         if (product or "").upper() == "DMR":
             try:
@@ -203,6 +235,9 @@ def _extract_evidence(text: str, recs: List[Dict[str, Any]],
             _rec = _sup.recovery_for_status(matched.get("status"))
             if _rec:
                 ev["mc_status"]["recovery"] = _rec
+            _ambiguity = _sup.decoder_ambiguity(mcacod, mscod, _unit or "", product)
+            if _ambiguity:
+                ev["mc_status"]["decoder_ambiguity"] = _ambiguity
         except Exception:
             pass
         # Status flag bits (VAL/OVER/UC/EN/MISCV/ADDRV/PCC) from a 64-bit MCi_STATUS.
@@ -244,13 +279,27 @@ def _extract_evidence(text: str, recs: List[Dict[str, Any]],
         last = post["codes"][-1]
         ev["bios_module"] = (last.get("description") or last.get("macro") or "").strip()
 
-    # 8. Socket(s) implicated — from the IERR table plus any "socketN" mentions.
+    # 8. Socket provenance — preserve source roles; never invent Socket 0.
     sockets = {r.get("socket") for r in (ierr_rows or []) if r.get("socket") not in (None, "")}
     for m in _SOCKET_RE.finditer(text):
         sockets.add(next(g for g in m.groups() if g))
     sockets.discard(None)
     if sockets:
         ev["sockets"] = sorted(str(s) for s in sockets)
+    ticket_socket = next((m.group(1) for m in re.finditer(
+        r"(?i)\b(?:ticket|hsd|reported|failing)\s+socket\s*[:=]?\s*([0-9])", text)), None)
+    first_ierr_socket = next((str(r.get("socket")) for r in (ierr_rows or [])
+                              if r.get("socket") not in (None, "")), None)
+    mca_socket = next((str(r.get("socket")) for r in (recs or [])
+                       if r.get("socket") not in (None, "")), None)
+    provenance = {"ticket_socket": ticket_socket,
+                  "first_ierr_socket": first_ierr_socket,
+                  "mca_socket": mca_socket,
+                  "crashdump_socket": None}
+    observed = {v for v in provenance.values() if v is not None}
+    provenance["conflict"] = len(observed) > 1
+    provenance["resolved_socket"] = next(iter(observed)) if len(observed) == 1 else None
+    ev["socket_provenance"] = provenance
 
     return ev
 

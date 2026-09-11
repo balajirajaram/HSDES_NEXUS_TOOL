@@ -1,0 +1,36 @@
+{
+  "tools": [
+    {"name": "sandstone", "patterns": ["\\bsandstone\\b"]},
+    {"name": "hammer-unified", "patterns": ["\\bhammer[- ]unified\\b", "\\bhammer\\b"]},
+    {"name": "IFS", "patterns": ["\\bIFS\\b", "in-field scan"]},
+    {"name": "TSL", "patterns": ["\\bTSL\\b"]},
+    {"name": "Mixer", "patterns": ["\\bMixer\\b", "paiv-mixer"]},
+    {"name": "ras-unified", "patterns": ["\\bras[- ]unified\\b"]},
+    {"name": "burnin", "patterns": ["\\bburn[- ]?in\\b"]},
+    {"name": "stress-ng", "patterns": ["\\bstress[-_]ng\\b"]},
+    {"name": "Xprod", "patterns": ["\\bXprod\\b"]},
+    {"name": "DCDiag", "patterns": ["\\bDCDiag\\b"]},
+    {"name": "Povray", "patterns": ["\\bPovray\\b", "\\bpov-ray\\b"]},
+    {"name": "mprime", "patterns": ["\\bmprime\\b", "prime95"]},
+    {"name": "FIO", "patterns": ["\\bFIO\\b", "\\bfio\\b"]}
+  ],
+  "subtests": [
+    {"name": "branch_tree_icache_focused", "patterns": ["branch_tree_icache_focused"]},
+    {"name": "c-states-randomized-valid-transitions", "patterns": ["c-states[-_]randomized[-_]valid[-_]transitions"]},
+    {"name": "rf-cold", "patterns": ["\\brf[-_]cold\\b"]},
+    {"name": "rf-warm", "patterns": ["\\brf[-_]warm\\b"]},
+    {"name": "combo", "patterns": ["\\bcombo\\b"]},
+    {"name": "chaos", "patterns": ["\\bchaos\\b"]}
+  ],
+  "triggers": [
+    {"name": "cold_reset", "patterns": ["cold reset", "cold-reset"]},
+    {"name": "warm_reset", "patterns": ["warm reset", "warm-reset"]},
+    {"name": "G3_cycle", "patterns": ["G3 cycle", "G3 cycling"]},
+    {"name": "AC_cycle", "patterns": ["AC cycle", "AC cycling"]},
+    {"name": "steady_state", "patterns": ["steady state"]},
+    {"name": "idle", "patterns": ["\\bidle\\b"]},
+    {"name": "instruction_class", "patterns": ["\\b(?:AMX|APX|AVX512)\\b"]},
+    {"name": "poison_injection", "patterns": ["poison injection", "load-poison"]},
+    {"name": "power_state", "patterns": ["\\bC[0-9]+\\b"]}
+  ]
+}

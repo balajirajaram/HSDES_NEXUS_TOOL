@@ -1,0 +1,16 @@
+Resources discovered: 15
+Inventory entries: 15
+Inventory coverage: 100.0%
+Missing inventory: 0
+Unknown trust: 9
+  UNKNOWN app/decoders/bank_mapping.json
+  UNKNOWN app/decoders/dmr_punit_mca.json
+  UNKNOWN app/decoders/ewl_codes_database.json
+  UNKNOWN app/decoders/ipsd_codes_database.json
+  UNKNOWN app/decoders/mca_codes_database.json
+  UNKNOWN app/decoders/mcheck_codes_database.json
+  UNKNOWN app/decoders/post_codes_database.json
+  UNKNOWN app/decoders/rc_fatal_errors_database.json
+  UNKNOWN app/knowledge/debug_kb.json
+Duplicate JSON keys: 0
+QUALITY: FAIL

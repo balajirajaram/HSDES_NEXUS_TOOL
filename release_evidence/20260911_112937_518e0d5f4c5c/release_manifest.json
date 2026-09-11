@@ -1,0 +1,35 @@
+{
+  "timestamp": "2026-09-11T11:29:55+0530",
+  "git_branch": "nexus-tool-import",
+  "commit_hash": "518e0d5f4c5ce5817cfdfe908b30a74454135b42",
+  "dirty_worktree": true,
+  "python_version": "3.14.3",
+  "config_fingerprint": "73dad1fc8f973a8d94acdb6f04220b2b45255b0dfd8354f371621650cc6f58d2",
+  "test_count": 65,
+  "test_exit_code": 0,
+  "provenance": {
+    "exit_code": 0,
+    "status": "PASS",
+    "unknown_trust": [],
+    "output": "Resources discovered: 15\nInventory entries: 15\nInventory coverage: 100.0%\nMissing inventory: 0\nUnknown trust: 0\nDuplicate JSON keys: 0\nQUALITY: PASS\n"
+  },
+  "reference_case_count": 50,
+  "strict_golden_case_count": 47,
+  "benchmark": {
+    "status": "FAIL",
+    "exit_code": 1,
+    "qualified_golden_cases": 47,
+    "reference_cases": 50,
+    "cases_passed": "0/47",
+    "output": "Running 47 golden case(s) from C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\golden_cases (offline fixture-only)\n\nHSD           Expected  Detected    Owner  Verdict             Conf  Result\n------------------------------------------------------------------------------\n14026093607   DSA                   FAIL   UNAVAILABLE         0%    FAIL\n14026464067   Core                  FAIL   UNAVAILABLE         0%    FAIL\n14028507593   Core/FE/HAM            FAIL   UNAVAILABLE         0%    FAIL\n14028507593   Core/FE/HAM            FAIL   UNAVAILABLE         0%    FAIL\n15019342741   Core                  FAIL   UNAVAILABLE         0%    FAIL\n15019342741   Core/FE/BPU            FAIL   UNAVAILABLE         0%    FAIL\n15019357856   Core                  FAIL   UNAVAILABLE         0%    FAIL\n15019357856   Core/FE/BPU            FAIL   UNAVAILABLE         0%    FAIL\n15019358385   Core                  FAIL   UNAVAILABLE         0%    FAIL\n15019358385   Core/FE/BPU            FAIL   UNAVAILABLE         0%    FAIL\n15019382716   Core                  FAIL   UNAVAILABLE         0%    FAIL\n15019382716   Core/FE/BPU            FAIL   UNAVAILABLE         0%    FAIL\n15019383400   Core                  FAIL   UNAVAILABLE         0%    FAIL\n15019383400   Core/FE/BPU            FAIL   UNAVAILABLE         0%    FAIL\n21044871638   Core/FE/HAM            FAIL   UNAVAILABLE         0%    FAIL\n21044871638   Core/FE/HAM            FAIL   UNAVAILABLE         0%    FAIL\n14020056414   Security              FAIL   UNAVAILABLE         0%    FAIL\n16024409170   MDF                   FAIL   UNAVAILABLE         0%    FAIL\n22019405820   Uncore                FAIL   UNAVAILABLE         0%    FAIL\n22019405820   Acode                 FAIL   UNAVAILABLE         0%    FAIL\n14011352071   Core                  FAIL   UNAVAILABLE         0%    FAIL\n14011439924   Core                  FAIL   UNAVAILABLE         0%    FAIL\n1707238410    Core                  FAIL   UNAVAILABLE         0%    FAIL\n22010039282   Core                  FAIL   UNAVAILABLE         0%    FAIL\n22010039282   uCode                 FAIL   UNAVAILABLE         0%    FAIL\n14012462331   ConfigROM             FAIL   UNAVAILABLE         0%    FAIL\n14013775827   Core                  FAIL   UNAVAILABLE         0%    FAIL\n14013789944   Core                  FAIL   UNAVAILABLE         0%    FAIL\n14014613214   CHA                   FAIL   UNAVAILABLE         0%    FAIL\n14014613214   Uncore                FAIL   UNAVAILABLE         0%    FAIL\n14015032086   UNKNOWN               FAIL   UNAVAILABLE         0%    FAIL\n14015143476   MDF                   FAIL   UNAVAILABLE         0%    FAIL\n14015196045   RAS                   FAIL   UNAVAILABLE         0%    FAIL\n14015263050   DSA                   FAIL   UNAVAILABLE         0%    FAIL\n14015800984   UPI                   FAIL   UNAVAILABLE         0%    FAIL\n14015800984   UPI Initialization            FAIL   UNAVAILABLE         0%    FAIL\n14016376372   UPI                   FAIL   UNAVAILABLE         0%    FAIL\n14016417265   Memory/IMC            FAIL   UNAVAILABLE         0%    FAIL\n1404503208    uCode                 FAIL   UNAVAILABLE         0%    FAIL\n22011493992   Core                  FAIL   UNAVAILABLE         0%    FAIL\n22012724143   UPI                   FAIL   UNAVAILABLE         0%    FAIL\n22014056631   Core                  FAIL   UNAVAILABLE         0%    FAIL\n22014056631   Core/BPU              FAIL   UNAVAILABLE         0%    FAIL\n22015416586   Mesh/Fabric            FAIL   UNAVAILABLE         0%    FAIL\n14019137156   Core                  FAIL   UNAVAILABLE         0%    FAIL\n15016126803   Core                  FAIL   UNAVAILABLE         0%    FAIL\n16022337351   Core                  FAIL   UNAVAILABLE         0%    FAIL\n\n=== Metrics ===\nOwning-IP accuracy      :   0.0%   (target > 80-85%)\nOwnership precision     :   n/a\nOwnership recall        :   0.0%   (correct / labeled cases)\nBank accuracy           :   0.0%\nSocket accuracy         :   0.0%\nFirst-error accuracy    :   0.0%   (target > 90%)\nOverconfidence rate     :   0.0%   (target ~0%)\nFalse-attribution rate  :   0.0%   (target < 10%)\nFalse Confirmed RCA count: 0\nConfidence calibration  : 0/47 overconfident cases\nContradiction miss rate :   n/a   (no labels)\nCases passed            : 0/47\nTimed-out cases         : none\n"
+  },
+  "autohsd_integration": {
+    "exit_code": 0,
+    "status": "PASS",
+    "output": ".....\n----------------------------------------------------------------------\nRan 5 tests in 0.266s\n\nOK\n"
+  },
+  "hsd_post_gate": "existing analyzer._post_gate; no write performed",
+  "blockers": [
+    "Golden Case benchmark failed"
+  ]
+}

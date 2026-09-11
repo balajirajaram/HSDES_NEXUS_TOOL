@@ -1,0 +1,56 @@
+{
+  "hsd_id": "15019383400",
+  "platform": "DMR",
+  "domain": "hw.big_core",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Core",
+  "expected_reporting_ip": "Core",
+  "expected_first_error": "Core",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "22022483185; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "22022483185=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "22022483185=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/15019383400"
+    ]
+  },
+  "expected": {
+    "owner": "Core",
+    "reporting_ip": "Core",
+    "originating_ip": "Core",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "22022483185"
+  },
+  "title": "[AtScale-Cluster][DMR][AP][ES1][RPP][[cs16ca101js1411][Q9WM][VID:D6F8844500074] - AtScale:SDE:Frequent L1 Instruction-Fetch MCE errors detected during sandstone branch_tree_icache_focused seed testing in PAIV-Mixer_random_workload on cs16ca101js1411",
+  "description": "Issue PAIV-Mixer_random_workloads test failed, observed some not ok in the workload log. branch_tree_icache_focused subworkload failed In WL log of system cs16ca101js1411 ................... .................. Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: Hardware event. This is not a software error. Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: MCE 0 Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: CPU 4 BANK 0 TSC 4d7c3f177003 Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: ADDR 1ba1465cc0 Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: TIME 1778555828 Tue May 12 03:17:08 2026 Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: MCG status: Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: MCi status: Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: Corrected error Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: MCi_ADDR register valid Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: MCA: Instruction CACHE Level-1 Instruction-Fetch Error Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: STATUS 8400014000050150 MCGSTATUS 0 Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: MCGCAP f001c20 APICID 28 SOCKETID 0 Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: PPIN 58bec94b7507a85a Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: MICROCODE 800009a0 Journal: May 12 03:17:08 cs16ca101js1411 mcelog[1181]: CPUID Vendor Intel Family 19 Model 1 Step 0 ................... .................. MCE events: 1 2026-05-12 03:16:57 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400014000050150, addr=0x1ba1465cc0, tsc=0x4d7c3f177003, walltime=0x6a029bb4, cpu=0x00000004, cpuid=0x00400f10, apicid=0x00000028 2 2026-05-12 03:51:58 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400014000050150, addr=0x192d17d780, tsc=0x4ff82c8d35d1, walltime=0x6a02a3e9, cpu=0x0000000b, cpuid=0x00400f10, apicid=0x0000010a 3 2026-05-12 05:35:13 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x840000c000050150, addr=0x17abf92f00, tsc=0x574b3b14c533, walltime=0x6a02bc1b, cpu=0x0000000e, cpuid=0x00400f10, apicid=0x00000138 4 2026-05-12 05:57:32 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x195f17cc40, tsc=0x58e07012f50b, walltime=0x6a02c156, cpu=0x0000000f, cpuid=0x00400f10, apicid=0x0000013a System details: 1 Socket VID: D6F8844500074 PPIN: 0x58bec94b7507a85a Microcode:0x800009a0 CPU QDF: Q9WM BKC#20 BIOS: OKSDCRB1.IPC.0034.D68.2604282331 Kernel : 6.18.0-dmr.bkc.6.18.6.4.6.x86_64 OS: CentOS Stream release 10 (Coughlan)",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0x8400014000050150",
+        "source_text": "0x8400014000050150"
+      },
+      {
+        "status": "0x840000c000050150",
+        "source_text": "0x840000c000050150"
+      },
+      {
+        "status": "0x8400010000050150",
+        "source_text": "0x8400010000050150"
+      }
+    ]
+  }
+}

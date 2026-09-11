@@ -1,0 +1,124 @@
+{
+  "hsd_id": "15019357856",
+  "platform": "DMR",
+  "domain": "hw.big_core",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Core",
+  "expected_reporting_ip": "Core",
+  "expected_first_error": "Core",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "22022450926; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "22022450926=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "22022450926=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/15019357856"
+    ]
+  },
+  "expected": {
+    "owner": "Core",
+    "reporting_ip": "Core",
+    "originating_ip": "Core",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "22022450926"
+  },
+  "title": "[AtScale-Cluster][DMR][AP][ES1][RPP][Q9WL][VID:D6DH353800104] - AtScale:SDE:Frequent L1 Instruction-Fetch MCE errors detected during sandstone branch_tree_icache_focused seed testing in PAIV-Mixer_random_workload on jf11x1703bs1107",
+  "description": "Issue PAIV-Mixer_random_workloads test failed, observed some not ok in the workload log. branch_tree_icache_focused subworkload failed In WL log of system jf11x1703bs1107 ................... .................. Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: Hardware event. This is not a software error. Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: MCE 0 Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: CPU 58 BANK 0 TSC da6e9496daf5 Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: TIME 1777508936 Thu Apr 30 00:28:56 2026 Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: MCG status: Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: MCi status: Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: Corrected error Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: MCA: Instruction CACHE Level-1 Instruction-Fetch Error Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: STATUS 8000008000350150 MCGSTATUS 0 Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: MCGCAP f001c20 APICID 158 SOCKETID 0 Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: PPIN 58b1ceca718c9b26 Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: MICROCODE 8000099d Journal: Apr 30 00:28:56 jf11x1703bs1107 mcelog[2930]: CPUID Vendor Intel Family 19 Model 1 Step 0 .......................... ....................... MCE events: 1 2026-04-30 00:28:24 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8000008000350150, tsc=0xda6e9496daf5, walltime=0x69f2a248, cpu=0x0000003a, cpuid=0x00400f10, apicid=0x00000158 2 2026-04-30 00:31:58 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8000010000350150, tsc=0xdad243ee8159, walltime=0x69f2a31e, cpu=0x00000081, cpuid=0x00400f10, apicid=0x00000322 3 2026-04-30 00:33:37 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400020000050150, addr=0x110d58bb40, tsc=0xdb00bbc72731, walltime=0x69f2a381, cpu=0x00000056, cpuid=0x00400f10, apicid=0x00000228 4 2026-04-30 00:49:59 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400008000050150, addr=0x1a7a123980, tsc=0xdcc9e2856b51, walltime=0x69f2a757, cpu=0x0000001a, cpuid=0x00400f10, apicid=0x00000088 5 2026-04-30 00:52:31 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400014000050150, addr=0x1f636915c0, tsc=0xdd1081837cc5, walltime=0x69f2a7ef, cpu=0x00000031, cpuid=0x00400f10, apicid=0x00000122 6 2026-04-30 00:57:40 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8000004000350150, tsc=0xdda092e6ed15, walltime=0x69f2a924, cpu=0x00000039, cpuid=0x00400f10, apicid=0x0000014a 7 2026-04-30 01:01:34 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x1b5f8e3e80, tsc=0xde0d43d1a96b, walltime=0x69f2aa0e, cpu=0x0000009a, cpuid=0x00400f10, apicid=0x00000398 8 2026-04-30 01:41:41 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400008000050150, addr=0x1a34af1f80, tsc=0xe26e6a2d7bab, walltime=0x69f2b375, cpu=0x00000056, cpuid=0x00400f10, apicid=0x00000228 9 2026-04-30 01:43:59 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400008000050150, addr=0x1a56deef40, tsc=0xe2ae90f77f03, walltime=0x69f2b3ff, cpu=0x00000054, cpuid=0x00400f10, apicid=0x00000210 10 2026-04-30 01:55:44 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400008000050150, addr=0x1562f31f00, tsc=0xe3f6ce56f517, walltime=0x69f2b6c0, cpu=0x00000028, cpuid=0x00400f10, apicid=0x00000100 11 2026-04-30 01:55:44 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400008000050150, addr=0x1ccbfb1f00, tsc=0xe3f7101c3dbf, walltime=0x69f2b6c0, cpu=0x0000005a, cpuid=0x00400f10, apicid=0x00000260 12 2026-04-30 01:55:45 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x840000c000050150, addr=0x1562f31f00, tsc=0xe3f722bb183d, walltime=0x69f2b6c1, cpu=0x00000028, cpuid=0x00400f10, apicid=0x00000100 13 2026-04-30 02:00:17 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400014000050150, addr=0x1d1beb4ac0, tsc=0xe475e7f43a75, walltime=0x69f2b7d1, cpu=0x00000056, cpuid=0x00400f10, apicid=0x00000228 14 2026-04-30 02:00:35 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400014000050150, addr=0x10ce3f37c0, tsc=0xe47e72b28f7d, walltime=0x69f2b7e3, cpu=0x0000007b, cpuid=0x00400f10, apicid=0x0000030a 15 2026-04-30 02:08:26 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400004000050150, addr=0x15bfa23280, tsc=0xe559b0a3c279, walltime=0x69f2b9ba, cpu=0x00000002, cpuid=0x00400f10, apicid=0x00000008 16 2026-04-30 02:14:42 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x1d8b2836c0, tsc=0xe608cc559267, walltime=0x69f2bb32, cpu=0x0000008a, cpuid=0x00400f10, apicid=0x00000348 17 2026-04-30 02:26:07 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400004000050150, addr=0x1a9bd6d200, tsc=0xe747e66f6c73, walltime=0x69f2bddf, cpu=0x0000009e, cpuid=0x00400f10, apicid=0x000003d8 18 2026-04-30 02:45:10 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400064000050150, addr=0x1ec53af640, tsc=0xe95bcfd9fb81, walltime=0x69f2c256, cpu=0x00000037, cpuid=0x00400f10, apicid=0x00000142 19 2026-04-30 03:05:11 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400208000050150, addr=0x17435b1840, tsc=0xeb8b6105fd43, walltime=0x69f2c707, cpu=0x00000068, cpuid=0x00400f10, apicid=0x000002a0 20 2026-04-30 03:05:11 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400044000050150, addr=0x17435b1840, tsc=0xeb8b78393451, walltime=0x69f2c707, cpu=0x00000071, cpuid=0x00400f10, apicid=0x000002c2 21 2026-04-30 03:06:25 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x800000c000350150, tsc=0xebadb007ca4d, walltime=0x69f2c751, cpu=0x00000079, cpuid=0x00400f10, apicid=0x00000302 22 2026-04-30 03:11:14 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400008000050150, addr=0x18ab5bd980, tsc=0xec342707ba53, walltime=0x69f2c872, cpu=0x00000043, cpuid=0x00400f10, apicid=0x0000017a 23 2026-04-30 03:23:41 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x198ddaaac0, tsc=0xed8ffe0cb517, walltime=0x69f2cb5d, cpu=0x0000007b, cpuid=0x00400f10, apicid=0x0000030a 24 2026-04-30 03:26:03 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x840000c000050150, addr=0x18306e0800, tsc=0xedd22a279125, walltime=0x69f2cbeb, cpu=0x00000097, cpuid=0x00400f10, apicid=0x0000038a 25 2026-04-30 03:26:03 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x14236a05c0, tsc=0xedd23f3636c1, walltime=0x69f2cbeb, cpu=0x00000097, cpuid=0x00400f10, apicid=0x0000038a 26 2026-04-30 03:53:10 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400040000050150, addr=0x149917b380, tsc=0xf0c7e70163af, walltime=0x69f2d246, cpu=0x00000035, cpuid=0x00400f10, apicid=0x0000013a 27 2026-04-30 03:53:22 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x840000c000050150, addr=0x110c8fbb00, tsc=0xf0cd9cbde287, walltime=0x69f2d252, cpu=0x00000035, cpuid=0x00400f10, apicid=0x0000013a 28 2026-04-30 03:53:44 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x17d207fe40, tsc=0xf0d7b0586579, walltime=0x69f2d268, cpu=0x00000067, cpuid=0x00400f10, apicid=0x0000029a 29 2026-04-30 08:32:39 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x840000c000050150, addr=0x16d4ca9e00, tsc=0x10f48855ad371, walltime=0x69f313c7, cpu=0x00000063, cpuid=0x00400f10, apicid=0x00000282 30 2026-04-30 08:38:52 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400014000050150, addr=0x14ff579ac0, tsc=0x10ff682a5eca3, walltime=0x69f3153c, cpu=0x0000004b, cpuid=0x00400f10, apicid=0x000001ba 31 2026-04-30 08:39:10 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x1483a1e400, tsc=0x10ffe89a51583, walltime=0x69f3154e, cpu=0x00000062, cpuid=0x00400f10, apicid=0x00000280 32 2026-04-30 08:42:07 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x1c3443ddc0, tsc=0x1105126734d9f, walltime=0x69f315ff, cpu=0x0000002a, cpuid=0x00400f10, apicid=0x00000108 33 2026-04-30 09:00:04 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8000018000350150, tsc=0x1124681b0013d, walltime=0x69f31a34, cpu=0x0000004b, cpuid=0x00400f10, apicid=0x000001ba 34 2026-04-30 09:00:30 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8000074000350150, tsc=0x11252a534ca39, walltime=0x69f31a4e, cpu=0x00000036, cpuid=0x00400f10, apicid=0x00000140 35 2026-04-30 09:08:26 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x1dc57fb5c0, tsc=0x11330684a3fdf, walltime=0x69f31c2a, cpu=0x00000095, cpuid=0x00400f10, apicid=0x00000382 36 2026-04-30 09:08:26 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400048000050150, addr=0x19abbbb780, tsc=0x113307a8e9b47, walltime=0x69f31c2a, cpu=0x00000095, cpuid=0x00400f10, apicid=0x00000382 37 2026-04-30 09:29:45 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8408154000050150, addr=0x1fd3e65d40, tsc=0x115841361e9df, walltime=0x69f32129, cpu=0x0000003f, cpuid=0x00400f10, apicid=0x0000016a 38 2026-04-30 09:29:53 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x840000c000050150, addr=0x1bec173ec0, tsc=0x11587c8d5562d, walltime=0x69f32131, cpu=0x00000082, cpuid=0x00400f10, apicid=0x00000328 39 2026-04-30 09:36:15 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x84080e8000050150, addr=0x1697782e00, tsc=0x1163974de6d85, walltime=0x69f322af, cpu=0x0000006f, cpuid=0x00400f10, apicid=0x000002ba 40 2026-04-30 09:38:09 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400014000050150, addr=0x1ca5ba1b40, tsc=0x1166e84adb93f, walltime=0x69f32321, cpu=0x0000001f, cpuid=0x00400f10, apicid=0x000000aa 41 2026-04-30 09:38:09 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400008000050150, addr=0x1ca5ba1b40, tsc=0x1166e99659889, walltime=0x69f32321, cpu=0x0000001f, cpuid=0x00400f10, apicid=0x000000aa 42 2026-04-30 09:41:28 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400010000050150, addr=0x10f54e1d40, tsc=0x116cb5eb4ece9, walltime=0x69f323e8, cpu=0x0000009a, cpuid=0x00400f10, apicid=0x00000398 43 2026-04-30 09:41:34 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x840000c000050150, addr=0x19448fe880, tsc=0x116cdfe7ea623, walltime=0x69f323ee, cpu=0x00000093, cpuid=0x00400f10, apicid=0x0000037a 44 2026-04-30 09:49:02 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8000020001350150, tsc=0x1179e8f8ce90f, walltime=0x69f325ae, cpu=0x00000045, cpuid=0x00400f10, apicid=0x0000019a 45 2026-04-30 10:04:13 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400004000050150, addr=0x1cd3d4d940, tsc=0x11946e63b0a37, walltime=0x69f3293d, cpu=0x00000091, cpuid=0x00400f10, apicid=0x00000372 46 2026-04-30 10:10:37 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400014000050150, addr=0x12712f9a80, tsc=0x119f9e3812b87, walltime=0x69f32abd, cpu=0x00000090, cpuid=0x00400f10, apicid=0x00000370 System details: 1 Socket VID: D6DH353800104 PPIN: 58b1ceca718c9b26 Microcode:0x8000099d CPU QDF:Q9WL BIOS: OKSDCRB1.IPC.0034.D25.2604142301 Kernel : 6.18.0-dmr.bkc.6.18.6.4.6.x86_64 OS: CentOS Stream release 10 (Coughlan)",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0x8000008000350150",
+        "source_text": "0x8000008000350150"
+      },
+      {
+        "status": "0x8000010000350150",
+        "source_text": "0x8000010000350150"
+      },
+      {
+        "status": "0x8400020000050150",
+        "source_text": "0x8400020000050150"
+      },
+      {
+        "status": "0x8400008000050150",
+        "source_text": "0x8400008000050150"
+      },
+      {
+        "status": "0x8400014000050150",
+        "source_text": "0x8400014000050150"
+      },
+      {
+        "status": "0x8000004000350150",
+        "source_text": "0x8000004000350150"
+      },
+      {
+        "status": "0x8400010000050150",
+        "source_text": "0x8400010000050150"
+      },
+      {
+        "status": "0x840000c000050150",
+        "source_text": "0x840000c000050150"
+      },
+      {
+        "status": "0x8400004000050150",
+        "source_text": "0x8400004000050150"
+      },
+      {
+        "status": "0x8400064000050150",
+        "source_text": "0x8400064000050150"
+      },
+      {
+        "status": "0x8400208000050150",
+        "source_text": "0x8400208000050150"
+      },
+      {
+        "status": "0x8400044000050150",
+        "source_text": "0x8400044000050150"
+      },
+      {
+        "status": "0x800000c000350150",
+        "source_text": "0x800000c000350150"
+      },
+      {
+        "status": "0x8400040000050150",
+        "source_text": "0x8400040000050150"
+      },
+      {
+        "status": "0x8000018000350150",
+        "source_text": "0x8000018000350150"
+      },
+      {
+        "status": "0x8000074000350150",
+        "source_text": "0x8000074000350150"
+      },
+      {
+        "status": "0x8400048000050150",
+        "source_text": "0x8400048000050150"
+      },
+      {
+        "status": "0x8408154000050150",
+        "source_text": "0x8408154000050150"
+      },
+      {
+        "status": "0x84080e8000050150",
+        "source_text": "0x84080e8000050150"
+      },
+      {
+        "status": "0x8000020001350150",
+        "source_text": "0x8000020001350150"
+      }
+    ]
+  }
+}

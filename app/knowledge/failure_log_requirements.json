@@ -1,0 +1,79 @@
+{
+  "kernel_panic": {
+    "aliases": ["Kernel Panic", "not syncing", "call trace", "oops"],
+    "ssh_commands": ["journalctl -k --no-pager -n 2000", "dmesg -T"],
+    "bmc_commands": ["ipmitool sel elist"],
+    "requires_node_reachable": true,
+    "if_unreachable": "Node unavailable -- BIOS/serial console history for this event may only exist in the centralized Elastic sol-*/bmcjournal-* pipeline outside NEXUS's reach; recommend requesting log export from that system if available.",
+    "status_scope_domains": ["cpu", "mce"]
+  },
+  "mce_mca": {
+    "aliases": ["MCE", "MCERR", "McBank", "IERR", "CATERR"],
+    "ssh_commands": ["mcelog --client"],
+    "pythonsv_profile": "MCA_RAS",
+    "bmc_commands": ["ipmitool sel elist"],
+    "requires_node_reachable": true,
+    "if_unreachable": "Node likely down due to fatal MCE/IERR -- only crashdump/ITP capture or the centralized log pipeline may have pre-failure evidence; NEXUS cannot retroactively fetch it via SSH.",
+    "status_scope_domains": ["mca", "ubox", "cha"]
+  },
+  "pcie_cxl": {
+    "aliases": ["PCIe", "CXL", "AER", "LTSSM"],
+    "ssh_commands": ["lspci -vvv"],
+    "pythonsv_profile": "PCIE_CXL",
+    "requires_node_reachable": true,
+    "status_scope_domains": ["pcie", "ieh"]
+  },
+  "upi_fabric": {
+    "aliases": ["UPI", "KTI", "CRC error", "Phy Drift"],
+    "ssh_commands": [],
+    "pythonsv_profile": "UPI_FABRIC",
+    "requires_node_reachable": true,
+    "status_scope_domains": ["upi"]
+  },
+  "memory_imc": {
+    "aliases": ["MemTest", "EDAC", "DIMM", "ECC", "RETRY_RD_ERR_LOG"],
+    "ssh_commands": ["ras-mc-ctl --summary", "edac-util -v", "dmidecode -t memory"],
+    "pythonsv_profile": "MEMORY_IMC",
+    "requires_node_reachable": true,
+    "status_scope_domains": ["memory", "imc"]
+  },
+  "bios_boot": {
+    "aliases": ["BIOS Assert", "POST code", "boot hang", "TOR_TIMEOUT"],
+    "ssh_commands": [],
+    "bmc_commands": ["ipmitool sel elist"],
+    "requires_node_reachable": false,
+    "if_unreachable": "BIOS serial console capture at time of failure is NOT retroactively obtainable via SSH. This requires either the ticket's own attached SOL capture, or the centralized Elastic sol-* pipeline (outside NEXUS's access) captured live during the event.",
+    "status_scope_domains": []
+  },
+  "bmc_management": {
+    "aliases": ["BMC Critical Event", "OpenBMC Service Failure", "Controller Down"],
+    "ssh_commands": [],
+    "bmc_commands": ["ipmitool sel elist", "redfish GET /redfish/v1/Systems/{id}/LogServices/EventLog/Entries"],
+    "requires_node_reachable": false,
+    "if_unreachable": "BMC access is independent of host OS reachability -- collection depends only on configured BMC network access and credentials.",
+    "note": "BMC access is independent of host OS reachability -- evidence may still be retrievable when the host is down.",
+    "status_scope_domains": []
+  },
+  "power_vr": {
+    "aliases": ["Pcode", "PMIC", "VR", "FIVR", "Watchdog"],
+    "ssh_commands": [],
+    "pythonsv_profile": "POWER_PUNIT",
+    "bmc_commands": ["ipmitool sel elist"],
+    "requires_node_reachable": true,
+    "status_scope_domains": ["punit", "pcode"]
+  },
+  "coredump_content": {
+    "aliases": ["Coredump", "segfault", "SIGSEGV"],
+    "ssh_commands": ["coredumpctl list", "coredumpctl info"],
+    "requires_node_reachable": true,
+    "status_scope_domains": []
+  },
+  "unknown_generic": {
+    "aliases": [],
+    "ssh_commands": ["dmesg -T", "journalctl --no-pager -n 500"],
+    "bmc_commands": ["ipmitool sel elist"],
+    "requires_node_reachable": true,
+    "if_unreachable": "Node unavailable -- no direct SSH evidence could be collected. Centralized Elastic sol-*/qpool-*/eventlog-*/bmcjournal-* indices are outside NEXUS's direct collection scope.",
+    "status_scope_domains": []
+  }
+}

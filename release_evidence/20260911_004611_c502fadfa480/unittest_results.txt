@@ -1,0 +1,66 @@
+EEE............Loaded 712 MCA decode entries
+..............................
+======================================================================
+ERROR: test_autohsd_integration (unittest.loader._FailedTest.test_autohsd_integration)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_autohsd_integration
+Traceback (most recent call last):
+  File "C:\Python314\Lib\unittest\loader.py", line 426, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "C:\Python314\Lib\unittest\loader.py", line 367, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\tests\test_autohsd_integration.py", line 14, in <module>
+    from app import analyzer  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\app\analyzer.py", line 24, in <module>
+    from .config import config
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\app\config.py", line 3, in <module>
+    from dotenv import load_dotenv
+ModuleNotFoundError: No module named 'dotenv'
+
+
+======================================================================
+ERROR: test_decoder_correctness (unittest.loader._FailedTest.test_decoder_correctness)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_decoder_correctness
+Traceback (most recent call last):
+  File "C:\Python314\Lib\unittest\loader.py", line 426, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "C:\Python314\Lib\unittest\loader.py", line 367, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\tests\test_decoder_correctness.py", line 19, in <module>
+    from app import analyzer as A  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\app\analyzer.py", line 24, in <module>
+    from .config import config
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\app\config.py", line 3, in <module>
+    from dotenv import load_dotenv
+ModuleNotFoundError: No module named 'dotenv'
+
+
+======================================================================
+ERROR: test_evidence_isolation (unittest.loader._FailedTest.test_evidence_isolation)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_evidence_isolation
+Traceback (most recent call last):
+  File "C:\Python314\Lib\unittest\loader.py", line 426, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "C:\Python314\Lib\unittest\loader.py", line 367, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\tests\test_evidence_isolation.py", line 19, in <module>
+    from app import analyzer as A  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\app\analyzer.py", line 24, in <module>
+    from .config import config
+  File "C:\Users\rbalaji\OneDrive - Intel Corporation\Documents\Intel\projects_GHCP\Auto_HSD_analyser_RDT and UPI\app\config.py", line 3, in <module>
+    from dotenv import load_dotenv
+ModuleNotFoundError: No module named 'dotenv'
+
+
+----------------------------------------------------------------------
+Ran 45 tests in 0.051s
+
+FAILED (errors=3)

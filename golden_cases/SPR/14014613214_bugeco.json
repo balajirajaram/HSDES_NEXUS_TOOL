@@ -1,0 +1,43 @@
+{
+  "hsd_id": "14014613214",
+  "platform": "SPR",
+  "domain": "Uncore",
+  "validation_level": "LEVEL_4_FIX_VALIDATED",
+  "expected_owner": "Uncore",
+  "expected_reporting_ip": "Uncore",
+  "expected_first_error": "Uncore",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "WA in uCode; fixed in Uncore/CHA.",
+  "evidence": {
+    "source": "RTL Bugeco 1401131480; fixed in Fixed in CHA SPR-A0",
+    "validation_source": "RTL Bugeco 1401131480; fixed in Fixed in CHA SPR-A0",
+    "validated_by": "RTL/Silicon validation (bugeco record)",
+    "fix_validated": true,
+    "source_references": [
+      "1401131480"
+    ]
+  },
+  "expected": {
+    "owner": "Uncore",
+    "reporting_ip": "Uncore",
+    "originating_ip": "Uncore",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "WA in uCode; fixed in Uncore/CHA."
+  },
+  "bugeco_id": "1401131480",
+  "secondary_ip": "Uncore/CHA",
+  "title": "[Cluster][GDC SPR D0] MCA_LLC_BIST_ACTIVE_TIMEOUT cold-reset + memory margin/reset",
+  "description": "DESCRIPTION: System R04s11 hit the following issue during burnin-sandstone-rf-warm: Configuration biosVersion EGSDCRB1.86B.0061.D12.2107080542 bmcVersion egs-0.63-0-gaf4a7a-cf6fd27 meVersion 6.0.1.023.0 microcode 0x8d000210 OS: CentOS Linux 8 Kernel: 5.12.0-0507.intel_next.07_01_po.14.x86_64+server QDF/stepping:QY0D/D0 CFR: 1D000060 python logs: &gt;&gt;&gt; sv.socket1.uncore.punit.mc_status.show() 0x00000001 : valid (63:63) -- Indicates that this register contains a valid... 0x00000001 : ovr (62:62) -- Another MCA error was detected when VALID was a... 0x00000001 : uc (61:61) -- Indicates (when set) that the processor did not ... 0x00000001 : en (60:60) -- Enable bit - Whether the logged error was enable... 0x00000001 : miscv (59:59) -- MISCV: The value held in the MC4_MISC_MSR is ... 0x00000000 : addrv (58:58) -- ADDRV: The address held in the MC4_ADDR_MSR i... 0x00000001 : pcc (57:57) -- &lt;p&gt;PCC: Processor context corrupt&lt;/p&gt; &lt;p&gt;Indica... 0x00000000 : s (56:56) -- &lt;p&gt;Signals the reporting of uncorrected, but reco... 0x00000000 : ar (55:55) -- Indicates (when set) that MCA error code specifi... 0x00000000 : thrs_err_st (54:53) -- Status tracking for Green/Yellow 0x00000000 : corr_err_count (52:38) -- Correctable error count. Indicated t... 0x00000000 : fw_upd (37:37) -- Indicates that the BIOS has updated the cont... 0x00000000 : other_info (36:32) -- If IA32_MCG_CAP.MCG_ELOG_P is 1, &quot;Other ... 0x0000000d : msec_fw (31:24) -- MCA_LLC_BIST_ACTIVE_TIMEOUT - Got timeout o... 0x00000000 : msec_hw (23:20) -- No Error -- Model specific error code bits ... 0x00000000 : msec_uc (19:16) -- No Error -- Model specific error code bits ... 0x00000402 : mccod (15:00) -- PCU errors (uC, FW) -- Machine Check Error Code NOTE: socket0 is not available. I attached logs about node r01s11.zp31l10b01 &quot; r01s11-MCA_LLC_BIST_ACTIVE_TIMEOUT.txt&quot; INGREDIENTS: BIOS: 0061.D12 BMC: 0.63",
+  "evidence_source": "none",
+  "machine_evidence": null
+}

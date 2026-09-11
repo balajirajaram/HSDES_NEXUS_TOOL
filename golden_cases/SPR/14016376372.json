@@ -1,0 +1,41 @@
+{
+  "hsd_id": "14016376372",
+  "platform": "SPR",
+  "domain": "hw.upi",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "UPI",
+  "expected_reporting_ip": "UPI",
+  "expected_first_error": "UPI",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "14016404363; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "14016404363=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "14016404363=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/14016376372"
+    ]
+  },
+  "expected": {
+    "owner": "UPI",
+    "reporting_ip": "UPI",
+    "originating_ip": "UPI",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "14016404363"
+  },
+  "title": "[EGS SPR-E0] [Cluster] [RPP] [r009s004.zp31l10b01]UPI CRC Errors : UPI LL Rx detected CRC error successful LLR without Phy Reinit during sandstone stress.",
+  "description": "OBSERVED UPI mcelog UPI LL Rx detected CRC error successful LLR without Phy Reinit,TIME RANGE 2022-03-22 17 01 17.000 to 2022-03-27 23 59 59.093,WARNING This presighting was generated automatically. Please verify the following fields for accuracy top_issue, phase_found, soc_family, soc_version, suspect_area, reproducibility. If neccesary metadata is missing frrom this presighting, check the current metadata through clusterscope or attend sys_debug. Owner Eduardo Bolanos. S ystem reporting several Correctable UPI errors in OS during workloads: All of them are coming from Socket1_UPI_Link0: Scoket1 info: VISUAL ID D1D613C800095 PPIN 1ED0F24BC68DB573 During the following stress : povray-test-rf-cold, burnin-sandstone-rf-cold, burnin-sandstone-rf-warm, sandstone-release, sandstone-chaos Mar 29, 2022 @ 06:20:47.026 r009s004.zp31l10b01 [48760.650069] mcelog[3923]: UPI: LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 06:20:47.026 r009s004.zp31l10b01 [48760.650290] mcelog[3923]: MCGCAP f000c15 APICID 80 SOCKETID 1 Mar 29, 2022 @ 06:20:47.026 r009s004.zp31l10b01 [48760.650165] mcelog[3923]: STATUS 8800004000300e0f MCGSTATUS 0 Mar 29, 2022 @ 06:20:47.026 r009s004.zp31l10b01 [48760.650648] mcelog[3923]: MICROCODE 8e0001f0 Mar 29, 2022 @ 06:20:47.026 r009s004.zp31l10b01 [48760.649909] mcelog[3923]: MCA: BUS error: 1 48 Level-3 Generic Generic Other-transaction Request-did-not-timeout Mar 29, 2022 @ 06:20:47.026 r009s004.zp31l10b01 [48760.650843] mcelog[3923]: CPUID Vendor Intel Family 6 Model 143 Step 4 Mar 29, 2022 @ 06:20:47.026 r009s004.zp31l10b01 [48760.650473] mcelog[3923]: PPIN 1ed0f24bc68db573 Mar 29, 2022 @ 06:20:46.976 r009s004.zp31l10b01 [48760.649777] mcelog[3923]: MCi_MISC register valid Mar 29, 2022 @ 06:20:46.976 r009s004.zp31l10b01 [48760.649400] mcelog[3923]: MCi status: Mar 29, 2022 @ 06:20:46.976 r009s004.zp31l10b01 [48760.648963] mcelog[3923]: MISC 608000abc1fffbe1 Mar 29, 2022 @ 06:20:46.976 r009s004.zp31l10b01 [48760.649239] mcelog[3923]: MCG status: Mar 29, 2022 @ 06:20:46.976 r009s004.zp31l10b01 [48760.648696] mcelog[3923]: MCE 0 Mar 29, 2022 @ 06:20:46.976 r009s004.zp31l10b01 [48760.649111] mcelog[3923]: TIME 1648556446 Tue Mar 29 05:20:46 2022 Mar 29, 2022 @ 06:20:46.976 r009s004.zp31l10b01 [48760.647855] mcelog[3923]: Hardware event. This is not a software error. Mar 29, 2022 @ 06:20:46.976 r009s004.zp31l10b01 [48760.649484] mcelog[3923]: Corrected error Mar 29, 2022 @ 06:20:46.976 r009s004.zp31l10b01 [48760.648851] mcelog[3923]: CPU 48 BANK 5 TSC 61e5c4155ddd [67081.144241] mce: [Hardware Error]: Machine check events logged [67081.145462] {737}[Hardware Error]: Hardware error from APEI Generic Hardware Error Source: 0 [67081.145466] {737}[Hardware Error]: It has been corrected by h/w and requires no further action [67081.145469] {737}[Hardware Error]: event severity: corrected [67081.145472] {737}[Hardware Error]: Error 0, type: corrected [67081.145473] {737}[Hardware Error]: section_type: general processor error [67081.145474] {737}[Hardware Error]: processor_type: 0, IA32/X64 [67081.145475] {737}[Hardware Error]: processor_isa: 2, X64 [67081.145477] {737}[Hardware Error]: error_type: 0x00 [67081.145478] {737}[Hardware Error]: operation: 0, unknown or generic [67081.145479] {737}[Hardware Error]: version_info: 0x00000000000806f4 [67081.145480] {737}[Hardware Error]: processor_id: 0x0000000000000080 Mar 29, 2022 @ 10:10:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 10:04:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 09:59:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 09:43:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 09:35:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 09:28:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 09:26:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 09:24:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 09:15:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Mar 29, 2022 @ 09:09:00.000 r009s004.zp31l10b01 1 0 SPR Ex shc COR LL Rx detected CRC error: successful LLR with Phy Reinit; COR LL Rx detected CRC error: successful LLR without Phy Reinit; COR Phy Reset COR LL Rx detected CRC error: successful LLR without Phy Reinit Logs PCI Registers: r009s004_PCI_Registers_UPI_Errors.csv System configuration: System Node r009s004.zp31l10b01 Platform & Release Eagle Stream with OCP rework silicon_Stepping Archer City silicon_Stepping E0 PCH_Stepping B1 memory_config BIOS Ucode EGSDCRB1.86B.0075.D01.2202211157 0x8e0001f0 Kernel_Version Linux 5.15.0-spr.bkc.pc.3.21.0.x86_64 BMC egs-0.91-67-g1943af-9248c75 No.Sockets 2 Sockets CPU_Model Q0KH Pool SPR_XCC-E0_PLN_EXC_PIV_BURNIN-PCH_VIMARTI last test povray-test-rf-cold/burnin-sandstone-rf-cold/ burnin-sandstone-rf-warm/ sandstone-release/ sandstone-chaos TTF N/A Wave1/Wave2 N/A",
+  "evidence_source": "none",
+  "machine_evidence": null
+}

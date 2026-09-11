@@ -1,0 +1,68 @@
+{
+  "hsd_id": "15019382716",
+  "platform": "DMR",
+  "domain": "hw.big_core",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Core",
+  "expected_reporting_ip": "Core",
+  "expected_first_error": "Core",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "22022484440; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "22022484440=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "22022484440=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/15019382716"
+    ]
+  },
+  "expected": {
+    "owner": "Core",
+    "reporting_ip": "Core",
+    "originating_ip": "Core",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "22022484440"
+  },
+  "title": "[AtScale-Cluster][DMR][AP][ES1][RPP][[cs16ca101hs0405][Q9UL][VID:D5SJ042400149] - AtScale:SDE:Frequent L1 Instruction-Fetch MCE errors detected during sandstone branch_tree_icache_focused seed testing in PAIV-Mixer_random_workload on cs16ca101hs0405",
+  "description": "Issue PAIV-Mixer_random_workloads test failed, observed some not ok in the workload log. branch_tree_icache_focused subworkload failed In WL log of system cs16ca101hs0405 ................... .................. Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: Hardware event. This is not a software error. Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCE 0 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: CPU 9 BANK 0 TSC 7bf319c6f0fd Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: ADDR 199963e980 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: TIME 1778553725 Tue May 12 02:42:05 2026 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCG status: Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCi status: Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: Corrected error Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCi_ADDR register valid Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCA: Instruction CACHE Level-1 Instruction-Fetch Error Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: STATUS 8400008000050150 MCGSTATUS 0 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCGCAP f001c20 APICID 42 SOCKETID 0 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: PPIN 39c3d589eda48826 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MICROCODE 800009a0 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: CPUID Vendor Intel Family 19 Model 1 Step 0 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: Hardware event. This is not a software error. Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCE 0 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: CPU 9 BANK 0 TSC 7bf332d66175 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: ADDR 1420c3e780 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: TIME 1778553725 Tue May 12 02:42:05 2026 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCG status: Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCi status: Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: Corrected error Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCi_ADDR register valid Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCA: Instruction CACHE Level-1 Instruction-Fetch Error Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: STATUS 8400004000050150 MCGSTATUS 0 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MCGCAP f001c20 APICID 42 SOCKETID 0 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: PPIN 39c3d589eda48826 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: MICROCODE 800009a0 Journal: May 12 02:42:05 cs16ca101hs0405 mcelog[1455]: CPUID Vendor Intel Family 19 Model 1 Step ................... .................. MCE events: 1 2026-05-12 02:41:51 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400008000050150, addr=0x199963e980, tsc=0x7bf319c6f0fd, walltime=0x6a02937d, cpu=0x00000009, cpuid=0x00400f10, apicid=0x00000042 2 2026-05-12 02:41:51 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400004000050150, addr=0x1420c3e780, tsc=0x7bf332d66175, walltime=0x6a02937d, cpu=0x00000009, cpuid=0x00400f10, apicid=0x00000042 3 2026-05-12 02:44:11 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x840000c000050150, addr=0x1763ca7ec0, tsc=0x7c37bf1fce09, walltime=0x6a029409, cpu=0x0000000a, cpuid=0x00400f10, apicid=0x00000048 4 2026-05-12 02:44:11 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400004000050150, addr=0x15e2c23fc0, tsc=0x7c37cceb990f, walltime=0x6a029409, cpu=0x00000025, cpuid=0x00400f10, apicid=0x000000ca 5 2026-05-12 03:19:06 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8000028000350150, tsc=0x8037e4b49c29, walltime=0x6a029c38, cpu=0x0000000a, cpuid=0x00400f10, apicid=0x00000048 6 2026-05-12 03:19:07 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x840003c000050150, addr=0x1845fef400, tsc=0x80383e86dd8f, walltime=0x6a029c38, cpu=0x0000000a, cpuid=0x00400f10, apicid=0x00000048 7 2026-05-12 03:20:08 +0000 error: Instruction CACHE Level-0 Instruction-Fetch Error, mcg mcgstatus=0, mci Corrected_error, mcgcap=0x0f001c20, status=0x8400014000050150, addr=0x11c4271640, tsc=0x8056063624b7, walltime=0x6a029c75, cpu=0x00000019, cpuid=0x00400f10, apicid=0x0000008a System details: 1 Socket VID: D5SJ042400149 PPIN: 0x39c3d589eda48826 Microcode:0x800009a0 CPU QDF: Q9UL BKC#20 BIOS: OKSDCRB1.IPC.0034.D68.2604282331 Kernel : 6.18.0-dmr.bkc.6.18.7.7.8.x86_64 OS: CentOS Stream release 10 (Coughlan)",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0x8400008000050150",
+        "source_text": "0x8400008000050150"
+      },
+      {
+        "status": "0x8400004000050150",
+        "source_text": "0x8400004000050150"
+      },
+      {
+        "status": "0x840000c000050150",
+        "source_text": "0x840000c000050150"
+      },
+      {
+        "status": "0x8000028000350150",
+        "source_text": "0x8000028000350150"
+      },
+      {
+        "status": "0x840003c000050150",
+        "source_text": "0x840003c000050150"
+      },
+      {
+        "status": "0x8400014000050150",
+        "source_text": "0x8400014000050150"
+      }
+    ]
+  }
+}

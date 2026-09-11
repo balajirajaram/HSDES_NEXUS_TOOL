@@ -17,6 +17,7 @@ fabricates HSD IDs, register names, or commands.
 """
 
 import json
+import os
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -126,6 +127,135 @@ def _is_poison_consumption(mcs: Dict[str, Any]) -> bool:
         return True
     # MCACOD 0x0134 = DCU load poison consumption.
     return unit in {"DCU", "MLC", "IFU", "DTLB"} and "0134" in str(mcs.get("mcacod", ""))
+
+
+# Intel SDM MCi_STATUS architectural bits (bit -> flag).
+_MCI_STATUS_BITS = [(63, "VAL"), (62, "OVER"), (61, "UC"), (60, "EN"),
+                    (59, "MISCV"), (58, "ADDRV"), (57, "PCC"), (56, "S"), (55, "AR")]
+
+
+def classify_mca_status(status: Any) -> Dict[str, Any]:
+    """Single source of truth for MCA severity/recovery from a 64-bit MCi_STATUS.
+    Rule: UC=1 & PCC=1 => UNCORRECTED_FATAL (never 'corrected'). All report
+    sections must consume this rather than re-deriving fatality."""
+    try:
+        val = int(str(status), 16) if not isinstance(status, int) else status
+    except (TypeError, ValueError):
+        return {"flags": {}, "severity": "unknown", "recovery_class": "unknown",
+                "is_corrected": False, "is_uncorrected": False, "is_fatal": False,
+                "valid": False}
+    flags = {name: bool((val >> bit) & 1) for bit, name in _MCI_STATUS_BITS}
+    uc, pcc, en, s, ar = (flags["UC"], flags["PCC"], flags["EN"], flags["S"], flags["AR"])
+    if not flags["VAL"]:
+        sev, corrected, uncorrected, fatal = "invalid", False, False, False
+    elif uc and pcc:
+        sev, corrected, uncorrected, fatal = "UNCORRECTED_FATAL", False, True, True
+    elif uc:
+        sev, corrected, uncorrected, fatal = "UNCORRECTED", False, True, False
+    else:
+        sev, corrected, uncorrected, fatal = "CORRECTED", True, False, False
+    if not uc:
+        recovery = "corrected — no OS action"
+    elif pcc:
+        recovery = "UCR/fatal — context corrupt, not recoverable (reset expected)"
+    elif s and ar:
+        recovery = "SRAR — software recoverable action required"
+    elif s and not ar:
+        recovery = "SRAO — software recoverable action optional"
+    else:
+        recovery = "UCNA — uncorrected no action (deferred)"
+    return {"flags": flags, "severity": sev, "recovery_class": recovery,
+            "is_corrected": corrected, "is_uncorrected": uncorrected,
+            "is_fatal": fatal, "valid": True}
+
+
+def mci_register_addrs(bank: Any) -> Dict[str, Any]:
+    """IA32_MCi_* MSR addresses for a bank: CTL/STATUS/ADDR/MISC = 0x400/1/2/3 + 4*bank."""
+    try:
+        b = int(bank)
+    except (TypeError, ValueError):
+        return {"bank": bank, "MCi_CTL": None, "MCi_STATUS": None,
+                "MCi_ADDR": None, "MCi_MISC": None}
+    base = 0x400 + 4 * b
+    return {"bank": b,
+            "MCi_CTL": f"0x{base:X}", "MCi_STATUS": f"0x{base + 1:X}",
+            "MCi_ADDR": f"0x{base + 2:X}", "MCi_MISC": f"0x{base + 3:X}"}
+
+
+def _norm_ip(unit: str) -> str:
+    """Normalise an IP/unit name for comparison (alpha prefix only)."""
+    return re.sub(r"[^a-z]", "", str(unit or "").lower())[:4]
+
+
+# Shared abstraction-level synonym groups: a component decode (e.g. "IFU
+# (Core)") and its broader owning team ("Core") are the SAME owner for
+# comparison purposes. Canonical home for this table — tools/rca_benchmark.py
+# imports it rather than keeping its own copy.
+OWNER_SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
+    ("Core", "IFU", "DCU", "MLC", "DTLB", "BPU", "MSE", "HAM"),
+    ("UPI", "NCU", "Fabric", "Mesh"),
+    ("RAS", "CCF"),
+)
+
+
+def normalize_owner_group(name: str) -> str:
+    """Map an owner/unit string to its canonical abstraction group (lowercase),
+    falling back to the lowercased original when no synonym group matches."""
+    n = (name or "").strip().lower()
+    if not n:
+        return n
+    for group in OWNER_SYNONYM_GROUPS:
+        if any(token.lower() in n for token in group):
+            return group[0].lower()
+    return n
+
+
+# Named units commonly seen in HSD titles/descriptions/comments that are NOT
+# necessarily captured by the structured first-error register (e.g. an
+# aggregated title naming "Acode" or "Punit" as the failing unit while the
+# reporting MCA bank decodes to a core-cache IP). Kept narrow and explicit —
+# no loose/general keyword scanning.
+_NAMED_UNIT_PATTERNS: tuple[tuple[str, "re.Pattern[str]"], ...] = (
+    ("Acode", re.compile(r"(?i)\bacode\b")),
+    ("Punit", re.compile(r"(?i)\bp[\s-]?unit\b")),
+    ("Pcode", re.compile(r"(?i)\bp[\s-]?code\b")),
+    ("DSA", re.compile(r"(?i)\bdsa\b")),
+    ("MDF", re.compile(r"(?i)\bmdf\b")),
+    ("UPI", re.compile(r"(?i)\bupi\b")),
+    ("CHA", re.compile(r"(?i)\bcha\b")),
+    ("IMC", re.compile(r"(?i)\bimc\b")),
+    ("PCIe", re.compile(r"(?i)\bpcie\b")),
+    ("BIOS", re.compile(r"(?i)\bbios\b")),
+)
+
+# A named-unit mention only counts as a root-cause candidate when it appears
+# near one of these words — prevents firing on incidental mentions (e.g. a
+# changelog line "BIOS version 1.2" with no error context).
+_TEXTUAL_ROOT_CAUSE_CONTEXT_RE = re.compile(
+    r"(?i)\b(error|timeout|fatal|mca_|root\s*cause|hang|busy|crash|panic)\b")
+
+
+def find_textual_root_cause_conflict(text: str, bank_unit: str,
+                                     window: int = 80) -> Optional[Dict[str, str]]:
+    """Conservative scan for a named unit (Acode/Punit/DSA/...) mentioned within
+    *window* characters of a root-cause context keyword. Returns the first such
+    mention whose normalized unit differs from the decoded bank owner, or None.
+    Never overrides bank_unit — this only surfaces a candidate for the report
+    and contradiction detector to reconcile."""
+    if not text or not bank_unit:
+        return None
+    bank_group = normalize_owner_group(bank_unit)
+    for unit, pattern in _NAMED_UNIT_PATTERNS:
+        for match in pattern.finditer(text):
+            if normalize_owner_group(unit) == bank_group:
+                continue
+            start = max(0, match.start() - window)
+            end = min(len(text), match.end() + window)
+            snippet = text[start:end]
+            if not _TEXTUAL_ROOT_CAUSE_CONTEXT_RE.search(snippet):
+                continue
+            return {"unit": unit, "snippet": " ".join(snippet.split())}
+    return None
 
 
 def _specific_root_cause(decoded: Optional[Dict[str, Any]],
@@ -266,6 +396,69 @@ def _post_verdict(decoded: Optional[Dict[str, Any]],
             "captured at this point; otherwise treat it as a firmware/config hang.")
 
 
+def _historical_repro_section(platform: str, target: Optional[Dict[str, Any]],
+                              log_findings: Optional[Dict[str, Any]]) -> str:
+    """Build the additive historical-repro section without changing RCA state."""
+    from pathlib import Path
+    from .historical_repro import load_cases, match_historical_repro, render_section
+
+    target = target or {}
+    decoded = (log_findings or {}).get("decoded") or {}
+    evidence = decoded.get("evidence") or {}
+    mca = evidence.get("mc_status") or {}
+    signature = {
+        "platform": platform,
+        "owner": target.get("component") or target.get("suspect_area") or "",
+        "mcacod": mca.get("mcacod"),
+        "mscod": mca.get("mscod"),
+        "bank": mca.get("bank"),
+        "socket": (evidence.get("sockets") or [None])[0],
+        "keywords": " ".join(str(target.get(key) or "") for key in
+                               ("title", "description", "full_text")),
+    }
+    root = Path(__file__).resolve().parents[1] / "golden_cases"
+    return render_section(match_historical_repro(signature, load_cases(root)))
+
+
+def _repro_vector_section(platform: str, target: Optional[Dict[str, Any]],
+                          log_findings: Optional[Dict[str, Any]],
+                          report_md: str) -> str:
+    """Append ranked stress vectors as research context only."""
+    from .repro_recommender import recommend_repro_vectors
+    from .repro_signature_extractor import extract_failure_mechanism
+
+    ownership = extract_ownership({"report_markdown": report_md,
+                                   "log_findings": log_findings or {}})
+    target = dict(target or {})
+    decoded = (log_findings or {}).get("decoded") or {}
+    labels = " ".join(str(item.get("label", "")) for item in
+                      (log_findings or {}).get("signatures", []))
+    target["keywords"] = " ".join(filter(None, [target.get("title", ""),
+                                                   target.get("description", ""), labels]))
+    mechanism = (decoded.get("failure_mechanism") or
+                 target.get("failure_mechanism") or extract_failure_mechanism(target))
+    recommendations = recommend_repro_vectors(
+        ownership.get("owning_ip", ""), mechanism, platform or "", top_n=5)
+    lines = ["## Suggested Reproduction Vectors", "",
+             "Historical reference only -- not used in confidence or verdict calculation.", ""]
+    if not recommendations:
+        lines.append("No historical reproduction vector found.")
+        return "\n".join(lines) + "\n"
+    for index, recommendation in enumerate(recommendations, 1):
+        lines.extend([
+            f"### Recommendation {index}",
+            f"- **Tool:** {recommendation.get('tool_name', 'unclassified')}",
+            f"- **Subtest / mode:** {recommendation.get('subtest_or_mode', 'unknown')}",
+            f"- **Trigger context:** {', '.join(recommendation.get('trigger_context', []))}",
+            f"- **Match:** {recommendation.get('match_type')}",
+            f"- **Hit count:** {recommendation.get('hit_count', 0)}",
+            f"- **Evidence tier:** {recommendation.get('evidence_tier', 'UNKNOWN')}",
+            f"- **Source HSDs:** {', '.join(recommendation.get('source_hsd_ids', []))}",
+            "",
+        ])
+    return "\n".join(lines)
+
+
 def _specific_next_steps(decoded: Optional[Dict[str, Any]]) -> List[str]:
     """IP-specific next reads derived from the decoded bank/unit."""
     ev = _mc_evidence(decoded)
@@ -329,11 +522,21 @@ def _collect_sources(target: Optional[Dict[str, Any]], recall: Dict[str, Any],
             "ref": "app/decoders/ewl_codes_database.json · rc_fatal_errors_database.json · mcheck_codes_database.json",
         })
     if decoded.get("mca"):
+        _mca_prov = []
+        try:
+            from .source_provenance import provenance_for
+            _mca_prov = [provenance_for("app/decoders/mca_codes_database.json")]
+        except Exception:
+            pass
         sources.append({
             "name": "MCA (Machine Check Architecture) code database",
             "kind": "Decoder DB",
             "detail": "Bank-specific MSCOD/MCACOD decode of MCi_STATUS from SOL RAS and PythonSV register dumps.",
             "ref": "app/decoders/mca_codes_database.json",
+            "trust": (_mca_prov[0].get("trust", "UNKNOWN") if _mca_prov else "UNKNOWN"),
+            "trust_score": str(_mca_prov[0].get("score", 0) if _mca_prov else 0),
+            "source_document": (_mca_prov[0].get("source_document", "UNKNOWN")
+                                if _mca_prov else "UNKNOWN"),
         })
     _ev = decoded.get("evidence") or {}
     if _ev.get("bank_units"):
@@ -359,6 +562,9 @@ def _collect_sources(target: Optional[Dict[str, Any]], recall: Dict[str, Any],
             "detail": "Maps the failing MCA bank number to its silicon unit "
                       f"({', '.join(f'{b}->{u}' for b, u in list(_ev['bank_units'].items())[:4])}).",
             "ref": _src_ref,
+            "trust": "AUTHORITATIVE" if _src_ref != "app/decoders/bank_mapping.json" else "UNKNOWN",
+            "trust_score": "100" if _src_ref != "app/decoders/bank_mapping.json" else "0",
+            "source_document": _src_name,
         })
     if decoded.get("post"):
         sources.append({
@@ -453,15 +659,17 @@ def _render_sources_md(sources: List[Dict[str, str]]) -> str:
         "",
         "Documents and datasets consulted to decode the failure signatures and derive the next steps:",
         "",
-        "| # | Source | Type | How it was used | Reference |",
-        "|---|--------|------|-----------------|-----------|",
+        "| # | Source | Type | How it was used | Reference | Trust |",
+        "|---|--------|------|-----------------|-----------|-------|",
     ]
     for i, s in enumerate(sources, 1):
         name = str(s.get("name", "")).replace("|", "\\|")
         kind = str(s.get("kind", "")).replace("|", "\\|")
         detail = _short(s.get("detail", ""), 160).replace("|", "\\|")
         ref = str(s.get("ref", "")).replace("|", "\\|")
-        lines.append(f"| {i} | {name} | {kind} | {detail} | `{ref}` |")
+        trust = str(s.get("trust", "UNKNOWN")).replace("|", "\\|")
+        score = str(s.get("trust_score", "0"))
+        lines.append(f"| {i} | {name} | {kind} | {detail} | `{ref}` | {trust} ({score}) |")
     lines.append("")
     return "\n".join(lines)
 
@@ -706,9 +914,10 @@ def _extract_findings(target: Optional[Dict[str, Any]],
     resolution = cf.get("workaround") or " ".join(fix_lines) or gf(
         "closed_reason", "status_reason")
     status = (target.get("status") or "").lower()
-    strong_comment_rc = bool(cf.get("root_cause") and cf.get("workaround"))
+    # A comment claim (even one that also proposes a fix) is a human observation,
+    # not validated proof — it must not grade the finding 'confirmed' on its own.
     confirmed = (status in ("closed", "complete", "verified")
-                 and bool(root_cause or resolution)) or strong_comment_rc
+                 and bool(root_cause or resolution))
     return {
         "root_cause": root_cause[:400],
         "resolution": resolution[:400],
@@ -723,7 +932,9 @@ async def analyze(hsd_id: str, symptoms: str,
                   log_text: Optional[str] = None,
                   fetch_attachments: bool = False,
                   follow_transferred: bool = True,
-                  reference_hsd_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+                  reference_hsd_ids: Optional[List[str]] = None,
+                  target_override: Optional[Dict[str, Any]] = None,
+                  offline_mode: bool = False) -> Dict[str, Any]:
     def _normalize_ref_ids(ids: Optional[List[str]], self_id: str) -> List[str]:
         out: List[str] = []
         seen: set = set()
@@ -767,11 +978,11 @@ async def analyze(hsd_id: str, symptoms: str,
     recall = kb.search(symptoms, exclude_id=hsd_id)
 
     # Step 2 - INVESTIGATE
-    target = await client.get_article(hsd_id)
+    target = target_override if target_override is not None else await client.get_article(hsd_id)
     # Discover REAL file attachments via the HSDES attachments API (SOL zips,
     # PythonSV dumps, crashdump JSON), falling back to inline resource links.
     attachment_meta: List[Dict[str, Any]] = []
-    if target and not target.get("error"):
+    if target and not target.get("error") and not offline_mode:
         try:
             _tenant = str((target.get("raw") or {}).get("tenant") or "server_platf")
             attachment_meta = await client.list_attachments(hsd_id, tenant=_tenant)
@@ -791,7 +1002,7 @@ async def analyze(hsd_id: str, symptoms: str,
     # Optional MCP enrichment: also ask the Geni + Co-Design HSDES agents and fold
     # their answers into the ticket context (grounds the report in every source).
     mcp_sources: List[str] = []
-    if target and not target.get("error") and enrichment_enabled():
+    if target and not target.get("error") and not offline_mode and enrichment_enabled():
         try:
             # Pass ticket text + typed symptoms so need-based sources (BIOS/S3M,
             # kernel-crash, Redfish) are only queried when the evidence is relevant.
@@ -840,7 +1051,7 @@ async def analyze(hsd_id: str, symptoms: str,
     # decode + metadata into the report, so Axon evidence is triaged too.
     axon_records: List[Dict[str, Any]] = []
     axon_uuids = sorted(extract_axon_uuids((target or {}).get("full_text", "") or ""))
-    if axon_uuids and target and not target.get("error"):
+    if axon_uuids and target and not target.get("error") and not offline_mode:
         try:
             axon_records = await fetch_axon_records(axon_uuids)
         except Exception:
@@ -895,7 +1106,7 @@ async def analyze(hsd_id: str, symptoms: str,
     log_known = _has_strong_log_evidence(log_findings)
     auto_history = not (kb_known or comment_known or log_known)
 
-    if auto_history and target and not target.get("error"):
+    if auto_history and target and not target.get("error") and not offline_mode:
         merged_ref_ids = _normalize_ref_ids(reference_hsd_ids, str(hsd_id))
         auto_ref_ids = _extract_clone_ref_ids(target, str(hsd_id))
         merged_ref_ids = _normalize_ref_ids(merged_ref_ids + auto_ref_ids, str(hsd_id))
@@ -959,14 +1170,14 @@ async def analyze(hsd_id: str, symptoms: str,
     if auto_history and recall["confidence"] != "High":
         similar = await client.search_similar(symptoms)
 
-    if auto_history and follow_transferred and target and not target.get("error"):
+    if auto_history and follow_transferred and target and not target.get("error") and not offline_mode:
         try:
             transferred = await sync_transferred(client, target)
         except Exception:
             transferred = None
 
     # Step 4 - REPORT
-    if llm.enabled:
+    if llm.enabled and not offline_mode:
         report_md, kb_entry = await _llm_report(
             hsd_id, symptoms, platform, recall, target, similar, client.enabled,
             log_findings, comment_findings, transferred
@@ -978,7 +1189,22 @@ async def analyze(hsd_id: str, symptoms: str,
             transferred, fetch_attempted=fetch_attachments
         )
 
+    # Historical reproduction is a read-only research aid. Keep it outside the
+    # report inputs used for confidence, verdict, KB validation, and post gating.
+    report_md = (report_md or "").rstrip() + "\n\n" + _historical_repro_section(
+        platform, target, log_findings)
+    report_md = (report_md or "").rstrip() + "\n\n" + _repro_vector_section(
+        platform, target, log_findings, report_md)
+
     # Step 3 - WRITE-BACK
+    _kb_state, _kb_eligible = _kb_validation_state(log_findings, comment_findings)
+    if isinstance(kb_entry, dict):
+        kb_entry["validation_state"] = _kb_state
+        kb_entry["eligible_for_root_cause_recall"] = _kb_eligible
+        # A comment-only (unvalidated) entry must never be stored as a confirmed cause.
+        if not _kb_eligible and isinstance(kb_entry.get("root_cause"), dict):
+            if kb_entry["root_cause"].get("confidence") == "confirmed":
+                kb_entry["root_cause"]["confidence"] = "hypothesis"
     kb_action = kb.upsert(kb_entry) if kb_entry else {"action": "skipped"}
 
     # Provenance — the reference materials this analysis actually drew on, so the
@@ -1285,14 +1511,26 @@ def extract_ownership(result: Dict[str, Any]) -> Dict[str, Any]:
     own_conf = _md_line(ladder, "Ownership Confidence")
     conf_sec = _md_section(md, "## Root-Cause Confidence")
     m = re.search(r"(\d{1,3})\s*%", conf_sec)
+    _textual_conflict_match = re.search(
+        r"TEXTUAL_OWNERSHIP_MENTION_CONFLICT\*\* — ticket text names \*\*([^*]+)\*\*", md)
     return {
         "owning_ip": owning_ip,
+        "reporting_ip": mcs.get("bank_unit", "") or "",
+        "bank": str(mcs.get("bank", "")) if mcs.get("bank") not in (None, "") else "",
+        "socket": ((ev.get("socket_provenance") or {}).get("resolved_socket")
+                   or (ev.get("sockets") or [""])[0]),
+        "mcacod": mcs.get("mcacod", "") or "",
+        "mscod": mcs.get("mscod", "") or "",
+        "decoder_state": (mcs.get("decoder_ambiguity") or {}).get("state", ""),
         "first_error": first_error,
         "verdict": verdict,
         "confidence": int(m.group(1)) if m else 0,
         "ownership_confidence": own_conf,
         "suggested_team": _suggested_team(owning_ip),
         "contradiction": "## Contradiction Detector" in md,
+        "ownership_evidence_conflict": "OWNERSHIP_EVIDENCE_CONFLICT" in md,
+        "textual_ownership_conflict": "TEXTUAL_OWNERSHIP_MENTION_CONFLICT" in md,
+        "textual_named_unit": _textual_conflict_match.group(1) if _textual_conflict_match else "",
     }
 
 
@@ -1318,6 +1556,11 @@ async def update_hsd_report(hsd_id: str, symptoms: str = "Automated triage",
         return {"ok": True, "dry_run": True, "hsd_id": hsd_id,
                 "comment_html": comment, "payload": payload,
                 "gate": gate, "hsdes_enabled": client.enabled}
+    if os.getenv("HSDES_WRITE_ENABLED", "false").lower() != "true":
+        return {"ok": True, "dry_run": True, "draft_only": True, "hsd_id": hsd_id,
+                "reason": "HSDES_WRITE_ENABLED is not set to true",
+                "comment_html": comment, "payload": payload, "gate": gate,
+                "hsdes_enabled": client.enabled}
     if not force and not gate["allow"]:
         return {"ok": False, "dry_run": False, "gated": True, "hsd_id": hsd_id,
                 "reason": gate["reason"], "gate": gate,
@@ -1347,12 +1590,13 @@ def _post_gate(result: Dict[str, Any]) -> Dict[str, Any]:
     # The Contradiction Detector section is emitted ONLY when a contradiction was
     # found, so its presence is the signal (robust to emoji encoding).
     contradiction = "## Contradiction Detector" in md
+    ambiguity = "AMBIGUOUS_DECODER" in md
     owner_proven = "CONFIRMED" in verdict or owner_conf.startswith("HIGH")
-    if contradiction:
+    if contradiction or ambiguity:
         return {"allow": False, "verdict": verdict, "confidence": conf_pct,
-                "contradiction": True,
-                "reason": "auto-post blocked — unresolved contradiction with the leading "
-                          "hypothesis; draft only until resolved"}
+                "contradiction": contradiction, "ambiguity": ambiguity,
+                "reason": "auto-post blocked — unresolved decoder ambiguity or contradiction; "
+                          "draft only until resolved"}
     if owner_proven or conf_pct >= 70:
         return {"allow": True, "verdict": verdict, "confidence": conf_pct,
                 "contradiction": False,
@@ -1405,6 +1649,36 @@ def _extract_json(text: str) -> Optional[Dict[str, Any]]:
             except Exception:
                 return None
     return None
+
+
+def _kb_validation_state(log_findings: Optional[Dict[str, Any]],
+                         comment_findings: Optional[Dict[str, Any]]) -> Tuple[str, bool]:
+    """KB validation state (Part 10): a self-analyzed ticket is never stored as a
+    validated root cause. Comment claims are UNVALIDATED; machine-decoded evidence
+    is at most MACHINE_SUPPORTED. Only curated/fix-validated outcomes (set out of
+    band) are eligible for root-cause recall. Returns (state, eligible)."""
+    lf = log_findings or {}
+    ev = (lf.get("decoded") or {}).get("evidence") or {}
+    mcs = ev.get("mc_status") or {}
+    ierr = [r for r in ((lf.get("decoded") or {}).get("ierr_table") or [])
+            if _ierr_has_source(r)]
+    has_machine = bool(mcs.get("status")) or (lf.get("lines_scanned") or 0) > 0
+    owner_proven = bool(ierr) and not _is_poison_consumption(mcs)
+    cf = comment_findings or {}
+    if not has_machine:
+        state = "OBSERVATION_ONLY"
+    elif owner_proven:
+        state = "MACHINE_SUPPORTED"
+    elif cf.get("root_cause"):
+        state = "UNVALIDATED_HYPOTHESIS"
+    elif mcs.get("status"):
+        state = "MACHINE_SUPPORTED"
+    else:
+        state = "OBSERVATION_ONLY"
+    # Nothing produced by automated analysis alone is eligible for validated
+    # root-cause recall — that requires curation or fix/repro validation.
+    eligible = state in ("VALIDATED_ROOT_CAUSE", "FIX_VALIDATED", "CURATED_GOLDEN_CASE")
+    return state, eligible
 
 
 def _fallback_entry(hsd_id, symptoms, platform, target, hsdes_enabled,
@@ -1961,6 +2235,9 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
     versions = _extract_versions(target)
     axon_sigs = (target or {}).get("axon_svtools_signatures") or []
     sim = similar or []
+    _socket_info = ev.get("socket_provenance") or {}
+    _socket = _socket_info.get("resolved_socket")
+    _sv_socket = f"socket{_socket}" if _socket is not None else "socket<N>  # resolve from socket provenance"
 
     # Resolve the implicated MCA bank so MC_ADDR/MC_MISC MSR offsets are exact.
     bank_n: Optional[int] = None
@@ -2009,7 +2286,7 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
     audit.append(item("MC_STATUS / MCACOD / MSCOD", have_status, detail2,
                       "capture the full 64-bit MCi_STATUS (VAL/UC/PCC/ADDRV/MISCV + MCACOD/MSCOD)",
                       [f"rdmsr -a {_sbank}  # MC{bank_n if bank_n is not None else 'N'}_STATUS (OS)",
-                       "sv.socket0.uncore.mca.dump()  # PythonSV — decode MCACOD/MSCOD + flags"]))
+                       f"sv.{_sv_socket}.uncore.mca.dump()  # PythonSV — decode MCACOD/MSCOD + flags"]))
 
     # 3. MC_ADDR
     _addr = f"0x{0x402 + 4*bank_n:X}" if bank_n is not None else "0x402+4*N"
@@ -2017,7 +2294,7 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
                       ev.get("mc_addr", ""),
                       "read MCi_ADDR when ADDRV=1 to locate the offending address/transaction",
                       [f"rdmsr -a {_addr}  # MC{bank_n if bank_n is not None else 'N'}_ADDR (OS)",
-                       "sv.socket0.uncore.mca.dump()  # PythonSV — MCi_ADDR field"]))
+                       f"sv.{_sv_socket}.uncore.mca.dump()  # PythonSV — MCi_ADDR field"]))
 
     # 4. MC_MISC
     _misc = f"0x{0x403 + 4*bank_n:X}" if bank_n is not None else "0x403+4*N"
@@ -2025,7 +2302,7 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
                       ev.get("mc_misc", ""),
                       "read MCi_MISC when MISCV=1 for request type / source / channel hints",
                       [f"rdmsr -a {_misc}  # MC{bank_n if bank_n is not None else 'N'}_MISC (OS)",
-                       "sv.socket0.uncore.mca.dump()  # PythonSV — MCi_MISC field"]))
+                       f"sv.{_sv_socket}.uncore.mca.dump()  # PythonSV — MCi_MISC field"]))
 
     # 5. RC-Fatal source agent
     audit.append(item("RC-Fatal / EWL Source Agent", ev.get("rc_fatal_agent"),
@@ -2056,7 +2333,9 @@ def _audit_root_cause_evidence(target: Dict[str, Any],
                       ("socket(s) " + ", ".join(sockets)) if sockets else "",
                       "note which socket(s) fail — a socket-localized pattern points at CPU/board vs firmware",
                       ["sv.sockets  # enumerate sockets",
-                       "sv.socket0.uncore.mca.dump(); sv.socket1.uncore.mca.dump()  # per-socket"]))
+                                             (f"sv.{_sv_socket}.uncore.mca.dump()  # selected by socket provenance"
+                                                if _socket is not None else
+                                                "sv.sockets.uncore.mca.dump()  # resolve socket before reading; no Socket 0 default")]))
 
     # 9. Historical signature match
     hist = bool(axon_sigs) or recall.get("confidence") in ("High", "Medium") or bool(sim)
@@ -2252,6 +2531,17 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
     # 'root cause identified' requires hardware ownership evidence.
     have_root_cause = bool(have_first_error and (have_crashdump or have_tor_dump) and not poison)
 
+    # Textually-named root cause (e.g. title names "Acode"/"Punit") that may
+    # differ from the reporting MCA bank owner — independent of, and computed
+    # alongside, the register-based first-error-vs-bank conflict below.
+    _comment_texts = " ".join(
+        str(c.get("text") or c.get("description") or "")
+        for c in (target.get("comments_structured") or target.get("comments") or [])
+        if isinstance(c, dict))
+    _textual_scan_text = "\n".join(part for part in (txt, _comment_texts) if part)
+    _textual_conflict = find_textual_root_cause_conflict(
+        _textual_scan_text, mcs.get("bank_unit") or first_ierr.get("source_unit") or "")
+
     # ---------- RCA Scorecard (manager-friendly, top of report) ----------
     _present = sum(1 for a in evidence_audit if a.get("present"))
     _total = len(evidence_audit) or 1
@@ -2324,11 +2614,14 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         L.append("## MCA Ownership Analysis")
         L.append("| Bank | MCACOD | MSCOD | Owning IP | Socket | Fatality | Class |")
         L.append("|------|--------|-------|-----------|--------|----------|-------|")
-        fatal = "FATAL" if (flags.get("UC") and flags.get("PCC")) else (
+        # Central fatality classification (UC & PCC => uncorrected fatal, never corrected).
+        _cls = classify_mca_status(mcs.get("status"))
+        fatal = _cls["severity"] if _cls.get("valid") else (
+            "FATAL" if (flags.get("UC") and flags.get("PCC")) else
             "uncorrected" if flags.get("UC") else "corrected")
         recov = _recovery_str(mcs.get("recovery"))
         if recov:
-            fatal = recov
+            fatal = f"{_cls['severity']} · {recov}" if _cls.get("valid") else recov
         # 3-strike Internal Timer AND poison consumption are VICTIM/symptom, not
         # the origin; a real IP/source fault is PRIMARY.
         cls = ("SECONDARY (symptom)" if three_strike
@@ -2358,6 +2651,12 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         else:
             L.append(f"- **PRIMARY_ERROR:** {mcs.get('bank_unit') or 'the logged bank'} "
                      f"({mcs.get('mcacod','?')}/{mcs.get('mscod','?')}).")
+        if _textual_conflict:
+            L.append(f"- **Reporting IP (decoded bank):** {mcs.get('bank_unit') or '—'}")
+            L.append(f"- **Textually-Named Candidate Cause:** {_textual_conflict['unit']} "
+                     f"— \"{_textual_conflict['snippet']}\" (not yet reconciled with the "
+                     "reporting bank; may be the true upstream origin, or the reporting bank "
+                     "may be correct and the mention incidental)")
         L.append("")
 
     # ---------- First-Error Provenance & Debug Decision Tree ----------
@@ -2566,6 +2865,42 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         contradictions.append("A 3-strike is decoded but the **first-error source is not "
                               "captured** — origin attribution is unproven (do not name a "
                               "specific IP as root cause yet)")
+    # OWNERSHIP_EVIDENCE_CONFLICT: the first-error source IP differs from the
+    # reporting MCA bank owner — reporting IP is not the originating IP.
+    _fe_unit = (first_ierr.get("source_unit") or "").strip()
+    _bank_unit = (mcs.get("bank_unit") or "").strip()
+    ownership_conflict = bool(
+        _fe_unit and _bank_unit and _norm_ip(_fe_unit) and _norm_ip(_bank_unit)
+        and _norm_ip(_fe_unit) != _norm_ip(_bank_unit))
+    if ownership_conflict:
+        contradictions.append(
+            f"**OWNERSHIP_EVIDENCE_CONFLICT** — first-error source (**{_fe_unit}**) differs "
+            f"from the reporting MCA bank owner (**{_bank_unit}**); the originating IP is "
+            "unresolved (reporting IP ≠ first-error source). Reconcile before naming an owner")
+    # TEXTUAL_OWNERSHIP_MENTION_CONFLICT: independent of the register-based check
+    # above — fires when the ticket TEXT names a different unit as the cause
+    # (e.g. "Acode"/"Punit") than the decoded reporting bank, even when no
+    # structured first-error register was captured.
+    textual_ownership_conflict = _textual_conflict is not None
+    if textual_ownership_conflict:
+        contradictions.append(
+            f"**TEXTUAL_OWNERSHIP_MENTION_CONFLICT** — ticket text names **{_textual_conflict['unit']}**"
+            f" (\"{_textual_conflict['snippet']}\"), which differs from the reporting MCA bank "
+            f"owner (**{_bank_unit or 'unknown'}**); this may be a reporting-bank-vs-originating-"
+            "cause situation, not necessarily a decoder error — reconcile before naming an owner")
+    decoder_ambiguity = bool((mcs.get("decoder_ambiguity") or {}).get("state"))
+    _decoder_sources = mcs.get("source_provenance") or []
+    provenance_unknown = bool(_decoder_sources) and any(
+        str(s.get("trust", "UNKNOWN")) == "UNKNOWN" for s in _decoder_sources)
+    if provenance_unknown:
+        contradictions.append(
+            "**SOURCE_PROVENANCE_UNKNOWN** — one or more decoder databases lack an "
+            "audited authoritative source; RCA cannot be promoted beyond WORKING HYPOTHESIS")
+    if decoder_ambiguity:
+        _candidates = ", ".join((mcs.get("decoder_ambiguity") or {}).get("candidates", []))
+        contradictions.append(
+            f"**AMBIGUOUS_DECODER** — MCACOD/MSCOD has competing interpretations: {_candidates}; "
+            "do not confirm an owner or cause until the platform/IP decode is resolved")
     if contradictions:
         L.append("## Contradiction Detector")
         for c in contradictions:
@@ -2597,10 +2932,16 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         ceilings.append((60, "owning IP not determined"))
     if poison:
         ceilings.append((70, "poison source not identified — only the consuming unit was captured"))
+    if decoder_ambiguity:
+        ceilings.append((65, "decoder ambiguity remains unresolved for the MCA code pair"))
+    if provenance_unknown:
+        ceilings.append((60, "decoder source provenance is not fully audited"))
     if not have_crashdump:
         ceilings.append((75, "no crashdump attached"))
     if contradictions:
         ceilings.append((65, "unresolved contradiction(s) with the leading hypothesis"))
+    if str(target.get("evidence_source", "")).startswith("reconstructed_from_"):
+        ceilings.append((35, "source evidence was reconstructed from HSD text, not an original log or crashdump"))
     cap = min([c for c, _ in ceilings], default=100)
     capped = min(score, cap)
     L.append("## Root-Cause Confidence")
@@ -2642,7 +2983,9 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         missing_key.append("poison source trace (MC_ADDR → IMC UE / CXL AER / uncore path)")
     # Verdict type: proven ownership vs likely vs hypothesis.
     # Poison consumption never proves the origin — the consumer is only the victim.
-    ownership_proven = have_first_error and (have_tor_dump or have_crashdump) and not poison
+    ownership_proven = (have_first_error and (have_tor_dump or have_crashdump)
+                        and not poison and not ownership_conflict and not decoder_ambiguity
+                        and not provenance_unknown and not textual_ownership_conflict)
     # A comment-thread claim is an OBSERVATION, never proof — it can never set CONFIRMED
     # and never lifts the verdict on its own; it is only noted in the reason.
     _cf_note = ("; a comment-thread claim exists but is NOT independently verified by "
@@ -2654,7 +2997,9 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         vtype, vreason = "WORKING HYPOTHESIS", (
             f"poison was CONSUMED at {mcs.get('bank_unit','the core cache')} (victim); the "
             "upstream poison SOURCE that is the true root cause is not yet identified" + _cf_note)
-    elif have_owning_ip and not contradictions and not (three_strike and not have_first_error):
+    elif (have_owning_ip and not contradictions and not decoder_ambiguity
+          and not provenance_unknown
+          and not (three_strike and not have_first_error)):
         vtype, vreason = "LIKELY ROOT CAUSE", (
             "owning IP identified from decoded MCA, but direct ownership (TOR owner / "
             "first-error register) not yet proven" + _cf_note)
@@ -2803,7 +3148,10 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
         # Evidence completeness lifts confidence a few points per key fact present,
         # so a fully-instrumented failing log reads higher than a generic one.
         score += 2 * sum(1 for a in evidence_audit if a["present"])
-        return min(97, score)
+        score = min(97, score)
+        if str(target.get("evidence_source", "")).startswith("reconstructed_from_"):
+            score = min(score, 35)
+        return score
 
 
     top_sig = None

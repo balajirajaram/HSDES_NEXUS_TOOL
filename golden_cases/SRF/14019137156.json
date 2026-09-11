@@ -1,0 +1,50 @@
+{
+  "hsd_id": "14019137156",
+  "platform": "SRF",
+  "domain": "hw.small_core",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Core",
+  "expected_reporting_ip": "Core",
+  "expected_first_error": "Core",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "15013397254; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "15013397254=new.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "15013397254=new.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/14019137156"
+    ]
+  },
+  "expected": {
+    "owner": "Core",
+    "reporting_ip": "Core",
+    "originating_ip": "Core",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "15013397254"
+  },
+  "title": "[SRF A0 PO][RAS][VIS-1] Exercising Sandstone with poison error injection is resulting on ROB timeout on few CMT modules",
+  "description": "Summary: Unexpected ROB timeout while consuming poison while running Sandstone workload to sweep through x86 ISA with MCA Recovery flow. Detailed Description: [02:20:53.002] I: fisher: ====================================================== [02:20:53.002] I: fisher: RUNNING CYCLE = 62 [02:20:53.002] I: fisher: ====================================================== [02:21:13.131] I: fisher: selected random pid = 168139 (control) [02:21:13.163] I: fish: version: 27 Mar 2023 22:24:01 UTC (main-d5399c5) [02:21:13.197] I: fish: ======================================================== [02:21:13.197] I: fish: lip = 0x33:0x4cdfd04 [02:21:13.197] I: fish: -------------------------------------------------------- [02:21:13.197] I: fish: [ +0] asm = vmulsd xmm0,xmm1,xmm1 [02:21:13.197] I: fish: [ +4] match = vfmadd132sd xmm1,xmm2,QWORD PTR [rip+0x1ad98e7] [02:21:13.197] I: fish: -------------------------------------------------------- [02:21:13.197] I: fish: asmop = vfmadd132sd [02:21:13.197] I: fish: size = QWORD PTR [02:21:13.197] I: fish: address = rip+0x1ad98e7+9 [02:21:13.197] I: fish: match: VirtAddr=0x67b95f8 - PhysAddr=0x244b8d5f8 [02:21:13.197] I: fisher: error type = memory-uncorrectable-non-fatal ERROR occured while reading MC bank data in socket0.compute0.uncore.memss.mc4.ch0.mcchan ###################################################################### # Error Sev: UC total MachineChecks: 10 # # Error Sev: SRAR total MachineChecks: 10 # # MC bank : BUS total MachineChecks: 2 # # MC bank : MEC total MachineChecks: 10 # # MC bank : UBOX total MachineChecks: 2 # # MC bank : PUNIT total MachineChecks: 6 # # Socket : 1 total MachineChecks: 9 # # Socket : 0 total MachineChecks: 11 # MCA ERROR INFO: ======================================================================================================================================================================================================= |mcbank_name|mcbank_id|mcbank_index|regpath |mc_status |mc_ctl|mc_ctl2 |mc_addr |mc_misc |error_type|error_signal|desc | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |BUS |0 |0 |socket1.compute0.cpu.module31 |0xb200000000000400| 0x1de |0x540000001|0x0 |0x0 |UC |MSMI |BUS ERROR ( mcacod:0x400 desc:| | | | | | | | | | | | |Internal Timer Error: Internal| | | | | | | | | | | | | Timer Error)( mscod:0x0 desc:| | | | | | | | | | | | | None) | |BUS |0 |0 |socket1.compute0.cpu.module32 |0xb200000000000400| 0x1de |0x540000001|0x0 |0x0 |UC |MSMI |BUS ERROR ( mcacod:0x400 desc:| | | | | | | | | | | | |Internal Timer Error: Internal| | | | | | | | | | | | | Timer Error)( mscod:0x0 desc:| | | | | | | | | | | | | None) | |MEC |3 |0 |socket0.cpu.module25.core1 |0xbd80000000070135|0x3 |0x540000001 |0x244b8d5e8| 0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |MEC |3 |0 |socket0.cpu.module28.core0 |0xbd80000000070135|0x3 |0x540000001|0x244b8d5e8|0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |MEC |3 |0 |socket0.cpu.module32.core1 |0xbd80000000070135|0x3 |0x540000001|0x244b8d5e8|0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |MEC |3 |0 |socket0.cpu.module33.core0 |0xbd80000000070135|0x3 |0x540000001|0x244b8d5f8|0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |MEC |3 |0 |socket0.cpu.module33.core3 |0xbd80000000070135|0x3 |0x540000001|0x244b8d5e0|0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |MEC |3 |0 |socket0.cpu.module36.core3 |0xbd80000000070135|0x3 |0x540000001|0x244b8d5e8|0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |MEC |3 |0 |socket0.cpu.module52.core2 |0xbd80000000070135|0x3 |0x540000001|0x244b8d5e8|0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |MEC |3 |0 |socket1.cpu.module3.core0 |0xbd80000000070135|0x3 |0x540000001|0x244b8d5e8|0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |MEC |3 |0 |socket1.cpu.module3.core3 |0xbd80000000070135|0x3 |0x540000001|0x244b8d5e8|0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |MEC |3 |0 |socket1.cpu.module35.core0 |0xbd80000000070135|0x3 |0x540000001|0x244b8d5e8|0x80 |SRAR |MSMI |MEC ERROR ( mcacod:0x135 desc:| | | | | | | | | | | | |Cache Errors: DRD.D.L1)( mscod| | | | | | | | | | | | |:0x7 desc: None) | |UBOX |4 |0 |socket0.io0.uncore.ubox.ncevents |0xfa0000000002040c|0x1f |0x540000001|0x0 |0xba0000 |UC |MSMI |UBOX ERROR ( mcacod:0x40c desc| | | | | | | | | | | | |:Shutdown suppression)( mscod:| | | | | | | | | | | | |0x2 desc: Error signaled by th| | | | | | | | | | | | |e core and logged in Ubox. Che| | | | | | | | | | | | |ck the core for more details.)| |UBOX |4 |0 |socket1.io0.uncore.ubox.ncevents |0xfa0000000002040c|0x1f |0x540000001|0x0 |0x2c00000|UC |MSMI |UBOX ERROR ( mcacod:0x40c desc| | | | | | | | | | | | |:Shutdown suppression)( mscod:| | | | | | | | | | | | |0x2 desc: Error signaled by th| | | | | | | | | | | | |e core and logged in Ubox. Che| | | | | | | | | | | | |ck the core for more details.)| |PUNIT |6 |0 |socket0.io0.uncore.punit.ptpcfsms.ptpcfsms |0xba00000000100402|0xf |0x540000000|0x0 |0x200 |UC |MSMI |PUNIT ERROR ( mcacod:0x402 des| | | | | | | | | | | | |c:Punit Error)( mscod:0x10 des| | | | | | | | | | | | |c: IERR_GENERIC) | |PUNIT |6 |0 |socket0.io1.uncore.punit.ptpcfsms.ptpcfsms |0xba00000000100402|0xf |0x540000000|0x0 |0x200 |UC |MSMI |PUNIT ERROR ( mcacod:0x402 des| | | | | | | | | | | | |c:Punit Error)( mscod:0x10 des| | | | | | | | | | | | |c: IERR_GENERIC) | |PUNIT |6 |0 |socket0.compute0.uncore.punit.ptpcfsms.ptpcfsms|0xba00000000100402|0xf |0x540000000|0x0 |0x200 |UC |MSMI |PUNIT ERROR ( mcacod:0x402 des| | | | | | | | | | | | |c:Punit Error)( mscod:0x10 des| | | | | | | | | | | | |c: IERR_GENERIC) | |PUNIT |6 |0 |socket1.io0.uncore.punit.ptpcfsms.ptpcfsms |0xba00000000100402|0xf |0x540000000|0x0 |0x200 |UC |MSMI |PUNIT ERROR ( mcacod:0x402 des| | | | | | | | | | | | |c:Punit Error)( mscod:0x10 des| | | | | | | | | | | | |c: IERR_GENERIC) | |PUNIT |6 |0 |socket1.io1.uncore.punit.ptpcfsms.ptpcfsms |0xba00000000100402|0xf |0x540000000|0x0 |0x200 |UC |MSMI |PUNIT ERROR ( mcacod:0x402 des| | | | | | | | | | | | |c:Punit Error)( mscod:0x10 des| | | | | | | | | | | | |c: IERR_GENERIC) | |PUNIT |6 |0 |socket1.compute0.uncore.punit.ptpcfsms.ptpcfsms|0xba00000000100402|0xf |0x540000000|0x0 |0x200 |UC |MSMI |PUNIT ERROR ( mcacod:0x402 des| | | | | | | | | | | | |c:Punit Error)( mscod:0x10 des| | | | | | | | | | | | |c: IERR_GENERIC) | =======================================================================================================================================================================================================",
+  "evidence_source": "reconstructed_from_hsd_description",
+  "machine_evidence": {
+    "mca_events": [],
+    "mcacod": "0X400",
+    "mscod": "0X0",
+    "first_error": [
+      {
+        "source_text": "IERR_GENERIC) | |PUNIT |6 |0 |socket0.io1.uncore.punit.ptpcfsms.ptpcfsms |0xba00000000100402|0xf |0x540000000|0x0 |0x200 |UC |MSMI |PUNIT ERROR ( mcacod:0x402 des| "
+      }
+    ]
+  }
+}

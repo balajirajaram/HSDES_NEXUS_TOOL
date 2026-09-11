@@ -1,0 +1,43 @@
+{
+  "hsd_id": "21044871638",
+  "platform": "DMR",
+  "domain": "Core/FE/HAM",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Core/FE/HAM",
+  "expected_reporting_ip": "Core/FE/HAM",
+  "expected_first_error": "Core/FE/HAM",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "HA ordering issue; WA in ucode (defeature). Fix is WIP and not yet confirmed.",
+  "evidence": {
+    "source": "RTL Bugeco 13013348392; fixed in Fix WIP (NOT yet fixed)",
+    "validation_source": "RTL Bugeco 13013348392; fixed in Fix WIP (NOT yet fixed)",
+    "validated_by": "RTL/Silicon validation (bugeco record)",
+    "fix_validated": false,
+    "source_references": [
+      "13013348392"
+    ]
+  },
+  "expected": {
+    "owner": "Core/FE/HAM",
+    "reporting_ip": "Core/FE/HAM",
+    "originating_ip": "Core/FE/HAM",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "HA ordering issue; WA in ucode (defeature). Fix is WIP and not yet confirmed."
+  },
+  "bugeco_id": "13013348392",
+  "secondary_ip": "Core/FE/DSB",
+  "title": "RTL_BUG: Hit on fetch old + legacy Ifclear on fetch YNG with short tag match but no full tag match (different itlb way) makes a corrupt entry point",
+  "description": "We get on the same cycle: 1)HaM on fetch OLD 2)IFClear on fetch YNG 3)short tag hit + full tag miss on fetch YNG 4)YNG is sequential cycle. 5)fetch YNG is sequential cycle. for the 4 to happened together we need that the fetch OLD which hit would end at offset 40. CFLI case is impossible as ifclear happens on YNG so fetch OLD must have been invalidated as ifclear on YNG means data is not in IFU and DSB is included in IFU. The outcome is that on the ifclear cycle the entry point was sent correctly to IFU, but after the ifclear the send entry point was corrupted by the tag hit as DSB view ifclear from such &quot;legacy&quot; cases as cycle valid. From IFU perspective the entry point sent in both times the same.",
+  "evidence_source": "none",
+  "machine_evidence": null
+}

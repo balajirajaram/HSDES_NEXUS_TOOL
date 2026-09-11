@@ -1,0 +1,41 @@
+{
+  "hsd_id": "14026093607",
+  "platform": "DMR",
+  "domain": "hw.dsa",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "DSA",
+  "expected_reporting_ip": "DSA",
+  "expected_first_error": "DSA",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "14026147117; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "14026147117=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "14026147117=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/14026093607"
+    ]
+  },
+  "expected": {
+    "owner": "DSA",
+    "reporting_ip": "DSA",
+    "originating_ip": "DSA",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "14026147117"
+  },
+  "title": "[DMR][BugNinja] dsa_fill sandstone subtest is detecting incorrect data pattern (relaxed ordering = 1)",
+  "description": "While running hammer-unified test suite one of the sandstone subtests detected a problem with data check: # PRNG seed = 0x56b83678742047abe1c779605929127b59a4fd455ed4f06e775dc363fbbb99bd \n # not ok 24.1 sandstone-dsa-ops-mix # exit code:1 \n # telemetry entry = 2025.10/16/2a907631aae111f092a4984fee1ac640 --- not ok 133 dsa_fill --- info: {version: sandstone-v242 (2b420c2c377ad6742cc53c9e1a569ecdd26826aa), timestamp: 2025-10-17T05:23:20Z} fail: { cpu-mask: '..X...', time-to-fail: 35.576, seed: 'AES:9a3298b406721e927f7df9ff2ecb24b664288affa5a21a06564af2d0d11f0755'} Thread 2 on CPU 2 (pkg 0, core 12, thr 0, family/model/stepping 13-01-00, microcode 0x60000970, PPIN 5101854cc3c7593d): - 'E&gt; accelerator info: numa_node 0 device dsa0 group group0.1 engine engine0.1 wq wq0.4' - 'E&gt; Failed at ../tests/idxd/dsa_fill.c:258: entry #2 0x7f0f45dac000[112+7008]: incorrect pattern byte (0 of 2, got 70 expected b3) on valid area' --- # Built from git commit: sandstone-v242 (2b420c2c377ad6742cc53c9e1a569ecdd26826aa) # Current time: 2025-10-17T05:23:20.664589Z",
+  "evidence_source": "none",
+  "machine_evidence": null
+}

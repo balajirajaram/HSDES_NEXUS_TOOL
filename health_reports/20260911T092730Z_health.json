@@ -1,0 +1,202 @@
+{
+  "timestamp": "20260911T092730Z",
+  "overall_status": "DEGRADED",
+  "modules": [
+    {
+      "module_name": "environment_sanity",
+      "status": "PASS",
+      "details": [
+        "Interpreter: C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\.venv\\Scripts\\python.exe",
+        "Required imports available: 12",
+        "Free disk: 231.61 GiB"
+      ],
+      "duration_seconds": 2.071
+    },
+    {
+      "module_name": "regression_suite",
+      "status": "PASS",
+      "details": [
+        "tests=82",
+        "failed=0",
+        "errors=0",
+        "PASS: test_existing_attachments_skip_direct_collection (test_autohsd_integration.TestAutoHsdClosedLoop.test_existing_attachments_skip_direct_collection)",
+        "PASS: test_force_true_cannot_bypass_write_disabled (test_autohsd_integration.TestAutoHsdClosedLoop.test_force_true_cannot_bypass_write_disabled)",
+        "PASS: test_kernel_panic_requirements_use_read_only_ssh_commands (test_autohsd_integration.TestAutoHsdClosedLoop.test_kernel_panic_requirements_use_read_only_ssh_commands)",
+        "PASS: test_profile_commands_are_read_only (test_autohsd_integration.TestAutoHsdClosedLoop.test_profile_commands_are_read_only)",
+        "PASS: test_reachable_collection_creates_before_after_and_dry_run (test_autohsd_integration.TestAutoHsdClosedLoop.test_reachable_collection_creates_before_after_and_dry_run)",
+        "PASS: test_unreachable_bmc_management_attempts_independent_bmc_path (test_autohsd_integration.TestAutoHsdClosedLoop.test_unreachable_bmc_management_attempts_independent_bmc_path)",
+        "PASS: test_unreachable_bmc_without_config_is_not_hard_error (test_autohsd_integration.TestAutoHsdClosedLoop.test_unreachable_bmc_without_config_is_not_hard_error)",
+        "PASS: test_unreachable_kernel_reports_insufficient_evidence (test_autohsd_integration.TestAutoHsdClosedLoop.test_unreachable_kernel_reports_insufficient_evidence)",
+        "PASS: test_unreachable_node_is_not_posted (test_autohsd_integration.TestAutoHsdClosedLoop.test_unreachable_node_is_not_posted)",
+        "PASS: test_write_enabled_allows_gate_passing_post (test_autohsd_integration.TestAutoHsdClosedLoop.test_write_enabled_allows_gate_passing_post)",
+        "PASS: test_bank4_status_also_uncorrected_fatal (test_decoder_correctness.TestFatalityClassifier.test_bank4_status_also_uncorrected_fatal)",
+        "PASS: test_corrected_status (test_decoder_correctness.TestFatalityClassifier.test_corrected_status)",
+        "PASS: test_invalid_status (test_decoder_correctness.TestFatalityClassifier.test_invalid_status)",
+        "PASS: test_uc_pcc_is_uncorrected_fatal_never_corrected (test_decoder_correctness.TestFatalityClassifier.test_uc_pcc_is_uncorrected_fatal_never_corrected)",
+        "PASS: test_ownership_fatality_never_corrected (test_decoder_correctness.TestOwnershipConflict.test_ownership_fatality_never_corrected)",
+        "PASS: test_punit_vs_ccf_emits_conflict_and_blocks (test_decoder_correctness.TestOwnershipConflict.test_punit_vs_ccf_emits_conflict_and_blocks)",
+        "PASS: test_same_ip_no_conflict (test_decoder_correctness.TestOwnershipConflict.test_same_ip_no_conflict)",
+        "PASS: test_bank4 (test_decoder_correctness.TestRegisterAddrs.test_bank4)",
+        "PASS: test_bank6 (test_decoder_correctness.TestRegisterAddrs.test_bank6)",
+        "PASS: test_12_comment_does_not_change_machine_verdict_or_confidence (test_evidence_isolation.TestEvidenceIsolation.test_12_comment_does_not_change_machine_verdict_or_confidence)",
+        "PASS: test_1_comment_only_root_cause_never_confirmed (test_evidence_isolation.TestEvidenceIsolation.test_1_comment_only_root_cause_never_confirmed)",
+        "PASS: test_8_uc_pcc_never_corrected (test_evidence_isolation.TestEvidenceIsolation.test_8_uc_pcc_never_corrected)",
+        "PASS: test_extract_findings_comment_only_not_confirmed (test_evidence_isolation.TestEvidenceIsolation.test_extract_findings_comment_only_not_confirmed)",
+        "PASS: test_kb_comment_only_is_unvalidated_and_ineligible (test_evidence_isolation.TestEvidenceIsolation.test_kb_comment_only_is_unvalidated_and_ineligible)",
+        "PASS: test_blind_comparison_detects_machine_influence (test_golden_candidates.TestGoldenCandidates.test_blind_comparison_detects_machine_influence)",
+        "PASS: test_comment_only_rca_cannot_be_gold (test_golden_candidates.TestGoldenCandidates.test_comment_only_rca_cannot_be_gold)",
+        "PASS: test_fix_validated_candidate_is_pending_platinum (test_golden_candidates.TestGoldenCandidates.test_fix_validated_candidate_is_pending_platinum)",
+        "PASS: test_open_case_is_rejected (test_golden_candidates.TestGoldenCandidates.test_open_case_is_rejected)",
+        "PASS: test_queues_and_thresholds_are_deterministic (test_golden_candidates.TestGoldenCandidates.test_queues_and_thresholds_are_deterministic)",
+        "PASS: test_review_pool_applies_platform_quotas (test_golden_candidates.TestGoldenCandidates.test_review_pool_applies_platform_quotas)",
+        "PASS: test_unapproved_candidate_cannot_promote (test_golden_candidates.TestGoldenCandidates.test_unapproved_candidate_cannot_promote)",
+        "PASS: test_writer_creates_csv_only (test_golden_candidates.TestGoldenCandidates.test_writer_creates_csv_only)",
+        "PASS: test_critical_safety_failure (test_health_monitor.TestHealthMonitor.test_critical_safety_failure)",
+        "PASS: test_first_run_is_baseline (test_health_monitor.TestHealthMonitor.test_first_run_is_baseline)",
+        "PASS: test_markdown_has_overall_line (test_health_monitor.TestHealthMonitor.test_markdown_has_overall_line)",
+        "PASS: test_pass_to_fail_is_regression (test_health_monitor.TestHealthMonitor.test_pass_to_fail_is_regression)",
+        "PASS: test_zero_actionable_benchmark_is_degraded (test_health_monitor.TestHealthMonitor.test_zero_actionable_benchmark_is_degraded)",
+        "PASS: test_exact_match_returns_workload (test_historical_repro.TestHistoricalRepro.test_exact_match_returns_workload)",
+        "PASS: test_fixture_without_raw_evidence_is_insufficient (test_historical_repro.TestHistoricalRepro.test_fixture_without_raw_evidence_is_insufficient)",
+        "PASS: test_no_match_is_explicit (test_historical_repro.TestHistoricalRepro.test_no_match_is_explicit)",
+        "PASS: test_partial_match_same_owner_different_mcacod (test_historical_repro.TestHistoricalRepro.test_partial_match_same_owner_different_mcacod)",
+        "PASS: test_repro_section_does_not_change_gate (test_historical_repro.TestHistoricalRepro.test_repro_section_does_not_change_gate)",
+        "PASS: test_title_evidence_is_reconstructed_and_marked (test_historical_repro.TestHistoricalRepro.test_title_evidence_is_reconstructed_and_marked)",
+        "PASS: test_known_0402_4a00_is_explicitly_ambiguous (test_p0_release_gate.TestDecoderAmbiguity.test_known_0402_4a00_is_explicitly_ambiguous)",
+        "PASS: test_unrelated_code_is_not_marked_ambiguous (test_p0_release_gate.TestDecoderAmbiguity.test_unrelated_code_is_not_marked_ambiguous)",
+        "PASS: test_16031734105_fixture_is_p0_case (test_p0_release_gate.TestGoldenFixture.test_16031734105_fixture_is_p0_case)",
+        "PASS: test_socket_provenance_preserves_socket_one_without_default_zero (test_p0_release_gate.TestSocketAndBanks.test_socket_provenance_preserves_socket_one_without_default_zero)",
+        "PASS: test_two_banks_are_preserved_in_normalized_evidence (test_p0_release_gate.TestSocketAndBanks.test_two_banks_are_preserved_in_normalized_evidence)",
+        "PASS: test_explicit_inband_preserved (test_pythonsv_debug_runner.TestAccessMode.test_explicit_inband_preserved)",
+        "PASS: test_linux_auto_defaults_oob (test_pythonsv_debug_runner.TestAccessMode.test_linux_auto_defaults_oob)",
+        "PASS: test_svos_forces_oob (test_pythonsv_debug_runner.TestAccessMode.test_svos_forces_oob)",
+        "PASS: test_uefi_forces_oob (test_pythonsv_debug_runner.TestAccessMode.test_uefi_forces_oob)",
+        "PASS: test_read_only_bundle_builds (test_pythonsv_debug_runner.TestBuildDriver.test_read_only_bundle_builds)",
+        "PASS: test_writing_bundle_refused (test_pythonsv_debug_runner.TestBuildDriver.test_writing_bundle_refused)",
+        "PASS: test_collect_exec_failure (test_pythonsv_debug_runner.TestDebugRunner.test_collect_exec_failure)",
+        "PASS: test_collect_no_payload (test_pythonsv_debug_runner.TestDebugRunner.test_collect_no_payload)",
+        "PASS: test_collect_returns_data (test_pythonsv_debug_runner.TestDebugRunner.test_collect_returns_data)",
+        "PASS: test_readiness_block_on_unreachable (test_pythonsv_debug_runner.TestDebugRunner.test_readiness_block_on_unreachable)",
+        "PASS: test_readiness_pass (test_pythonsv_debug_runner.TestDebugRunner.test_readiness_pass)",
+        "PASS: test_healthy_probe_all_pass (test_pythonsv_debug_runner.TestEvaluateGates.test_healthy_probe_all_pass)",
+        "PASS: test_locked_target_warns_g6 (test_pythonsv_debug_runner.TestEvaluateGates.test_locked_target_warns_g6)",
+        "PASS: test_no_jtag_blocks_g4 (test_pythonsv_debug_runner.TestEvaluateGates.test_no_jtag_blocks_g4)",
+        "PASS: test_no_pysv_blocks_g2 (test_pythonsv_debug_runner.TestEvaluateGates.test_no_pysv_blocks_g2)",
+        "PASS: test_product_mismatch_blocks_g3 (test_pythonsv_debug_runner.TestEvaluateGates.test_product_mismatch_blocks_g3)",
+        "PASS: test_transport_down_blocks_all (test_pythonsv_debug_runner.TestEvaluateGates.test_transport_down_blocks_all)",
+        "PASS: test_transport_up_no_probe_unknowns (test_pythonsv_debug_runner.TestEvaluateGates.test_transport_up_no_probe_unknowns)",
+        "PASS: test_bad_json_returns_none (test_pythonsv_debug_runner.TestExtractResult.test_bad_json_returns_none)",
+        "PASS: test_extracts_payload (test_pythonsv_debug_runner.TestExtractResult.test_extracts_payload)",
+        "PASS: test_missing_sentinels_returns_none (test_pythonsv_debug_runner.TestExtractResult.test_missing_sentinels_returns_none)",
+        "PASS: test_explicit_ssh (test_pythonsv_debug_runner.TestMakeTransport.test_explicit_ssh)",
+        "PASS: test_linux_host_auto_ssh (test_pythonsv_debug_runner.TestMakeTransport.test_linux_host_auto_ssh)",
+        "PASS: test_windows_host_auto_winrm (test_pythonsv_debug_runner.TestMakeTransport.test_windows_host_auto_winrm)",
+        "PASS: test_blocked_when_any_block (test_pythonsv_debug_runner.TestReadinessReport.test_blocked_when_any_block)",
+        "PASS: test_ready_when_only_warn (test_pythonsv_debug_runner.TestReadinessReport.test_ready_when_only_warn)",
+        "PASS: test_cross_platform_analog_is_ranked_lower (test_repro_vectors.TestReproVectors.test_cross_platform_analog_is_ranked_lower)",
+        "PASS: test_exact_match_returns_registry_workload (test_repro_vectors.TestReproVectors.test_exact_match_returns_registry_workload)",
+        "PASS: test_new_registry_tool_is_learned_during_rebuild (test_repro_vectors.TestReproVectors.test_new_registry_tool_is_learned_during_rebuild)",
+        "PASS: test_no_match_is_empty_not_a_guess (test_repro_vectors.TestReproVectors.test_no_match_is_empty_not_a_guess)",
+        "PASS: test_vector_section_cannot_change_gate (test_repro_vectors.TestReproVectors.test_vector_section_cannot_change_gate)",
+        "PASS: test_all_json_resources_have_inventory_rows (test_source_provenance.TestSourceProvenance.test_all_json_resources_have_inventory_rows)",
+        "PASS: test_authoritative_bank_map_is_recorded (test_source_provenance.TestSourceProvenance.test_authoritative_bank_map_is_recorded)",
+        "PASS: test_inventory_marks_internal_import_as_non_authoritative (test_source_provenance.TestSourceProvenance.test_inventory_marks_internal_import_as_non_authoritative)"
+      ],
+      "duration_seconds": 0.629
+    },
+    {
+      "module_name": "source_provenance",
+      "status": "PASS",
+      "details": [
+        "resources=18",
+        "coverage=100.0%",
+        "trust_counts={'INTERNAL_VALIDATED': 12, 'AUTHORITATIVE': 5, 'OFFICIAL_INTERNAL': 1}",
+        "unknown=none"
+      ],
+      "duration_seconds": 0.005
+    },
+    {
+      "module_name": "golden_corpus_integrity",
+      "status": "PASS",
+      "details": [
+        "files=49",
+        "parsed=49",
+        "malformed_count=0",
+        "malformed=none",
+        "qualified=47",
+        "platforms={'DMR': 16, 'GNR': 4, 'ICX': 5, 'SPR': 19, 'SRF': 3}",
+        "levels={'LEVEL_3_REPRODUCED': 33, 'LEVEL_4_FIX_VALIDATED': 14}"
+      ],
+      "duration_seconds": 0.065
+    },
+    {
+      "module_name": "safety_invariants",
+      "status": "PASS",
+      "details": [
+        "comment-only root cause: PASS (tests.test_evidence_isolation.TestEvidenceIsolation.test_1_comment_only_root_cause_never_confirmed)",
+        "comment confidence isolation: PASS (tests.test_evidence_isolation.TestEvidenceIsolation.test_12_comment_does_not_change_machine_verdict_or_confidence)",
+        "comment-only KB eligibility: PASS (tests.test_evidence_isolation.TestEvidenceIsolation.test_kb_comment_only_is_unvalidated_and_ineligible)",
+        "UC/PCC fatality: PASS (tests.test_evidence_isolation.TestEvidenceIsolation.test_8_uc_pcc_never_corrected)",
+        "ownership conflict gate: PASS (tests.test_decoder_correctness.TestOwnershipConflict.test_punit_vs_ccf_emits_conflict_and_blocks)",
+        "decoder ambiguity gate: PASS (tests.test_p0_release_gate.TestDecoderAmbiguity.test_known_0402_4a00_is_explicitly_ambiguous)",
+        "write-disable force gate: PASS (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_force_true_cannot_bypass_write_disabled)"
+      ],
+      "duration_seconds": 0.021
+    },
+    {
+      "module_name": "autohsd_integration",
+      "status": "PASS",
+      "details": [
+        "tests=10",
+        "failed=0",
+        "errors=0",
+        "PASS: test_existing_attachments_skip_direct_collection (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_existing_attachments_skip_direct_collection)",
+        "PASS: test_force_true_cannot_bypass_write_disabled (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_force_true_cannot_bypass_write_disabled)",
+        "PASS: test_kernel_panic_requirements_use_read_only_ssh_commands (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_kernel_panic_requirements_use_read_only_ssh_commands)",
+        "PASS: test_profile_commands_are_read_only (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_profile_commands_are_read_only)",
+        "PASS: test_reachable_collection_creates_before_after_and_dry_run (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_reachable_collection_creates_before_after_and_dry_run)",
+        "PASS: test_unreachable_bmc_management_attempts_independent_bmc_path (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_unreachable_bmc_management_attempts_independent_bmc_path)",
+        "PASS: test_unreachable_bmc_without_config_is_not_hard_error (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_unreachable_bmc_without_config_is_not_hard_error)",
+        "PASS: test_unreachable_kernel_reports_insufficient_evidence (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_unreachable_kernel_reports_insufficient_evidence)",
+        "PASS: test_unreachable_node_is_not_posted (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_unreachable_node_is_not_posted)",
+        "PASS: test_write_enabled_allows_gate_passing_post (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_write_enabled_allows_gate_passing_post)"
+      ],
+      "duration_seconds": 0.154
+    },
+    {
+      "module_name": "benchmark_sanity",
+      "status": "WARN",
+      "details": [
+        "completed_within_timeout=Y",
+        "cases=47",
+        "insufficient_evidence=9",
+        "actionable_predictions=24",
+        "outcome_buckets=ACTIONABLE=24, INSUFFICIENT_EVIDENCE=9, NO_BANK_PROVENANCE=1, NO_OWNERSHIP_SIGNAL=13"
+      ],
+      "duration_seconds": 5.58
+    },
+    {
+      "module_name": "live_api_health",
+      "status": "PASS",
+      "details": [
+        "API running: HTTP 200",
+        "/api/me: HTTP 200",
+        "/api/products: HTTP 200"
+      ],
+      "duration_seconds": 0.145
+    },
+    {
+      "module_name": "repo_hygiene",
+      "status": "PASS",
+      "details": [
+        "dirty_files=202",
+        "HSDES_WRITE_ENABLED=false"
+      ],
+      "duration_seconds": 0.303
+    }
+  ],
+  "regressions": [
+    "No regressions detected compared with previous run"
+  ],
+  "interpreter": "C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\.venv\\Scripts\\python.exe"
+}

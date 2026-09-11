@@ -1,0 +1,94 @@
+========================================================================
+Sandstone @ At-Scale — HSDES / EQL query set
+Generated 2026-09-02.  Tenants: server_platf.bug, sighting_central.sighting,
+central_firmware.bug.  Match = keyword 'sandstone' in
+title / executive_summary / description.
+========================================================================
+
+------------------------------------------------------------------------
+Q1 — BASE POPULATION (server_platf.bug) — all statuses incl. rejected
+      -> 8,092 records
+------------------------------------------------------------------------
+SELECT id, title, status, status_reason, priority, suspect_area,
+       platform, product_found, submitted_date
+WHERE  tenant = 'server_platf' AND subject = 'bug'
+  AND (title             CONTAINS 'sandstone'
+       OR execution_summary CONTAINS 'sandstone'
+       OR description        CONTAINS 'sandstone')
+SORTBY submitted_date DESC
+
+
+------------------------------------------------------------------------
+Q1b / Q1c — same base for the other two tenants
+------------------------------------------------------------------------
+-- sighting_central.sighting  -> 707
+SELECT id, title, status, status_reason, priority
+WHERE  tenant = 'sighting_central' AND subject = 'sighting'
+  AND (title CONTAINS 'sandstone'
+       OR execution_summary CONTAINS 'sandstone'
+       OR description CONTAINS 'sandstone')
+
+-- central_firmware.bug  -> 3
+SELECT id, title, status, status_reason, priority
+WHERE  tenant = 'central_firmware' AND subject = 'bug'
+  AND (title CONTAINS 'sandstone'
+       OR execution_summary CONTAINS 'sandstone'
+       OR description CONTAINS 'sandstone')
+
+
+------------------------------------------------------------------------
+Q2 — CONFIRMED-SILICON slice (the "117")
+      non-rejected server_platf.bug where suspect_area = silicon
+      NOTE: suspect_area is an owner-assigned TRIAGE field. It captures
+      *suspect* silicon; it does NOT itself require a bugeco/errata link.
+------------------------------------------------------------------------
+SELECT id, title, status, status_reason, priority, suspect_area,
+       platform, product_found, submitted_date
+WHERE  tenant = 'server_platf' AND subject = 'bug'
+  AND  status != 'rejected'
+  AND (title CONTAINS 'sandstone'
+       OR execution_summary CONTAINS 'sandstone'
+       OR description CONTAINS 'sandstone')
+  AND  suspect_area = 'silicon'
+SORTBY submitted_date DESC
+
+
+------------------------------------------------------------------------
+Q3 — REFINED "true confirmed-Si" (errata-backed)
+      EQL cannot filter on a linked record's subject, so this is a
+      two-step: run Q2, then resolve links per id and keep those with a
+      formal subject='bugeco' link OR a stepping change.
+      Audited result on the 117:
+         A  bugeco-linked ................. 3
+         B  product_changed, no bugeco .... 50
+         C  needs review .................. 64
+------------------------------------------------------------------------
+-- Step 1: candidate ids = Q2 result (117)
+-- Step 2 (per id) — links traversal, keep bucket A/B:
+--     KEEP if  exists(link where subject = 'bugeco')          -- bucket A
+--          OR  status_reason = 'complete.product_changed'      -- bucket B
+--     ELSE     bucket C (needs review)
+
+-- The 3 errata-backed ids and their bugeco references:
+--   14026464067 -> ip_cpu_bigcore.bugeco 13014355605
+--   14015032086 -> ip_cpu_bigcore.bugeco 1308560873 ; 1309522432 ; 1309345419
+--   22010039282 -> ip_cpu_bigcore.bugeco 1306993191
+
+
+------------------------------------------------------------------------
+Q4 — Inverse / exception list ("suspect-silicon, no errata trail")
+      i.e. bucket C review candidates.
+------------------------------------------------------------------------
+-- Run Q2, then per id keep those where:
+--     NOT exists(link where subject = 'bugeco')
+--     AND status_reason != 'complete.product_changed'
+
+
+NOTES ON EQL SYNTAX
+  * tenant / subject go in the WHERE clause (no FROM clause).
+  * Use CONTAINS for text (not LIKE).  Single quotes only.
+  * Any field in SORTBY must also be in SELECT; always include 'status'.
+  * 'bugeco' links live in IP tenants (e.g. ip_cpu_bigcore) with
+    subject = 'bugeco'; they are only reachable via link traversal,
+    not via a scalar field on the bug.
+========================================================================

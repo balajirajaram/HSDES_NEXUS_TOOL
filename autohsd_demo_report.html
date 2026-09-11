@@ -1,0 +1,10 @@
+<!doctype html><meta charset=utf-8><title>AutoHSD Demonstration</title>
+<style>body{font:14px system-ui;max-width:1050px;margin:2rem auto}section{border:1px solid #e6e6e6;padding:1rem;margin:1rem 0}h1{margin-bottom:.2rem}.policy{background:#fff3cd;padding:.8rem;font-weight:bold}code,li{white-space:pre-wrap}</style>
+<h1>AutoHSD Demonstration Report</h1>
+<p class=policy>Recommendation-only demonstration. No commands were executed and no HSDES write-back was performed.</p>
+<section><h2>Input / RCA</h2><p><b>HSD:</b> 16031734105</p><p><b>Domain:</b> MCA/unknown</p><p></p></section>
+<section><h2>Missing Evidence</h2><ul></ul></section>
+<section><h2>PythonSV Commands</h2><ul><li># Recommendation only; do not execute automatically</li><li>sv.sockets  # enumerate actual sockets</li><li>sv.socket&lt;resolved_socket&gt;.uncore.mca.dump()  # collect MC_STATUS/ADDR/MISC</li></ul></section>
+<section><h2>StatusScope Commands</h2><ul><li># Recommendation only; confirm exact paths for the platform/stepping</li><li>status_scope --collect platform,stepping,bios,bmc,ucode</li><li>status_scope --collect ierr,mcerr,mca,post,pcie,upi,memory</li></ul></section>
+<section><h2>MCA Commands</h2><ul><li># Recommendation only; use the resolved bank after log review</li><li>rdmsr -a 0x401+4*N  # MCi_STATUS</li><li>rdmsr -a 0x402+4*N  # MCi_ADDR when ADDRV=1</li><li>rdmsr -a 0x403+4*N  # MCi_MISC when MISCV=1</li></ul></section>
+<section><h2>Re-analysis Plan</h2><ul><li>1. Collect only the missing artifacts above.</li><li>2. Attach the raw artifacts to the HSD or local analysis input.</li><li>3. Re-run deterministic log/MCA/ownership analysis.</li><li>4. Compare owner, socket, bank, MCACOD/MSCOD, confidence, and verdict.</li><li>5. Keep the result draft-only if ambiguity or contradiction remains.</li></ul></section>

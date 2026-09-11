@@ -13,8 +13,16 @@ never logged, returned to the UI, or written to any report/session file.
 """
 
 import asyncio
+import json
+import os
 import re
 import socket
+import subprocess
+import time
+import uuid
+import urllib.request
+import base64
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from .config import config
@@ -33,7 +41,6 @@ _LOG_CMDS: List[Tuple[str, str]] = [
     ("journalctl", "journalctl -k -n 4000 --no-pager 2>/dev/null"),
     ("mcelog", "cat /var/log/mcelog 2>/dev/null | tail -n 2000"),
     ("messages", "(cat /var/log/messages 2>/dev/null || cat /var/log/syslog 2>/dev/null) | tail -n 4000"),
-    ("ipmi_sel", "ipmitool sel elist 2>/dev/null | tail -n 800"),
 ]
 
 # Targeted evidence-collection profiles (Rec 4): only pull the extra artifacts
@@ -64,6 +71,46 @@ _PROFILE_CMDS: Dict[str, List[Tuple[str, str]]] = {
     ],
 }
 
+_PROFILE_REFERENCE = {
+    "BASE": "app/node_triage.py:_LOG_CMDS (read-only baseline)",
+    "KERNEL_PANIC": "app/node_triage.py:_PROFILE_CMDS.kernel_panic",
+    "PCIE_CXL": "app/node_triage.py:_PROFILE_CMDS.pcie_cxl",
+    "UPI_FABRIC": "app/node_triage.py:_PROFILE_CMDS.tor_timeout",
+    "MEMORY_IMC": "app/node_triage.py:_PROFILE_CMDS.memory",
+    "TOR_TIMEOUT": "app/node_triage.py:_PROFILE_CMDS.tor_timeout",
+    "BIOS_BOOT": "app/node_triage.py:_PROFILE_CMDS.kernel_panic",
+    "POWER_PUNIT": "app/node_triage.py:_PROFILE_CMDS.hw_error",
+}
+
+_WRITE_COMMAND_PATTERN = re.compile(
+    r"(^|\s)(?:reboot|shutdown|poweroff|halt|init\s+[06]|systemctl\s+(?:stop|restart|disable)|"
+    r"rm\s+-|mkfs|dd\s+if=|wrmsr|ipmitool\s+.*(?:power|chassis\s+boot)|"
+    r"(?:apt|yum|dnf|rpm)\s+(?:install|remove|upgrade)|chmod\s+|chown\s+)", re.I)
+
+_REQUIREMENTS_PATH = Path(__file__).resolve().parent / "knowledge" / "failure_log_requirements.json"
+_CENTRALIZED_SCOPE_NOTE = (
+    "Centralized Elastic sol-*/qpool-*/eventlog-*/bmcjournal-* indices are "
+    "outside NEXUS direct collection scope; request Phoenix AtScale log export "
+    "when historical centralized evidence is needed."
+)
+
+
+def _load_failure_requirements() -> Dict[str, Dict[str, Any]]:
+    try:
+        return json.loads(_REQUIREMENTS_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
+def _failure_requirements(title: str) -> List[Tuple[str, Dict[str, Any]]]:
+    text = title or ""
+    found: List[Tuple[str, Dict[str, Any]]] = []
+    for name, requirement in _load_failure_requirements().items():
+        aliases = requirement.get("aliases") or []
+        if name == "unknown_generic" or any(re.search(re.escape(alias), text, re.I) for alias in aliases):
+            found.append((name, requirement))
+    return found or [("unknown_generic", _load_failure_requirements().get("unknown_generic", {}))]
+
 
 def classify_failure(title: str) -> List[str]:
     """Classify the HSD title into evidence-collection profile(s). Returns the
@@ -92,7 +139,14 @@ def _cmds_for(title: str) -> List[Tuple[str, str]]:
             if name not in seen:
                 cmds.append((name, cmd))
                 seen.add(name)
-    return cmds
+    for requirement_name, requirement in _failure_requirements(title):
+        for index, command in enumerate(requirement.get("ssh_commands") or []):
+            name = f"{requirement_name}_ssh_{index + 1}"
+            if name not in seen:
+                cmds.append((name, command))
+                seen.add(name)
+    return [(name, command) for name, command in cmds
+            if not _WRITE_COMMAND_PATTERN.search(command)]
 
 
 # A hostname-like bracket token: starts with letters, followed by digits, and has
@@ -114,6 +168,15 @@ def extract_node_host(title: str) -> Optional[str]:
     # Fallback: a bare cs-prefixed host anywhere in the title.
     m = re.search(r"\b(cs\d[a-z0-9]{5,})\b", title, re.I)
     return m.group(1).lower() if m else None
+
+
+def extract_node_host_from_text(*values: Any) -> Optional[str]:
+    """Extract a node from title/description/structured HSD text."""
+    for value in values:
+        host = extract_node_host(str(value or ""))
+        if host:
+            return host
+    return None
 
 
 def _resolve_host(host: str) -> str:
@@ -154,23 +217,96 @@ def _collect_sync(host: str, title: str = "") -> Dict[str, Any]:
                 "error": f"SSH connect/auth failed ({type(exc).__name__})"}
     cmds = _cmds_for(title)
     logs: Dict[str, str] = {}
+    audit: List[Dict[str, Any]] = []
+    started_all = time.time()
+    max_total = 180
+    max_output = 512 * 1024
     try:
         for name, cmd in cmds:
+            if time.time() - started_all > max_total:
+                audit.append({"name": name, "command": cmd, "status": "SKIPPED_TOTAL_TIMEOUT"})
+                continue
+            started = time.time()
             try:
-                _in, out, _err = cli.exec_command(cmd, timeout=30)
-                logs[name] = out.read().decode("utf-8", "replace")
+                _in, out, err = cli.exec_command(cmd, timeout=30)
+                stdout = out.read(max_output + 1).decode("utf-8", "replace")
+                stderr = err.read(32 * 1024).decode("utf-8", "replace")
+                truncated = len(stdout) > max_output
+                logs[name] = stdout[:max_output]
+                audit.append({"name": name, "command": cmd, "return_code": out.channel.recv_exit_status(),
+                              "stdout_bytes": len(stdout), "stderr": stderr[:2000],
+                              "truncated": truncated, "started": started, "ended": time.time(), "host": fqdn})
             except Exception as exc:
                 logs[name] = f"[collect error: {type(exc).__name__}]"
+                audit.append({"name": name, "command": cmd, "status": "ERROR",
+                              "error": type(exc).__name__, "started": started,
+                              "ended": time.time(), "host": fqdn})
     finally:
         cli.close()
     combined = "\n".join(f"===== {n} =====\n{t}" for n, t in logs.items() if t.strip())
     return {"reachable": True, "host": fqdn, "logs": logs, "combined": combined,
-            "profiles": classify_failure(title)}
+            "profiles": classify_failure(title), "command_audit": audit}
 
 
 async def collect_node_logs(host: str, title: str = "") -> Dict[str, Any]:
     """Reachability check + profile-targeted SSH log collection, off the event loop."""
     return await asyncio.to_thread(_collect_sync, host, title)
+
+
+def _collect_bmc_sync(title: str = "") -> Dict[str, Any]:
+    """Collect configured BMC evidence independently of host SSH reachability."""
+    requirements = _failure_requirements(title)
+    commands: List[str] = []
+    for _, requirement in requirements:
+        for command in requirement.get("bmc_commands") or []:
+            if command not in commands:
+                commands.append(command)
+    if not commands:
+        return {"configured": bool(config.BMC_ACCESS_ENABLED), "attempted": False,
+                "status": "NO_BMC_REQUIREMENT", "logs": {}, "command_audit": []}
+    if not config.BMC_ACCESS_ENABLED or not config.BMC_HOST or not config.BMC_CREDENTIAL:
+        return {"configured": False, "attempted": False, "status": "BMC access not configured",
+                "logs": {}, "command_audit": []}
+    logs: Dict[str, str] = {}
+    audit: List[Dict[str, Any]] = []
+    for index, command in enumerate(commands, 1):
+        started = time.time()
+        try:
+            if command.startswith("ipmitool"):
+                env = os.environ.copy()
+                env["IPMI_PASSWORD"] = config.BMC_CREDENTIAL
+                args = ["ipmitool", "-H", config.BMC_HOST]
+                if config.BMC_USER:
+                    args += ["-U", config.BMC_USER]
+                args += ["-E"] + command.split()[1:]
+                proc = subprocess.run(args, capture_output=True, text=True,
+                                      timeout=30, env=env, check=False)
+                output = proc.stdout[:512 * 1024]
+                logs[f"bmc_{index}"] = output
+                audit.append({"name": f"bmc_{index}", "command": command,
+                              "return_code": proc.returncode, "stdout_bytes": len(output),
+                              "started": started, "ended": time.time(), "host": config.BMC_HOST})
+            elif command.startswith("redfish GET "):
+                path = command[len("redfish GET "):]
+                request = urllib.request.Request("https://" + config.BMC_HOST + path)
+                token = base64.b64encode(f"{config.BMC_USER}:{config.BMC_CREDENTIAL}".encode()).decode()
+                request.add_header("Authorization", f"Basic {token}")
+                with urllib.request.urlopen(request, timeout=30) as response:
+                    output = response.read(512 * 1024).decode("utf-8", "replace")
+                logs[f"bmc_{index}"] = output
+                audit.append({"name": f"bmc_{index}", "command": command,
+                              "return_code": 0, "stdout_bytes": len(output),
+                              "started": started, "ended": time.time(), "host": config.BMC_HOST})
+        except Exception as exc:
+            audit.append({"name": f"bmc_{index}", "command": command, "status": "ERROR",
+                          "error": type(exc).__name__, "started": started,
+                          "ended": time.time(), "host": config.BMC_HOST})
+    return {"configured": True, "attempted": True, "status": "COLLECTED" if logs else "FAILED",
+            "logs": logs, "combined": "\n".join(logs.values()), "command_audit": audit}
+
+
+async def collect_bmc_logs(title: str = "") -> Dict[str, Any]:
+    return await asyncio.to_thread(_collect_bmc_sync, title)
 
 
 def _esc(s: Any) -> str:
@@ -229,3 +365,108 @@ async def triage_auto_hsd(hsd_id: str, post: bool = False, force: bool = False) 
             "profiles": node.get("profiles", []),
             "comment_html": upd.get("comment_html"),
             "posted": (upd if post else None)}
+
+
+def _ownership_snapshot(result: Dict[str, Any]) -> Dict[str, Any]:
+    from .analyzer import extract_ownership
+    own = extract_ownership(result)
+    return {key: own.get(key, "") for key in
+            ("owning_ip", "reporting_ip", "first_error", "bank", "socket",
+             "mcacod", "mscod", "verdict", "confidence", "contradiction")}
+
+
+async def triage_auto_hsd_end_to_end(hsd_id: str, dry_run: bool = True,
+                                     force: bool = False) -> Dict[str, Any]:
+    """Auditable HSD -> collect -> re-analyze -> gate loop.
+
+    Collection is restricted to this module's read-only allow-list. The run is
+    always persisted under autohsd_runs and HSDES writes occur only when
+    ``dry_run`` is false and the existing validation gate allows them.
+    """
+    from .analyzer import analyze, update_hsd_report, _post_gate
+    from .hsdes_client import HSDESClient
+    hsd_id = re.sub(r"\D", "", str(hsd_id))
+    run_id = time.strftime("%Y%m%d_%H%M%S") + "_" + uuid.uuid4().hex[:8]
+    run_dir = Path(os.getenv("AUTOHSD_RUN_ROOT", "autohsd_runs")) / hsd_id / run_id
+    run_dir.mkdir(parents=True, exist_ok=True)
+    (run_dir / "collected_artifacts").mkdir(exist_ok=True)
+    client = HSDESClient()
+    target = await client.get_article(hsd_id)
+    if not target or target.get("error"):
+        outcome = {"ok": False, "hsd_id": hsd_id, "error": (target or {}).get("error", "HSD not found")}
+        (run_dir / "run_manifest.json").write_text(json.dumps(outcome, indent=2), encoding="utf-8")
+        return outcome
+    title = target.get("title", "") or ""
+    description = target.get("description", "") or ""
+    initial = await analyze(hsd_id, f"AutoHSD: {title}", fetch_attachments=True)
+    host = extract_node_host_from_text(title, description, target.get("raw", {}))
+    requirements = _failure_requirements(title)
+    plan = {"hsd_id": hsd_id, "host": host, "profiles": classify_failure(title),
+            "failure_requirements": [name for name, _ in requirements],
+            "profile_reference": _PROFILE_REFERENCE, "execution_policy": "READ_ONLY_ALLOWLIST",
+            "centralized_elastic_scope": _CENTRALIZED_SCOPE_NOTE}
+    (run_dir / "collection_plan.json").write_text(json.dumps(plan, indent=2), encoding="utf-8")
+    (run_dir / "initial_report.md").write_text(initial.get("report_markdown", ""), encoding="utf-8")
+    from .report_html import render_structured_report_html
+    (run_dir / "initial_report.html").write_text(
+        render_structured_report_html(initial, title=f"AutoHSD Initial Report - {hsd_id}"),
+        encoding="utf-8")
+    has_attachments = bool(initial.get("attachments"))
+    collection_enabled = os.getenv("AUTOHSD_ALLOW_SSH_COLLECTION", "false").lower() in {"1", "true", "yes"}
+    if has_attachments:
+        node = {"reachable": False, "host": _resolve_host(host) if host else "",
+                "error": "Attachments already present; direct collection skipped",
+                "status": "ATTACHMENTS_PRESENT", "profiles": classify_failure(title),
+                "command_audit": []}
+    elif host and collection_enabled:
+        node = await collect_node_logs(host, title)
+    elif host:
+        node = {"reachable": False, "host": _resolve_host(host),
+                "error": "SSH collection disabled by AUTOHSD_ALLOW_SSH_COLLECTION=false"}
+    else:
+        node = {"reachable": False, "error": "Node hostname not found"}
+    bmc = {"status": "SKIPPED_ATTACHMENTS"} if has_attachments else await collect_bmc_logs(title)
+    node["bmc"] = bmc
+    node["collection_scope_note"] = _CENTRALIZED_SCOPE_NOTE
+    if not node.get("reachable") and not has_attachments:
+        unreachable_messages = [requirement.get("if_unreachable") for _, requirement in requirements
+                                if requirement.get("if_unreachable")]
+        node["status"] = "INSUFFICIENT_EVIDENCE"
+        node["if_unreachable"] = unreachable_messages[0] if unreachable_messages else (
+            "Node unavailable -- no direct SSH evidence could be collected."
+        )
+        if bmc.get("status") == "BMC access not configured":
+            node["bmc_note"] = "BMC access not configured"
+    (run_dir / "command_audit.jsonl").write_text("\n".join(json.dumps(item) for item in node.get("command_audit", [])), encoding="utf-8")
+    for name, content in (node.get("logs") or {}).items():
+        (run_dir / "collected_artifacts" / f"{name}.log").write_text(str(content), encoding="utf-8")
+    for name, content in (bmc.get("logs") or {}).items():
+        (run_dir / "collected_artifacts" / f"{name}.log").write_text(str(content), encoding="utf-8")
+    if node.get("reachable"):
+        final = await analyze(hsd_id, f"AutoHSD re-analysis: {title}",
+                              log_text=node.get("combined", ""), fetch_attachments=True)
+    else:
+        final = initial
+    before_after = {"initial": _ownership_snapshot(initial), "final": _ownership_snapshot(final),
+                    "node_status": "REACHABLE" if node.get("reachable") else "UNAVAILABLE",
+                    "collection_status": "RUN" if node.get("reachable") else "NOT RUN",
+                    "remaining_blockers": [node.get("error"), node.get("if_unreachable")] if not node.get("reachable") else [],
+                    "evidence_status": node.get("status", "UNKNOWN"),
+                    "bmc_status": bmc.get("status", "UNKNOWN")}
+    before_after["rca_changed_after_collection"] = before_after["initial"] != before_after["final"]
+    (run_dir / "before_after.json").write_text(json.dumps(before_after, indent=2), encoding="utf-8")
+    (run_dir / "final_report.md").write_text(final.get("report_markdown", ""), encoding="utf-8")
+    (run_dir / "final_report.html").write_text(
+        render_structured_report_html(final, title=f"AutoHSD Final Report - {hsd_id}"),
+        encoding="utf-8")
+    gate = _post_gate(final)
+    update = await update_hsd_report(hsd_id, result=final, dry_run=(dry_run or not gate.get("allow")), force=force)
+    (run_dir / "hsd_comment_preview.html").write_text(update.get("comment_html", ""), encoding="utf-8")
+    manifest = {"hsd_id": hsd_id, "run_id": run_id, "dry_run": dry_run,
+                "force": force, "host": node.get("host", host), "gate": gate,
+                "posted": bool(update.get("posted")), "execution_policy": "READ_ONLY_ALLOWLIST",
+                "collection_scope_note": _CENTRALIZED_SCOPE_NOTE}
+    (run_dir / "run_manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return {"ok": True, **manifest, "before_after": before_after,
+            "initial": initial, "final": final, "collection": node, "update": update,
+            "run_dir": str(run_dir)}

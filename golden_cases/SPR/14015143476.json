@@ -1,0 +1,53 @@
+{
+  "hsd_id": "14015143476",
+  "platform": "SPR",
+  "domain": "hw.mdf",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "MDF",
+  "expected_reporting_ip": "MDF",
+  "expected_first_error": "MDF",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "22013879933; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "22013879933=new.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "22013879933=new.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/14015143476"
+    ]
+  },
+  "expected": {
+    "owner": "MDF",
+    "reporting_ip": "MDF",
+    "originating_ip": "MDF",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "22013879933"
+  },
+  "title": "[Cluster GDC][EGS SPR D0]MDF Parity Error seen during IDLE/ive-povray with ucode 0x2c0",
+  "description": "DESCRIPTION: During the execution of Burnin -sandstone-cold , Machine check bank 8 was reported: &quot; Machine Check Exception: 5 Bank 8: fa00000000400405&quot; while running IDLE before launch Sandstone workload. 3 more systems hit MDF parity error with ucode 0x2d0 while running ive-povray w/ GeniePOVRay-pvr_peak_core System Configuration: \n\n \n \n \n System Cluster \n \n \n Bios/BMC \n \n \n Failure \n \n \n Ucode\n Patch \n \n \n CFR patch \n \n \n SPR \n \n \n Memory config \n \n \n CE5/CE6 FIVR mix-up \n \n \n SPR \n \n \n OS \n \n \n Debug \n \n \n TTF \n \n \n results \n \n \n pythonSv sig. \n \n \n \n \n \n \n \n BIOS \n \n \n Hit \n \n \n Version \n \n \n Version \n \n \n Stepping \n \n \n \n \n \n \n \n \n Test case \n \n \n \n \n \n Fail/pass \n \n \n hrs \n \n \n MDF pairty Parity error \n \n \n hung? \n \n \n \n \n 2S-r09s11.zp31l10b01 \n \n \n 64.D15/egs-0.74 \n \n \n 1st hit \n \n \n 0x8d0002c0 \n \n \n 1D000080 \n \n \n SPR D0\n QYFR \n \n \n 1DPC Samsung 64GB 4800 MT/s \n \n \n mrb_check.check_by_ult() \n ERROR!!! Socket 0 tile 1 has a mismatch of MIM recipe: CE5 and\n FIVR fuse recipe: CE6 \n ERROR!!! Socket 0 tile 2 has a mismatch of MIM recipe: CE5 and\n FIVR fuse recipe: CE6 \n ERROR!!! Socket 1 tile 1 has a mismatch of MIM recipe: CE5 and\n FIVR fuse recipe: CE6 \n ERROR!!! Socket 1 tile 2 has a mismatch of MIM recipe: CE5 and\n FIVR fuse recipe: CE6 \n FAILURE!!! FIVR RECIPE MISMATCH \n -0x1 \n \n \n IDLE \n \n \n CentOS\n Linux 8 Kernel 5.12.0-0507.intel_next.07_20_po.19.x86_64 \n \n \n Failed \n \n \n n/a \n \n \n Machine Check Exception: 5 Bank 8: ba00000000400405\n : Socket: 1, Machine Check Bank 8: Status: 0xBA00000000400405, Address:\n 0x0000000000000000, Misc: 0x0000000000002086 \n \n \n Not\n hung \n \n \n \n \n 2S-r06s11.zp31l10b0 \n \n \n 64.D15/egs-0.74 \n \n \n 1st hit \n \n \n 0x8d0002d0 \n \n \n 1D000080 \n \n \n SPR D0\n QYG5 \n \n \n 1DPC Micron 64GB 4800 MT/s \n \n \n mrb_check.check_by_ult() PASS: No issues found \n FIVR Recipe was: CE6,CE6,CE6,CE6 \n 0x0 \n &gt;&gt;&gt; \n SOCKET0: PPIN 0x09D2ACCAA6BEE83C \n VID: D1VY547200412 SOCKET1: PPIN :0x71CD74F51C5E9163 \n VID: 71F87W5500024 \n \n \n ive-povray-21ww21-3\n :ok - 211\n IVE_GeniePOVRay-pvr_peak_core \n \n \n CentOS\n Linux 8 Kernel 5.12.0-0507.intel_next.07_20_po.19.x86_64 \n \n \n Failed \n \n \n 6h \n \n \n Machine Check Exception: 5 Bank 7: ba00000000400405\n : Socket: 0, Machine Check Bank 7: Status: 0xBA00000000400405, Address:\n 0x0000000000000000, Misc: 0x0000000000002086 \n \n \n Not\n hung \n \n \n \n \n 2S-r12s16.zp31l10b01 \n \n \n 64.D15/egs-0.74 \n \n \n 1st hit \n \n \n 0x8d0002d0 \n \n \n 1D000080 \n \n \n SPR D0\n QY6C \n \n \n 1DPC Hyix 32GB 4800 MT/s \n \n \n mrb_check.check_by_ult() \n ERROR!!! Socket 0 tile 0 has a mismatch of MIM recipe: CE6 and FIVR\n fuse recipe: CE5 \n ERROR!!! Socket 0 tile 1 has a mismatch of MIM recipe: CE6 and\n FIVR fuse recipe: CE5 \n ERROR!!! Socket 0 tile 2 has a mismatch of MIM recipe: CE6 and\n FIVR fuse recipe: CE5 \n ERROR!!! Socket 0 tile 3 has a mismatch of MIM recipe: CE6 and\n FIVR fuse recipe: CE5 \n ERROR!!! Socket 1 tile 0 has a mismatch of MIM recipe: CE6 and\n FIVR fuse recipe: CE5 \n ERROR!!! Socket 1 tile 1 has a mismatch of MIM recipe: CE6 and\n FIVR fuse recipe: CE5 \n ERROR!!! Socket 1 tile 2 has a mismatch of MIM recipe: CE6 and\n FIVR fuse recipe: CE5 \n ERROR!!! Socket 1 tile 3 has a mismatch of MIM recipe: CE6 and\n FIVR fuse recipe: CE5 \n FAILURE!!! FIVR RECIPE MISMATCH \n -0x1 \n \n \n ive-povray-21ww21-3\n : 2 IVE_GeniePOVRay-pvr_peak_core \n \n \n CentOS\n Linux 8 Kernel 5.12.0-0507.intel_next.07_20_po.19.x86_64 \n \n \n Failed \n \n \n 2h \n \n \n Socket: 1, Machine Check Bank 7: Status:\n 0xBA00000000400405, Address: 0x0000000000000000, Misc: 0x0000000000002086 \n \n \n Not\n hung \n \n \n \n\n Time Line error: Sep 17, 2021 @ 14:30:04.413 r09s11.zp31l10b01 WHEA: Detected Processor Error Sep 17, 2021 @ 14:30:04.413 r09s11.zp31l10b01 ERROR: C00000002:V03071008 I0 D6476950-2481-4CBB-8400-442542C766C8 7BFABA18 Sep 17, 2021 @ 14:30:04.413 r09s11.zp31l10b01 System address:FFFFFFFFFFFFFFFF is not DRAM address Sep 17, 2021 @ 14:30:04.413 r09s11.zp31l10b01 --Logging Uncorrected Error to WHEA Sep 17, 2021 @ 14:30:04.413 r09s11.zp31l10b01 WHEA: Ignore Processor WHEA error now. Sep 17, 2021 @ 14:30:04.463 r09s11.zp31l10b01 S1 C14 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x3, State = 0x4 Sep 17, 2021 @ 14:30:04.464 r09s11.zp31l10b01 ERROR: C00000002:V03071008 I0 D6476950-2481-4CBB-8400-442542C766C8 7BFABA18 Sep 17, 2021 @ 14:30:04.464 r09s11.zp31l10b01 WHEA: Detected Processor Error Sep 17, 2021 @ 14:30:04.464 r09s11.zp31l10b01 --Logging Uncorrected Error to WHEA Sep 17, 2021 @ 14:30:04.464 r09s11.zp31l10b01 System address:FFFFFFFFFFFFFFFF is not DRAM address Sep 17, 2021 @ 14:30:04.464 r09s11.zp31l10b01 WHEA: Ignore Processor WHEA error now. Sep 17, 2021 @ 14:30:04.464 r09s11.zp31l10b01 ERROR: C00000002:V03071008 I0 D6476950-2481-4CBB-8400-442542C766C8 7BFABA18 Sep 17, 2021 @ 14:30:04.464 r09s11.zp31l10b01 [Mca]McaDetectAndHandle, severity = 0x1, Broadcast is 0x1 Sep 17, 2021 @ 14:30:04.464 r09s11.zp31l10b01 S1 C14 T0 [CpuRas]MC status 0xB200000000400405, class FATAL Sep 17, 2021 @ 14:30:04.465 r09s11.zp31l10b01 [Mca] Clear Status Sep 17, 2021 @ 14:30:04.507 r09s11.zp31l10b01 [Mca]Find uncorrected error at CPU 112 Sep 17, 2021 @ 14:30:04.507 r09s11.zp31l10b01 [Mca]Successfully notify OS via MCE Sep 17, 2021 @ 14:30:04.507 r09s11.zp31l10b01 [ 466.303649] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.507 r09s11.zp31l10b01 [Mca]Sending OS notification via MCE Sep 17, 2021 @ 14:30:04.507 r09s11.zp31l10b01 [Mca]Find uncorrected error at CPU 140 Sep 17, 2021 @ 14:30:04.508 r09s11.zp31l10b01 [ 466.314537] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.508 r09s11.zp31l10b01 [ 466.319911] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.508 r09s11.zp31l10b01 [ 466.325418] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.508 r09s11.zp31l10b01 [ 466.309106] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.670 r09s11.zp31l10b01 [ 466.331181] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.670 r09s11.zp31l10b01 [ 466.331187] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.670 r09s11.zp31l10b01 [ 466.331185] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.671 r09s11.zp31l10b01 [ 466.385511] smpboot: Scheduler frequency invariance went wobbly, disabling! Sep 17, 2021 @ 14:30:04.671 r09s11.zp31l10b01 [ 466.441630] Disabling lock debugging due to kernel taint Sep 17, 2021 @ 14:30:04.671 r09s11.zp31l10b01 [ 466.331192] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.671 r09s11.zp31l10b01 [ 466.331190] mce: MCE records pool full! Sep 17, 2021 @ 14:30:04.671 r09s11.zp31l10b01 [ 466.441633] mce: [Hardware Error]: CPU 182: Machine Check Exception: 5 Bank 3: b200000000400405 Sep 17, 2021 @ 14:30:04.724 r09s11.zp31l10b01 [ 466.441634] mce: [Hardware Error]: RIP !INEXACT! 10:&lt;ffffffff9cf5c875&gt; {intel_idle+0x65/0xb0} Sep 17, 2021 @ 14:30:04.724 r09s11.zp31l10b01 [ 466.441636] mce: [Hardware Error]: TSC 115a1e3beab PPIN 9fdc9cb347c1e5e Sep 17, 2021 @ 14:30:04.725 r09s11.zp31l10b01 [ 466.441639] mce: [Hardware Error]: Run the above through 'mcelog --ascii' Sep 17, 2021 @ 14:30:04.725 r09s11.zp31l10b01 [ 466.441638] mce: [Hardware Error]: PROCESSOR 0:806f3 TIME 1631907004 SOCKET 1 APIC 9d microcode 8d0002c0 Sep 17, 2021 @ 14:30:04.725 r09s11.zp31l10b01 [ 466.441641] mce: [Hardware Error]: TSC 115a1e414ff MISC 2086 PPIN 9fdc9cb347c1e5e Sep 17, 2021 @ 14:30:04.725 r09s11.zp31l10b01 [ 466.441640] mce: [Hardware Error]: CPU 56: Machine Check Exception: 5 Bank 8: ba00000000400405 Sep 17, 2021 @ 14:30:04.760 r09s11.zp31l10b01 [ 466.441645] Kernel panic - not syncing: Fatal machine check Sep 17, 2021 @ 14:30:04.760 r09s11.zp31l10b01 [ 466.441642] mce: [Hardware Error]: PROCESSOR 0:806f3 TIME 1631907004 SOCKET 1 APIC 80 microcode 8d0002c0 Sep 17, 2021 @ 14:30:04.760 r09s11.zp31l10b01 [ 466.441644] mce: [Hardware Error]: Machine check: Processor context corrupt Sep 17, 2021 @ 14:30:04.760 r09s11.zp31l10b01 [ 466.441643] mce: [Hardware Error]: Run the above through 'mcelog --ascii' Sep 17, 2021 @ 14:30:06.002 r09s11.zp31l10b01 [ 467.479842] Shutting down cpus with NMI Sep 17, 2021 @ 14:30:06.002 r09s11.zp31l10b01 [ 467.479844] Kernel Offset: 0x1b000000 from 0xffffffff81000000 (relocation range: 0xffffffff80000000-0xffffffffbfffffff) Sep 17, 2021 @ 14:30:28.287 r09s11.zp31l10b01 Socket: 1, Machine Check Bank 8: Status: 0xBA00000000400405, Address: 0x0000000000000000, Misc: 0x0000000000002086",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0xBA00000000400405",
+        "source_text": "0xBA00000000400405"
+      },
+      {
+        "status": "0xB200000000400405",
+        "source_text": "0xB200000000400405"
+      }
+    ],
+    "bank": "0X3"
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "generated_date": "2026-09-10",
+  "golden_cases": {
+    "qualified": 0,
+    "required": 30
+  },
+  "metrics": {
+    "owner_accuracy": null,
+    "bank_accuracy": null,
+    "socket_accuracy": null,
+    "false_confirmed_rca": null,
+    "comment_influence": null,
+    "kb_contamination": null
+  },
+  "source_provenance": {
+    "coverage_percent": 100.0,
+    "unknown_trust": [
+      "app/decoders/bank_mapping.json",
+      "app/decoders/dmr_punit_mca.json",
+      "app/decoders/ewl_codes_database.json",
+      "app/decoders/ipsd_codes_database.json",
+      "app/decoders/mca_codes_database.json",
+      "app/decoders/mcheck_codes_database.json",
+      "app/decoders/post_codes_database.json",
+      "app/decoders/rc_fatal_errors_database.json",
+      "app/knowledge/debug_kb.json"
+    ],
+    "missing_inventory": []
+  },
+  "production_status": "NOT APPROVED",
+  "failures": [
+    "qualified golden cases 0/30",
+    "unknown-trust resources 9"
+  ],
+  "note": "Metrics are null until a qualified corpus has been benchmarked."
+}

@@ -13,6 +13,7 @@ adjust `_normalize` / `_fetch_comments` / `get_query_results` if needed.
 
 import asyncio
 import io
+import platform
 import re
 import zipfile
 from typing import Any, Dict, List, Optional
@@ -27,12 +28,16 @@ try:  # Kerberos/Negotiate (proven method: requests + requests-kerberos + verify
 except Exception:
     _REQUESTS_AVAILABLE = False
 try:
-    from requests_kerberos import HTTPKerberosAuth
-    _KERBEROS_KIND = "kerberos"
-except Exception:
-    try:
+    if platform.system() == "Windows":
         from requests_negotiate_sspi import HttpNegotiateAuth
         _KERBEROS_KIND = "sspi"
+    else:
+        from requests_kerberos import HTTPKerberosAuth
+        _KERBEROS_KIND = "kerberos"
+except Exception:
+    try:
+        from requests_kerberos import HTTPKerberosAuth
+        _KERBEROS_KIND = "kerberos"
     except Exception:
         _KERBEROS_KIND = None
 
@@ -78,8 +83,9 @@ class HSDESClient:
     def _kerberos_request(self, method: str, url: str, **kw) -> Any:
         if not (_REQUESTS_AVAILABLE and _KERBEROS_KIND):
             raise RuntimeError(
-                "Kerberos mode needs 'requests-kerberos' "
-                "(pip install requests-kerberos)")
+                "HSDES SSO is unavailable: install the Windows SSPI dependency "
+                "with 'pip install requests-negotiate-sspi', or use a configured "
+                "HSDES token/basic-auth mode.")
         try:
             import urllib3
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)

@@ -131,7 +131,7 @@ def build_png():
     print("PNG :", PNG)
 
 
-def build_roadmap_png():
+def build_roadmap_png(show_detail=True):
     """Management roadmap graphic: Phases 0-5 with status, as a two-row timeline."""
     # status -> (fill, edge, ribbon color, label)
     DONE = ("#dcefe0", GREEN, GREEN, "COMPLETED")
@@ -152,22 +152,25 @@ def build_roadmap_png():
          ["Ownership Evidence Ladder",
           "Owner → team routing (suggestion)",
           "Validation gate · auto-comment · publish"]),
-        ("PHASE 2", "AutoHSD Triage Engine", CUR,
-         ["Parse title → classify failure type",
-          "Node reachability → profile log collect",
-          "Run RCA → gate → update / draft"]),
-        ("PHASE 3", "Ownership Validation", NEXT,
-         ["20-30 root-caused HSD corpus",
-          "RCA benchmark runner (5 metrics)",
-          "Gate to Phase 4 at > 85% owner accuracy"]),
-        ("PHASE 4", "Knowledge Graph", FUT,
-         ["MCACOD + MSCOD + platform → cause DB",
-          "Cause-frequency model (TOR→UPI 43%…)",
-          "Suggested next investigation"]),
-        ("PHASE 5", "Debug Advisor", FUT,
-         ["Signature → root-cause candidate",
-          "Recommended experiments + outcomes",
-          "Suggested owner · auto-HSD investigation"]),
+                ("PHASE 2", "AutoHSD Closed-Loop Tool", DONE,
+                 ["HSD → missing evidence → guarded SSH",
+                    "Before/after re-analysis + audit bundle",
+                          "SSH/BMC requirements + draft-first write safety"]),
+                                ("PHASE 3", "Production Qualification", CUR,
+                                 (["47 validated reference cases",
+                                        "Evidence-backed accuracy validation",
+                                        "Expanding coverage across platform families"] if not show_detail else
+                                    ["47 strict Level 3/4 Golden Cases",
+                                        "18/18 provenance resources covered; 0 UNKNOWN",
+                                        "Offline benchmark: 0/47 actionable predictions"])),
+                ("PHASE 4", "Shared VM Deployment", NEXT,
+                 ["Role-based access + audit trail",
+                    "Shared KB + RCA history",
+                    "HSDES/Git integration review"]),
+                ("PHASE 5", "Enterprise RCA Operations", FUT,
+                 ["Measured engineer-time savings",
+                    "Controlled AutoHSD evidence loop",
+                    "Production approval + operations"]),
     ]
 
     fig, ax = plt.subplots(figsize=(16, 9), dpi=150)
@@ -179,8 +182,7 @@ def build_roadmap_png():
                  boxstyle="square,pad=0", linewidth=0, facecolor=INK, zorder=0))
     ax.text(0.5, 0.963, "HSDES NEXUS — Product Roadmap",
             ha="center", va="center", fontsize=22, fontweight="bold", color="white")
-    ax.text(0.5, 0.925, "From offline RCA generator → engineer-grade triage → automated, "
-            "validated ownership → debug advisor",
+    ax.text(0.5, 0.925, "From offline RCA generator → guarded AutoHSD loop → production qualification → shared operations",
             ha="center", va="center", fontsize=11.5, color="#c9d6ea")
 
     def card(x, y, w, h, ph, name, status, bullets):
@@ -229,8 +231,8 @@ def build_roadmap_png():
     # elbow arrow: Phase 2 (row1 last) down to Phase 3 (row2 first)
     _arrow(ax, (r1x[3] + w / 2, y1), (r2x[0] + w / 2, y2 + h), color=AMBER, rad=-0.3, lw=2.6)
 
-    # "You are here" marker under Phase 2
-    ax.text(r1x[3] + w / 2, y1 - 0.03, "◀ You are here",
+    # "You are here" marker under Phase 3
+    ax.text(r2x[0] + w / 2, y2 - 0.03, "◀ You are here",
             ha="center", va="top", fontsize=11, fontweight="bold", color=AMBER)
 
     # Legend
@@ -419,30 +421,31 @@ def build_pptx():
     ], size=16)
 
     # ---- 9 Roadmap (Phases 0-5 graphic) ----
-    s = add_slide(); band(s, "Product Roadmap", "Phase 0 → Phase 5 · where we are and where we're going")
+    s = add_slide(); band(s, "Product Roadmap", "Phase 0 → Phase 5 · current state and release gates")
     if os.path.exists(ROADMAP_PNG):
         s.shapes.add_picture(ROADMAP_PNG, Inches(0.3), Inches(1.3), width=Inches(12.7))
 
     # ---- 9b What's new this cycle ----
-    s = add_slide(); band(s, "What's New — Automation, Validation & Phase 2",
-                          "Shipped since the engineer-grade RCA engine")
+    s = add_slide(); band(s, "What's New — Operational Loop & Qualification",
+                          "Current release baseline and remaining production gates")
     bullets(s, [
         "HSD write-back — posts an executive RCA summary straight into the ticket comment thread (root cause · owner · confidence · evidence · next action); full report saved as HTML/MD. Dry-run + preview first.",
         "Validation Gate — blocks auto-posting weak conclusions: WORKING HYPOTHESIS, confidence < 70%, unproven owner, OR an unresolved contradiction → draft-only (explicit --force override).",
         "Ownership Evidence Ladder — Level 1 direct (first-error / TOR owner) → Level 4 weak (KB similarity), so confidence is explained, not a black box.",
         "Owner → Team routing (suggestion only) — CHA→Uncore, UPI→Fabric, PCIe→PV.Domain.IO, IMC→RAS/Memory, DCU→Core; never auto-reassigns.",
-        "Phase 2 AutoHSD triage — parse node from the title → SSH → collect failure-type evidence profiles → run RCA → gate → update; node-down handled gracefully.",
-        "RCA Regression Framework — golden_cases/ corpus + tools/rca_benchmark.py scoring owning-IP accuracy, precision/recall, overconfidence, false-attribution, contradiction-miss.",
+        "AutoHSD closed loop — retrieve HSD → collect missing evidence with guarded SSH/BMC requirements → re-analyze → compare before/after → gate → draft/post result; 10 focused integration tests pass.",
+        "Release baseline — 75 tests pass, provenance covers 18/18 resources with 0 UNKNOWN, and 47 strict Golden Cases are loaded.",
+        "Qualification blocker — the bounded offline benchmark completes but produces 0/47 actionable predictions; live RCA measurement remains separate from fixture-only validation.",
     ], size=15)
 
     # ---- 9c Phase 2 AutoHSD flow ----
-    s = add_slide(); band(s, "Phase 2 — AutoHSD Triage Engine", "Current focus: one-liner HSD → live node triage")
+    s = add_slide(); band(s, "Phase 2 — AutoHSD Closed-Loop Tool", "Implemented and fixture-tested; SSH collection remains opt-in")
     panel(s, 0.55, 5.9, "Flow", BLU, [
         "New HSD created → parse title → classify failure type.",
         "Kernel Panic · PCIe/CXL · TOR Timeout · Memory Poison · Hardware Error.",
         "Node reachability check (SSH) — up or down.",
         "Node up → collect profile logs → run NEXUS RCA → validation gate.",
-        "Gate PASS → auto-update HSD · DRAFT → store RCA for review.",
+        "Gate PASS → draft HSD update; POST remains opt-in via HSDES_WRITE_ENABLED.",
     ])
     panel(s, 6.9, 5.9, "Safety & efficiency", RGBColor(0x00, 0x85, 0x7D), [
         "Node down → post 'Node unreachable, analysis not possible' (no empty report).",

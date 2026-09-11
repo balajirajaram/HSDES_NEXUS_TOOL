@@ -1,0 +1,48 @@
+{
+  "hsd_id": "22015416586",
+  "platform": "SPR",
+  "domain": "hw.mesh",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Mesh/Fabric",
+  "expected_reporting_ip": "Mesh/Fabric",
+  "expected_first_error": "Mesh/Fabric",
+  "expected_bank": null,
+  "expected_socket": "1",
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "14017130518; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "14017130518=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "14017130518=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/22015416586"
+    ]
+  },
+  "expected": {
+    "owner": "Mesh/Fabric",
+    "reporting_ip": "Mesh/Fabric",
+    "originating_ip": "Mesh/Fabric",
+    "bank": null,
+    "socket": "1",
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "14017130518"
+  },
+  "title": "[Cluster][GDC SPR E3][RPP][r015s003.zp31l10b01] UC LL Detected Control Error from M3UPI reported Socket 1 MCE 5 Status 0xFA00000C001F0E0F Address 0x0000000000000000 Misc 0x0020000000000000 during povray/burnin-cold/warm",
+  "description": "OBSERVED: BMC MCE Socket 1 Machine Check Bank 5 Status 0xFA00000C001F0E0F Address 0x0000000000000000 Misc 0x0020000000000000, TIME RANGE: 2022-06-26 00:12:35.571 to 2022-06-26 05:00:54.827, WARNING: This presighting was generated automatically. Please verify the following fields for accuracy: top_issue, phase_found, soc_family, soc_version, suspect_area, reproducibility. If neccesary metadata is missing frrom this presighting, check the current metadata through clusterscope or attend sys_debug. Owner: Eduardo Bolanos. SOL TIMELINE During sandstone/sandstone Jun 26, 2022 @ 00:00:21.577 r015s003.zp31l10b01 Socket: 1, Machine Check Bank 5: Status: 0xFA00000C001F0E0F, Address: 0x0000000000000000, Misc: 0x0020000000000000 sandstone Jun 25, 2022 @ 23:59:57.701 r015s003.zp31l10b01 [ 2912.001845] mce: [Hardware Error]: Machine check: Processor context corrupt sandstone Jun 25, 2022 @ 23:59:57.701 r015s003.zp31l10b01 [ 2911.936282] mce: [Hardware Error]: Run the above through 'mcelog --ascii' sandstone Jun 25, 2022 @ 23:59:57.701 r015s003.zp31l10b01 [ 2911.925558] mce: [Hardware Error]: PROCESSOR 0:806f6 TIME 1656219597 SOCKET 1 APIC 80 microcode aa000060 sandstone Jun 25, 2022 @ 23:59:57.701 r015s003.zp31l10b01 [ 2911.915903] mce: [Hardware Error]: TSC 59ee8861bf5 MISC 20000000000000 PPIN 227f86fc21e7263e sandstone Jun 25, 2022 @ 23:59:57.700 r015s003.zp31l10b01 [ 2911.908373] mce: [Hardware Error]: RIP !INEXACT! 33:&lt;00007fa6c66c5e86&gt; sandstone Jun 25, 2022 @ 23:59:57.700 r015s003.zp31l10b01 [ 2911.898614] mce: [Hardware Error]: CPU 56: Machine Check Exception: 5 Bank 5: fa00000c001f0e0f sandstone Jun 25, 2022 @ 23:59:57.698 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x4 sandstone Jun 25, 2022 @ 23:59:57.698 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x2 sandstone Jun 25, 2022 @ 23:59:57.698 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x1 sandstone TF 26 warm cycles Jun 25, 2022 @ 21:27:23.788 r015s003.zp31l10b01 Socket: 1, Machine Check Bank 5: Status: 0xBA00000C001F0E0F, Address: 0x0000000000000000, Misc: 0x0000000000000000 burnin-sandstone-rf-warm Jun 25, 2022 @ 21:26:59.154 r015s003.zp31l10b01 [ 1726.058536] mce: [Hardware Error]: Machine check: Processor context corrupt burnin-sandstone-rf-warm Jun 25, 2022 @ 21:26:59.141 r015s003.zp31l10b01 [ 1726.019812] mce: [Hardware Error]: Run the above through 'mcelog --ascii' burnin-sandstone-rf-warm Jun 25, 2022 @ 21:26:59.141 r015s003.zp31l10b01 [ 1726.019810] mce: [Hardware Error]: PROCESSOR 0:806f6 TIME 1656210418 SOCKET 1 APIC 80 microcode aa000060 burnin-sandstone-rf-warm Jun 25, 2022 @ 21:26:59.141 r015s003.zp31l10b01 [ 1726.019809] mce: [Hardware Error]: TSC 3756438486f PPIN 227f86fc21e7263e burnin-sandstone-rf-warm Jun 25, 2022 @ 21:26:59.141 r015s003.zp31l10b01 [ 1726.019799] mce: [Hardware Error]: RIP !INEXACT! 10:&lt;ffffffffa617594d&gt; {down_read_trylock+0x1d/0x50} burnin-sandstone-rf-warm Jun 25, 2022 @ 21:26:59.141 r015s003.zp31l10b01 [ 1726.019783] mce: [Hardware Error]: CPU 56: Machine Check Exception: 5 Bank 5: ba00000c001f0e0f burnin-sandstone-rf-warm Jun 25, 2022 @ 21:26:58.912 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x4 burnin-sandstone-rf-warm Jun 25, 2022 @ 21:26:58.912 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x2 burnin-sandstone-rf-warm Jun 25, 2022 @ 21:26:58.912 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x1 burnin-sandstone-rf-warm TF 20 cold cycles Jun 24, 2022 @ 10:34:09.908 r015s003.zp31l10b01 Socket: 1, Machine Check Bank 5: Status: 0xBA00000C001F0E0F, Address: 0x0000000000000000, Misc: 0x0000000000000000 burnin-sandstone-rf-cold Jun 24, 2022 @ 10:33:46.548 r015s003.zp31l10b01 [ 518.782786] mce: [Hardware Error]: Machine check: Processor context corrupt burnin-sandstone-rf-cold Jun 24, 2022 @ 10:33:46.251 r015s003.zp31l10b01 [ 518.716293] mce: [Hardware Error]: Run the above through 'mcelog --ascii' burnin-sandstone-rf-cold Jun 24, 2022 @ 10:33:46.251 r015s003.zp31l10b01 [ 518.705572] mce: [Hardware Error]: PROCESSOR 0:806f6 TIME 1656084826 SOCKET 1 APIC 80 microcode aa000060 burnin-sandstone-rf-cold Jun 24, 2022 @ 10:33:46.250 r015s003.zp31l10b01 [ 518.697873] mce: [Hardware Error]: TSC 14539947077 PPIN 227f86fc21e7263e burnin-sandstone-rf-cold Jun 24, 2022 @ 10:33:46.250 r015s003.zp31l10b01 [ 518.690362] mce: [Hardware Error]: RIP !INEXACT! 33:&lt;0000000001a88484&gt; burnin-sandstone-rf-cold Jun 24, 2022 @ 10:33:46.250 r015s003.zp31l10b01 [ 518.680609] mce: [Hardware Error]: CPU 56: Machine Check Exception: 5 Bank 5: ba00000c001f0e0f burnin-sandstone-rf-cold Jun 24, 2022 @ 10:33:46.249 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x4 burnin-sandstone-rf-cold Jun 24, 2022 @ 10:33:46.249 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x2 burnin-sandstone-rf-cold Jun 24, 2022 @ 10:33:46.249 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x1 burnin-sandstone-rf-cold TF 2 cold cycles Jun 23, 2022 @ 22:59:55.487 r015s003.zp31l10b01 Socket: 1, Machine Check Bank 5: Status: 0xBA00000C001F0E0F, Address: 0x0000000000000000, Misc: 0x0000000000000000 povray-test-rf-cold Jun 23, 2022 @ 22:59:32.570 r015s003.zp31l10b01 [ 203.485357] mce: [Hardware Error]: Machine check: Processor context corrupt povray-test-rf-cold Jun 23, 2022 @ 22:59:32.570 r015s003.zp31l10b01 [ 203.452724] mce: [Hardware Error]: Run the above through 'mcelog --ascii' povray-test-rf-cold Jun 23, 2022 @ 22:59:32.570 r015s003.zp31l10b01 [ 203.452721] mce: [Hardware Error]: PROCESSOR 0:806f6 TIME 1656043171 SOCKET 1 APIC 80 microcode aa000060 povray-test-rf-cold Jun 23, 2022 @ 22:59:32.570 r015s003.zp31l10b01 [ 203.452720] mce: [Hardware Error]: TSC b29cc8bff7 PPIN 227f86fc21e7263e povray-test-rf-cold Jun 23, 2022 @ 22:59:32.569 r015s003.zp31l10b01 [ 203.452711] mce: [Hardware Error]: RIP !INEXACT! 10:&lt;ffffffff83fe4a45&gt; {intel_idle+0x65/0xb0} povray-test-rf-cold Jun 23, 2022 @ 22:59:32.569 r015s003.zp31l10b01 [ 203.452707] mce: [Hardware Error]: CPU 56: Machine Check Exception: 5 Bank 5: ba00000c001f0e0f povray-test-rf-cold Jun 23, 2022 @ 22:59:32.140 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x4 povray-test-rf-cold Jun 23, 2022 @ 22:59:32.139 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x2 povray-test-rf-cold Jun 23, 2022 @ 22:59:32.139 r015s003.zp31l10b01 S1 C0 T0 [Mca]McBankErrorHandler: Skt = 0x1, McBank = 0x5, State = 0x1 povray-test-rf-cold",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0xFA00000C001F0E0F",
+        "source_text": "0xFA00000C001F0E0F"
+      }
+    ]
+  }
+}

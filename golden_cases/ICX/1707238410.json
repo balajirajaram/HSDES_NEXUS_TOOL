@@ -1,0 +1,48 @@
+{
+  "hsd_id": "1707238410",
+  "platform": "ICX",
+  "domain": "hw.big_core",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Core",
+  "expected_reporting_ip": "Core",
+  "expected_first_error": "Core",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "22010919712; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "22010919712=new.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "22010919712=new.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/1707238410"
+    ]
+  },
+  "expected": {
+    "owner": "Core",
+    "reporting_ip": "Core",
+    "originating_ip": "Core",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "22010919712"
+  },
+  "title": "[ICX-C0-XCC][Cluster][QOT-CAS]: Mixer run with imunch results in uncorrectable error with only Core-0 in Hung State",
+  "description": "Description: A combination of Mixer tests, including sandstone and imunch app creates a core-0 hung state with MCA showing uncorrectable error. ASD based dumps confirm the error scenario: F OUND VALID\nMCA socket0.cpu_client.core0.ml2_cr_mc3_status\n= 0xe200000000800400 0x00000400 :\nmcacod (15:00) -- WDTimeout (3 strike) -- \nMachine Check Archi... 0x00000080 :\nmscod (31:16) -- WDTimeout (3 strike) -- \nModel Specific Error... 0x00000000 :\nenh_mca_avail0 (37:32) -- Available when Enhnaced MCA is in use 0x00000000 :\ncec (52:38) -- Correctable Error\nCount 0x00000000 :\nbitfix_allocated (53:53) -- Status tracking is Green if this b... 0x00000000 :\nbitfix_overcapacity (54:54) -- Status tracking is Yellow if th... 0x00000000 :\nenh_mca_avail1 (56:55) -- Available when Enhnaced MCA is in use 0x00000001 :\npcc (57:57) -- Processor Context\nCorrupt 0x00000000 :\naddrv (58:58) -- MC3_ADDR register\nvalid 0x00000000 :\nmiscv (59:59) -- MC3_MISC register\nvalid 0x00000000 :\nen (60:60) -- Error Enabled 0x00000001 :\nuc (61:61) -- Uncorrectable Error 0x00000001 :\nover (62:62) -- Machine Check\nOverflow 0x00000001 :\nval (63:63) -- Status register\nValid ################################################## ##############\nSocket0 Core0 status ############## ################################################## socket0.core0 is active Thread active is:3 UIP tracker info +----------------+------------+------------+ | Title | Thread 0 | Thread 1 \n| +================+============+============+ | MSBusy | [2b] 0x0 | [2b] 0x1 \n| +----------------+------------+------------+ | Current MS\nUIP | 0x9270 | 0x48d4 | +----------------+------------+------------+ | Next MS\nUIP | 0x0 | 0x0 | +----------------+------------+------------+ | Next ROB\nUIP | 0x45dc | 0x808f | +----------------+------------+------------+ | RONuke | [2b] 0x0 | [2b] 0x1 \n| +----------------+------------+------------+ ROB tail info +------------------+------------+-------------+ | Title | Thread 0 | Thread 1 \n| +==================+============+=============+ | ROB/RAT\npointers | 0x3b/0x63 | 0x100/0x15a | +------------------+------------+-------------+ | ROB tail\ncheck | Hung | Hung | +------------------+------------+-------------+ Socket0\nCore0: \n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n No valid SQ\nentries",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0xe200000000800400",
+        "source_text": "0xe200000000800400"
+      }
+    ]
+  }
+}

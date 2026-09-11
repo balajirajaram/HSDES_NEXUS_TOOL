@@ -1,0 +1,38 @@
+{
+  "timestamp": "2026-09-11T00:46:13+0530",
+  "git_branch": "nexus-tool-import",
+  "commit_hash": "c502fadfa48096a74e2f3f68bf1c19efa851b90a",
+  "dirty_worktree": true,
+  "python_version": "3.14.3",
+  "config_fingerprint": "73dad1fc8f973a8d94acdb6f04220b2b45255b0dfd8354f371621650cc6f58d2",
+  "test_count": 45,
+  "test_exit_code": 1,
+  "provenance": {
+    "exit_code": 1,
+    "status": "FAIL",
+    "unknown_trust": [
+      "app/decoders/bank_mapping.json",
+      "app/decoders/ewl_codes_database.json",
+      "app/decoders/ipsd_codes_database.json",
+      "app/decoders/mca_codes_database.json",
+      "app/decoders/mcheck_codes_database.json",
+      "app/decoders/post_codes_database.json",
+      "app/decoders/rc_fatal_errors_database.json"
+    ],
+    "output": "Resources discovered: 15\nInventory entries: 15\nInventory coverage: 100.0%\nMissing inventory: 0\nUnknown trust: 7\n  UNKNOWN app/decoders/bank_mapping.json\n  UNKNOWN app/decoders/ewl_codes_database.json\n  UNKNOWN app/decoders/ipsd_codes_database.json\n  UNKNOWN app/decoders/mca_codes_database.json\n  UNKNOWN app/decoders/mcheck_codes_database.json\n  UNKNOWN app/decoders/post_codes_database.json\n  UNKNOWN app/decoders/rc_fatal_errors_database.json\nDuplicate JSON keys: 0\nQUALITY: FAIL\n"
+  },
+  "reference_case_count": 50,
+  "strict_golden_case_count": 0,
+  "autohsd_integration": {
+    "exit_code": 1,
+    "status": "FAIL",
+    "output": "E\n======================================================================\nERROR: test_autohsd_integration (unittest.loader._FailedTest.test_autohsd_integration)\n----------------------------------------------------------------------\nImportError: Failed to import test module: test_autohsd_integration\nTraceback (most recent call last):\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 426, in _find_test_path\n    module = self._get_module_from_name(name)\n  File \"C:\\Python314\\Lib\\unittest\\loader.py\", line 367, in _get_module_from_name\n    __import__(name)\n    ~~~~~~~~~~^^^^^^\n  File \"C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\tests\\test_autohsd_integration.py\", line 14, in <module>\n    from app import analyzer  # noqa: E402\n    ^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\app\\analyzer.py\", line 24, in <module>\n    from .config import config\n  File \"C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\app\\config.py\", line 3, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'\n\n\n----------------------------------------------------------------------\nRan 1 test in 0.000s\n\nFAILED (errors=1)\n"
+  },
+  "hsd_post_gate": "existing analyzer._post_gate; no write performed",
+  "blockers": [
+    "tests failed",
+    "unknown provenance resources: 7",
+    "qualified Golden Cases: 0/30",
+    "AutoHSD integration tests failed"
+  ]
+}

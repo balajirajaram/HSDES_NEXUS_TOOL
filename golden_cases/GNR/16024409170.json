@@ -1,0 +1,45 @@
+{
+  "hsd_id": "16024409170",
+  "platform": "GNR",
+  "domain": "hw.mdf",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "MDF",
+  "expected_reporting_ip": "MDF",
+  "expected_first_error": "MDF",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "16025627513; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "16025627513=known.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "16025627513=known.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/16024409170"
+    ]
+  },
+  "expected": {
+    "owner": "MDF",
+    "reporting_ip": "MDF",
+    "originating_ip": "MDF",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "16025627513"
+  },
+  "title": "[KVL GNRD RP][Cluster] System reporting MCA error and not reachable while running sandstone - SBO_BL_DATA_PAR_ERR - IO/Compute",
+  "description": "Description : System reporting MCA error, not reachable while running sandstone as a part of sandstone test with warm reset. ####################### Dumping MC Banks Data: ####################### -------------------------------------------------------------------------------- MCA ERROR hit!! ::[Error Target = socket0.io0.uncore.ubox] ::[Error_Severity = UC] ::[Expected Interrupt_Signal= MSMI] ::[Error_Description = UBOX ERROR ( mcacod:0x413 desc:SCF Bridge IP:SBO error)( mscod:0x3 desc: SCF IP (from SBO {'PORTID': '0x74d', 'source_name': 'io0:scf_sbo.0.pariddis.3'}) error SBO_BL_DATA_PAR_ERR signaled to ubox MCA.)] ###################################################################### # Error Sev: UC total MachineChecks: 1 # # MC bank : UBOX total MachineChecks: 1 # # Socket : 0 total MachineChecks: 1 # MCA ERROR INFO: ================================================================================================================================================================================== |mcbank_name|mcbank_id|mcbank_index|regpath |mc_status |mc_ctl|mc_ctl2 |mc_addr|mc_misc|error_type|error_signal|desc | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |UBOX |4 |0 |socket0.io0.uncore.ubox.ncevents|0xba00000000030413|0x1f |0x540000001|0x0 |0xe9a86|UC |MSMI |UBOX ERROR ( mcacod:0x413 desc| | | | | | | | | | | | |:SCF Bridge IP:SBO error)( msc| | | | | | | | | | | | |od:0x3 desc: SCF IP (from SBO| | | | | | | | | | | | | {'PORTID': '0x74d', 'source_n| | | | | | | | | | | | |ame': 'io0:scf_sbo.0.pariddis.| | | | | | | | | | | | |3'}) error SBO_BL_DATA_PAR_ER| | | | | | | | | | | | |R signaled to ubox MCA.) | ================================================================================================================================================================================== ###################################################################### Out[3]: [&lt;graniterapidsd.ras.ras_master.mca_master.mca_entry at 0x25ffa993940&gt;] Steps to reproduce: Run sandstone test with warm reset for 50 iterations. Actual Results: The system was not reachable and in hang state during the ongoing test run Expected results: The system should complete the test without going to hang state. System Configuration: Node cs17ca101is0110 QDF Q45T IFWI KVLDCRB1.IPC.0023.D14.2405281257 BMC kvl-24.16-0-g315639-6fddef2 CPLD 3.8",
+  "evidence_source": "reconstructed_from_hsd_description",
+  "machine_evidence": {
+    "mca_events": [],
+    "mcacod": "0X413",
+    "mscod": "0X3"
+  }
+}

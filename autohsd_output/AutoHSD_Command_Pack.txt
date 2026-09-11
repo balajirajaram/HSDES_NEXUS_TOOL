@@ -1,0 +1,469 @@
+NEXUS AutoHSD Command Pack
+
+POLICY: RECOMMENDATION ONLY. NO COMMANDS WERE EXECUTED.
+
+HSD 14023430059 | CWF | MCA
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 14023750934 | CWF | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13013365493 | UNKNOWN | MCA
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13013365497 | UNKNOWN | MCA
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 14023830786 | CWF | Memory
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+- # Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status
+
+HSD 13011141641 | SRF | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 14021933054 | UNKNOWN | PCIe/CXL
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect PCIe AER/CXL error status and device topology
+
+HSD 14022039307 | UNKNOWN | PCIe/CXL
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect PCIe AER/CXL error status and device topology
+
+HSD 14023779609 | CWF | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13010785700 | GNR | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13010785701 | GNR | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13010785702 | GNR | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13011141638 | SRF | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13013367911 | UNKNOWN | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13013368252 | UNKNOWN | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 22019703105 | UNKNOWN | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 22019799080 | UNKNOWN | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 14023831173 | CWF | PCIe/CXL
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect PCIe AER/CXL error status and device topology
+
+HSD 13010785698 | GNR | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13010788085 | GNR | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13010788087 | GNR | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13010788089 | GNR | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13010788090 | GNR | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13010788091 | GNR | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13010788093 | GNR | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13011141637 | SRF | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13011141639 | SRF | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13011141640 | SRF | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13011141642 | SRF | PCIe/CXL
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect PCIe AER/CXL error status and device topology
+
+HSD 13011141643 | SRF | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13011141645 | SRF | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13011141646 | SRF | PCIe/CXL
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect PCIe AER/CXL error status and device topology
+
+HSD 13011141647 | SRF | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13013364737 | UNKNOWN | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13013365077 | UNKNOWN | Memory
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+- # Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status
+
+HSD 13013365080 | UNKNOWN | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 13013368254 | UNKNOWN | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13013368257 | UNKNOWN | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 13014085149 | UNKNOWN | Memory
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+- # Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status
+
+HSD 14021914647 | UNKNOWN | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 14021933048 | UNKNOWN | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 14022048858 | UNKNOWN | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 14027087976 | UNKNOWN | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 14027098529 | UNKNOWN | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 14027098531 | UNKNOWN | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 14027098532 | UNKNOWN | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 14027098533 | UNKNOWN | PCIe/CXL
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect PCIe AER/CXL error status and device topology
+
+HSD 14027147092 | UNKNOWN | Other
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+
+HSD 14027184382 | UNKNOWN | Memory
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+- # Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status
+
+HSD 14027184398 | UNKNOWN | Memory
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+- # Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status
+
+HSD 14027187022 | UNKNOWN | Memory
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+- # Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status
+
+HSD 14027187037 | UNKNOWN | Memory
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+- # Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status
+
+HSD 22019684757 | UNKNOWN | PCIe/CXL
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect PCIe AER/CXL error status and device topology
+
+HSD 22019741379 | UNKNOWN | PCIe/CXL
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect PCIe AER/CXL error status and device topology
+
+HSD 22019783231 | UNKNOWN | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 14023830004 | CWF | BIOS/Boot
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect POST/checkpoint history and BIOS/IFWI/BMC versions
+
+HSD 14023960264 | CWF | MCA
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 14018231367 | GNR | MCA
+- # Recommendation only: collect and attach SOL/serial + PythonSV + crashdump artifacts
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank
+- rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set
+- rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set
+
+HSD 14018914786 | GNR | BIOS/Boot
+- # Recommendation only: collect and attach SOL/serial + PythonSV + crashdump artifacts
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect POST/checkpoint history and BIOS/IFWI/BMC versions
+
+HSD 14023010765 | GNR | BIOS/Boot
+- # Recommendation only: collect and attach SOL/serial + PythonSV + crashdump artifacts
+- # Recommendation only: capture failing and passing runs with identical ingredients
+- # Recommendation only; do not execute automatically
+- sv.sockets  # enumerate actual sockets before selecting a socket-specific read
+- sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc
+- # Recommendation only: collect POST/checkpoint history and BIOS/IFWI/BMC versions

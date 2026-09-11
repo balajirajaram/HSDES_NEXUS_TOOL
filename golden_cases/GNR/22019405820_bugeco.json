@@ -1,0 +1,55 @@
+{
+  "hsd_id": "22019405820",
+  "platform": "GNR",
+  "domain": "Acode",
+  "validation_level": "LEVEL_4_FIX_VALIDATED",
+  "expected_owner": "Acode",
+  "expected_reporting_ip": "Acode",
+  "expected_first_error": "Acode",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "Fixed in Uncore/Acode.",
+  "evidence": {
+    "source": "RTL Bugeco 14021589581; fixed in Fixed in RWC-R0",
+    "validation_source": "RTL Bugeco 14021589581; fixed in Fixed in RWC-R0",
+    "validated_by": "RTL/Silicon validation (bugeco record)",
+    "fix_validated": true,
+    "source_references": [
+      "14021589581"
+    ]
+  },
+  "expected": {
+    "owner": "Acode",
+    "reporting_ip": "Acode",
+    "originating_ip": "Acode",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "Fixed in Uncore/Acode."
+  },
+  "bugeco_id": "14021589581",
+  "secondary_ip": "Power/FW",
+  "title": "[GNR AP B0 PO][Stability] Acode MCA_HAL_IOSF_BRIDGE_RUN_BUSY_TIMEOUT_E and Punit MCA_DISP_RUN_BUSY_TIMEOUT (GPSB hardhang) during G3 cycling or sandstone",
+  "description": "During G3 cycling, during OS load (either in early OS load or shortly after booting) system hits a Fatal Acode MCA causing a kernel panic Issue was reproduced on 2 different GNR_AP B0 1S systems during G3 cycling Failure rate during G3 cycling seems low JF53NOR16BN0304 1S Q4G5 - failed 2/15 G3 cycles JF53NOR07AN0204 1S Q44U - failed 1/16 G3 cycles The core that reports the MCA changes each failure, even on the same system: Failure 1: Serial logs attached: JF53NOR16BN0304_GNR-B0_Q4GS_MCA.log MCA dump attached: JF53NOR16BN0304_Acode-MCA-serial-2024-01-24-120336.log socket0.cpu.core141.ml2_cr_mc3_status = 0xb20000000000040e socket0.cpu.core142.ml2_cr_mc3_status = 0xb20000000000040e socket0.compute2.uncore.core_pmsb.core_pmsb141.core_pmsb_instance.pmsb_top.pma_core.error_report = 0x340b socket0.compute2.uncore.core_pmsb.core_pmsb142.core_pmsb_instance.pmsb_top.pma_core.error_report = 0x340b Failure 2: socket0.cpu.core6.ml2_cr_mc3_status = 0xb20000000000040e socket0.compute0.uncore.core_pmsb.core_pmsb6.core_pmsb_instance.pmsb_top.pma_core.error_report = 0x340b Failure 3: socket0.cpu.core15.ml2_cr_mc3_status = 0xb20000000000040e socket0.compute0.uncore.core_pmsb.core_pmsb21.core_pmsb_instance.pmsb_top.pma_core.error_report = 0x340b [2024-01-25-03:33:06] S0 C6 T0 [Mca]McBankErrorHandler: Skt = 0x0, McBank = 0x3, State = 0x2 [2024-01-25-03:33:06] S0 C6 T1 [Mca]McBankErrorHandler: Skt = 0x0, McBank = 0x3, State = 0x2 [2024-01-25-03:33:06] S0 C6 T0 [CpuRas]MC status 0xB20000000000040E, class FATAL [2024-01-25-03:33:06] S0 C6 T1 [CpuRas]MC status 0xB20000000000040E, class FATAL [2024-01-25-03:33:06] S0 C6 T0 [Mca]McBankErrorHandler: Skt = 0x0, McBank = 0x3, State = 0x4 [2024-01-25-03:33:06] S0 C6 T1 [Mca]McBankErrorHandler: Skt = 0x0, McBank = 0x3, State = 0x4 [2024-01-25-03:33:06] S0 C6 T0 [CpuRas]MC status 0xB20000000000040E, class FATAL [2024-01-25-03:33:06] S0 C6 T1 [CpuRas]MC status 0xB20000000000040E, class FATAL [2024-01-25-03:33:06] S0 C6 T0 [CpuRas]MC status 0xB20000000000040E, class FATAL [2024-01-25-03:33:06] S0 C6 T1 [CpuRas]MC status 0xB20000000000040E, class FATAL The failure can also be hit by running sandstone-v170: sandstone -v -T 20m https://ubit-artifactory-or.intel.com/artifactory/sandstone-or-local/release-binaries/sandstone-170-linux.tar.xz Time to fail is &lt;10 minutes with sandstone Storm\nof UCNA Bank 6 MCA(Punit) followed by Fatal Bank 3 + Bank 6 MCA Failing configs: JF53NOR07AN0204 1S Q44U VID: D4388HN400124 12+0+0 Hynix RA96 6400 1 NIC + 2 Storage 1x E810-CQDA2 2x U.2 NVMe - Intel 3.84TB SSD SSDPF2KX038TZ JF53NOR16BN0304 1S Q4G5 VID: D4388HN400011 12+0+1 Hynix RA96 6400 PE1 - Astera A0 CB128 x16 IFWI ( WW04.4 latest magic, SPIQuadEn) - BHSDCRB1.86B. 2963.D03 .2401240745_GA80000593_SB81000270_GBF9000002_SC830000c0_AP_1_ SPIQuadEn _delAllUc_m_97_a06d1_ 81000130 .bin Other collaterals from WW03 BKC89 BMC Current BMC_BHS_23.49-9 CPLD Current CPLD-BHS_GNR_AVC_AP_5V04_V2 CPLD_PFR Current 723.4",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0xb20000000000040e",
+        "source_text": "0xb20000000000040e"
+      },
+      {
+        "status": "0xB20000000000040E",
+        "source_text": "0xB20000000000040E"
+      }
+    ],
+    "bank": "0X3"
+  }
+}

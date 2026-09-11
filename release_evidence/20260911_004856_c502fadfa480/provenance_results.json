@@ -1,0 +1,14 @@
+{
+  "exit_code": 1,
+  "status": "FAIL",
+  "unknown_trust": [
+    "app/decoders/bank_mapping.json",
+    "app/decoders/ewl_codes_database.json",
+    "app/decoders/ipsd_codes_database.json",
+    "app/decoders/mca_codes_database.json",
+    "app/decoders/mcheck_codes_database.json",
+    "app/decoders/post_codes_database.json",
+    "app/decoders/rc_fatal_errors_database.json"
+  ],
+  "output": "Resources discovered: 15\nInventory entries: 15\nInventory coverage: 100.0%\nMissing inventory: 0\nUnknown trust: 7\n  UNKNOWN app/decoders/bank_mapping.json\n  UNKNOWN app/decoders/ewl_codes_database.json\n  UNKNOWN app/decoders/ipsd_codes_database.json\n  UNKNOWN app/decoders/mca_codes_database.json\n  UNKNOWN app/decoders/mcheck_codes_database.json\n  UNKNOWN app/decoders/post_codes_database.json\n  UNKNOWN app/decoders/rc_fatal_errors_database.json\nDuplicate JSON keys: 0\nQUALITY: FAIL\n"
+}

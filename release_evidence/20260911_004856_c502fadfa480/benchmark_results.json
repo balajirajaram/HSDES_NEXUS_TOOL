@@ -1,0 +1,6 @@
+{
+  "status": "NOT_RUN",
+  "qualified_golden_cases": 0,
+  "reference_cases": 50,
+  "reason": "Canonical release gate does not run live benchmark automatically."
+}

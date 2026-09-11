@@ -1,0 +1,41 @@
+{
+  "hsd_id": "14011352071",
+  "platform": "ICX",
+  "domain": "hw.big_core",
+  "validation_level": "LEVEL_3_REPRODUCED",
+  "expected_owner": "Core",
+  "expected_reporting_ip": "Core",
+  "expected_first_error": "Core",
+  "expected_bank": null,
+  "expected_socket": null,
+  "expected_mcacod": null,
+  "expected_mscod": null,
+  "expected_verdict": "CONFIRMED",
+  "min_confidence": 0,
+  "expected_contradiction": false,
+  "notes": "14011358274; bank/MCACOD/socket not auto-parsed, needs manual annotation",
+  "evidence": {
+    "source": "14011358274=new.hw.bug",
+    "validated_by": "sighting_central RCA process (Intel)",
+    "validation_source": "14011358274=new.hw.bug",
+    "fix_validated": false,
+    "source_references": [
+      "https://hsdes.intel.com/appstore/article/#/14011352071"
+    ]
+  },
+  "expected": {
+    "owner": "Core",
+    "reporting_ip": "Core",
+    "originating_ip": "Core",
+    "bank": null,
+    "socket": null,
+    "mcacod": null,
+    "mscod": null,
+    "verdict": "CONFIRMED",
+    "root_cause": "14011358274"
+  },
+  "title": "ICX segfault with sandstone content",
+  "description": "Seeing segfaults with sandstone content (primarily memcpy_shuffle_v2) when run with new devious minds &quot;mixer&quot; script. This has been seen both with and without M2I mitigations in place. Failures stop when BPU is disabled (big hammer). Some data that also suggests it goes away when DSB is disabled (also big hammer), but less time was spent here. Has not responded to several smaller hammer bits (e.g. all powerdown overrides, other DFV). Lining up to get a PSMI trace next.",
+  "evidence_source": "none",
+  "machine_evidence": null
+}

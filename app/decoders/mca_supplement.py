@@ -64,6 +64,30 @@ def mscod_meaning(mscod: Any, ip: str, product: str) -> Optional[str]:
     return table.get(f"0x{val:X}") or table.get(f"0x{val:04X}")
 
 
+def decoder_ambiguity(mcacod: Any, mscod: Any, ip: str = "",
+                      product: str = "") -> Optional[Dict[str, Any]]:
+    """Return an explicit ambiguity record for known overlapping decodes.
+
+    0x0402/0x4A00 is intentionally not collapsed to one owner/cause: field
+    captures have been interpreted as SAD_OTHER, address parity, or TOR timeout
+    depending on the IP/database context. The caller must gate confirmation.
+    """
+    mc = _to_int(mcacod)
+    ms = _to_int(mscod)
+    if mc == 0x0402 and ms == 0x4A00:
+        return {
+            "state": "AMBIGUOUS_DECODER",
+            "mcacod": "0x0402",
+            "mscod": "0x4A00",
+            "candidates": ["SAD_NON_CORRUPTING_ERR_OTHER",
+                            "ADDR_PARITY_ERROR", "TOR_TIMEOUT"],
+            "reason": "MCACOD/MSCOD has conflicting IP/database interpretations",
+            "ip": ip or None,
+            "product": product or None,
+        }
+    return None
+
+
 def recovery_for_status(status: Any) -> Optional[Dict[str, str]]:
     """Classify OS/RAS recovery from MCi_STATUS severity bits.
 

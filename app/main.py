@@ -42,7 +42,7 @@ from .bugscout_bridge import (
 from .config import config
 from .hsdes_client import HSDESClient
 from .llm_client import llm
-from .node_triage import triage_auto_hsd
+from .node_triage import triage_auto_hsd, triage_auto_hsd_end_to_end
 from .report_html import APP_NAME, render_report_html, render_structured_report_html
 
 app = FastAPI(title="HSDES NEXUS")
@@ -405,7 +405,8 @@ async def api_autohsd_triage(request: Request, body: AutoHsdRequest):
         return JSONResponse(status_code=401, content={"error": "Please sign in first."})
     hsd_id = _normalize_hsd_id(body.hsd_id)
     try:
-        result = await triage_auto_hsd(hsd_id, post=body.post, force=body.force)
+        result = await triage_auto_hsd_end_to_end(
+            hsd_id, dry_run=not body.post, force=body.force)
     except Exception as exc:
         return JSONResponse(status_code=502, content={"error": f"AutoHSD triage failed: {exc}"})
     if result.get("report_markdown"):
