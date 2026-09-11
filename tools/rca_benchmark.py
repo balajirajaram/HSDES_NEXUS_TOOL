@@ -77,6 +77,12 @@ def _normalized_match(expected: str, detected: str) -> bool:
     return _match(normalize_owner_group(expected), normalize_owner_group(detected))
 
 
+def _normalized_owner_ok(expected: str, detected: str) -> Any:
+    """Return the abstraction-aware equivalent of owner_ok, preserving None
+    for cases without an owner label."""
+    return _normalized_match(expected, detected) if expected else None
+
+
 def _optional_match(expected: Any, detected: Any) -> Any:
     """Return None for an unlabeled field, otherwise compare normalized text."""
     if expected in (None, "", []):
@@ -272,11 +278,16 @@ async def _score_case(case: Dict[str, Any], fetch_attachments: bool) -> Dict[str
     contra_miss = exp_contra and not own.get("contradiction")
     field_checks = (owner_ok, reporting_ok, bank_ok, socket_ok, mcacod_ok,
                     mscod_ok, decoder_ok, fe_ok, verdict_ok, conf_ok)
+    normalized_owner_ok = _normalized_owner_ok(expected_owner, own["owning_ip"])
+    normalized_field_checks = (normalized_owner_ok, reporting_ok, bank_ok, socket_ok,
+                               mcacod_ok, mscod_ok, decoder_ok, fe_ok, verdict_ok, conf_ok)
     passed = all(check is not False for check in field_checks)
+    passed_normalized = all(check is not False for check in normalized_field_checks)
     return {
         "hsd_id": hsd_id, "file": case.get("_file", ""),
         "expected_owner": expected_owner, "detected_owner": own["owning_ip"],
-        "owner_ok": owner_ok, "fe_ok": fe_ok, "verdict_ok": verdict_ok, "conf_ok": conf_ok,
+        "owner_ok": owner_ok, "normalized_owner_ok": normalized_owner_ok,
+        "fe_ok": fe_ok, "verdict_ok": verdict_ok, "conf_ok": conf_ok,
         "reporting_ok": reporting_ok, "bank_ok": bank_ok, "socket_ok": socket_ok,
         "mcacod_ok": mcacod_ok, "mscod_ok": mscod_ok, "decoder_ok": decoder_ok,
         "detected_reporting_ip": own["reporting_ip"], "detected_bank": own["bank"],
@@ -287,6 +298,7 @@ async def _score_case(case: Dict[str, Any], fetch_attachments: bool) -> Dict[str
         "false_confirmed": overconfident,
         "named_owner": bool(own["owning_ip"]), "exp_contra": exp_contra,
         "contra_miss": contra_miss, "passed": passed,
+        "passed_normalized": passed_normalized,
     }
 
 
@@ -295,13 +307,14 @@ async def _score_fixture_case(case: Dict[str, Any]) -> Dict[str, Any]:
     if target is None:
         return {"hsd_id": str(case["hsd_id"]), "file": case.get("_file", ""),
                 "expected_owner": (case.get("expected_owner") or "").strip(),
-                "detected_owner": "", "owner_ok": None, "fe_ok": None,
+                "detected_owner": "", "owner_ok": None, "normalized_owner_ok": None, "fe_ok": None,
                 "verdict_ok": None, "conf_ok": None, "reporting_ok": None,
                 "bank_ok": None, "socket_ok": None, "mcacod_ok": None,
                 "mscod_ok": None, "decoder_ok": None, "verdict": "INSUFFICIENT_EVIDENCE",
                 "confidence": 0, "overconfident": False, "false_attr": False,
                 "false_confirmed": False, "named_owner": False, "exp_contra": False,
-                "contra_miss": None, "passed": False, "insufficient_evidence": True,
+                "contra_miss": None, "passed": False, "passed_normalized": False,
+                "insufficient_evidence": True,
                 "evidence_source": "none", "outcome_bucket": "INSUFFICIENT_EVIDENCE",
                 "outcome_reason": "No title/description/log_text/machine_evidence source available in fixture"}
     result = await analyze(str(case["hsd_id"]), f"RCA benchmark: {case.get('notes', '')}",
@@ -350,9 +363,13 @@ async def _score_result(case: Dict[str, Any], result: Dict[str, Any]) -> Dict[st
     contra_miss = exp_contra and not own.get("contradiction")
     checks = (owner_ok, reporting_ok, bank_ok, socket_ok, mcacod_ok, mscod_ok,
               decoder_ok, fe_ok, verdict_ok, conf_ok)
+    normalized_owner_ok = _normalized_owner_ok(expected_owner, own["owning_ip"])
+    normalized_checks = (normalized_owner_ok, reporting_ok, bank_ok, socket_ok,
+                         mcacod_ok, mscod_ok, decoder_ok, fe_ok, verdict_ok, conf_ok)
     return {"hsd_id": str(case["hsd_id"]), "file": case.get("_file", ""),
             "expected_owner": expected_owner, "detected_owner": own["owning_ip"],
-            "owner_ok": owner_ok, "fe_ok": fe_ok, "verdict_ok": verdict_ok,
+            "owner_ok": owner_ok, "normalized_owner_ok": normalized_owner_ok,
+            "fe_ok": fe_ok, "verdict_ok": verdict_ok,
             "conf_ok": conf_ok, "reporting_ok": reporting_ok, "bank_ok": bank_ok,
             "socket_ok": socket_ok, "mcacod_ok": mcacod_ok, "mscod_ok": mscod_ok,
             "decoder_ok": decoder_ok, "detected_reporting_ip": own["reporting_ip"],
@@ -362,7 +379,9 @@ async def _score_result(case: Dict[str, Any], result: Dict[str, Any]) -> Dict[st
             "confidence": own["confidence"], "overconfident": overconfident,
             "false_attr": false_attr, "false_confirmed": overconfident,
             "named_owner": bool(own["owning_ip"]), "exp_contra": exp_contra,
-            "contra_miss": contra_miss, "passed": all(check is not False for check in checks)}
+            "contra_miss": contra_miss,
+            "passed": all(check is not False for check in checks),
+            "passed_normalized": all(check is not False for check in normalized_checks)}
 
 
 def _offline_score_case(case: Dict[str, Any]) -> Dict[str, Any]:
@@ -378,7 +397,9 @@ def _offline_score_case(case: Dict[str, Any]) -> Dict[str, Any]:
     return {
         "hsd_id": str(case["hsd_id"]), "file": case.get("_file", ""),
         "expected_owner": expected_owner, "detected_owner": "",
-        "owner_ok": False if expected_owner else None, "fe_ok": False if labeled_fields["fe_ok"] else None,
+        "owner_ok": False if expected_owner else None,
+        "normalized_owner_ok": False if expected_owner else None,
+        "fe_ok": False if labeled_fields["fe_ok"] else None,
         "verdict_ok": None, "conf_ok": None,
         "reporting_ok": None, "bank_ok": False if labeled_fields["bank_ok"] else None,
         "socket_ok": False if labeled_fields["socket_ok"] else None,
@@ -389,12 +410,13 @@ def _offline_score_case(case: Dict[str, Any]) -> Dict[str, Any]:
         "detected_decoder_state": "", "verdict": "UNAVAILABLE", "confidence": 0,
         "overconfident": False, "false_attr": False, "false_confirmed": False,
         "named_owner": False, "exp_contra": bool(case.get("expected_contradiction")),
-        "contra_miss": None, "passed": False, "offline": True,
+        "contra_miss": None, "passed": False, "passed_normalized": False, "offline": True,
     }
 
 
 async def run(dir_path: str, fetch_attachments: bool, offline: bool = False,
-              timeout_seconds: int = CASE_TIMEOUT_SECONDS) -> int:
+              timeout_seconds: int = CASE_TIMEOUT_SECONDS,
+              normalized_pass: bool = False) -> int:
     root = (REPO_ROOT / dir_path) if not Path(dir_path).is_absolute() else Path(dir_path)
     if not root.exists():
         print(f"No such directory: {root}")
@@ -419,22 +441,25 @@ async def run(dir_path: str, fetch_attachments: bool, offline: bool = False,
             timed_out.append(str(case["hsd_id"]))
             rows.append({"hsd_id": str(case["hsd_id"]), "file": case.get("_file", ""),
                          "expected_owner": case["expected_owner"], "detected_owner": "TIMEOUT",
-                         "owner_ok": False, "fe_ok": None, "verdict_ok": None, "conf_ok": None,
+                         "owner_ok": False, "normalized_owner_ok": False,
+                         "fe_ok": None, "verdict_ok": None, "conf_ok": None,
                          "reporting_ok": None, "bank_ok": None, "socket_ok": None,
                          "mcacod_ok": None, "mscod_ok": None, "decoder_ok": None,
                          "verdict": "TIMEOUT", "confidence": 0, "overconfident": False,
                          "false_attr": False, "false_confirmed": False, "named_owner": False,
                          "exp_contra": False, "contra_miss": False, "passed": False,
+                         "passed_normalized": False,
                          "outcome_bucket": "TIMEOUT", "outcome_reason": f"Per-case timeout after {timeout_seconds}s"})
         except Exception as exc:
             rows.append({"hsd_id": str(case["hsd_id"]), "file": case.get("_file", ""),
                          "expected_owner": case["expected_owner"], "detected_owner": f"ERROR: {exc}",
-                         "owner_ok": False, "fe_ok": None, "verdict_ok": None, "conf_ok": None,
+                         "owner_ok": False, "normalized_owner_ok": False,
+                         "fe_ok": None, "verdict_ok": None, "conf_ok": None,
                          "reporting_ok": None, "bank_ok": None, "socket_ok": None,
                          "mcacod_ok": None, "mscod_ok": None, "decoder_ok": None,
                          "verdict": "", "confidence": 0, "overconfident": False,
                          "false_attr": False, "false_confirmed": False, "named_owner": False, "exp_contra": False,
-                         "contra_miss": False, "passed": False,
+                         "contra_miss": False, "passed": False, "passed_normalized": False,
                          "insufficient_evidence": False, "error": f"{type(exc).__name__}: {exc}",
                          "outcome_bucket": "ERROR", "outcome_reason": f"{type(exc).__name__}: {exc}"})
 
@@ -472,6 +497,7 @@ async def run(dir_path: str, fetch_attachments: bool, offline: bool = False,
     contra_cases = [r for r in rows if r["exp_contra"]]
     contra_miss = (100 * sum(1 for r in contra_cases if r["contra_miss"]) / len(contra_cases)) if contra_cases else None
     passed = sum(1 for r in rows if r["passed"])
+    passed_normalized = sum(1 for r in rows if r.get("passed_normalized", False))
     insufficient = sum(1 for r in rows if r.get("insufficient_evidence"))
     errors = [r for r in rows if r.get("error")]
     predicted = n - insufficient - len(timed_out) - len(errors)
@@ -507,7 +533,8 @@ async def run(dir_path: str, fetch_attachments: bool, offline: bool = False,
     print(f"False Confirmed RCA count: {false_confirmed}")
     print(f"Confidence calibration  : {sum(1 for r in rows if r['overconfident'])}/{n} overconfident cases")
     print(f"Contradiction miss rate : " + (f"{contra_miss:5.1f}%   (target < 5%)" if contra_miss is not None else "  n/a   (no labels)"))
-    print(f"Cases passed            : {passed}/{n}")
+    print(f"Cases passed (strict)     : {passed}/{n}")
+    print(f"Cases passed (normalized) : {passed_normalized}/{n}")
     print(f"Actual predictions      : {predicted}/{n}")
     print(f"Actionable owner preds  : {len(actionable)}/{n}")
     print(f"Insufficient evidence   : {insufficient}/{n}")
@@ -518,7 +545,7 @@ async def run(dir_path: str, fetch_attachments: bool, offline: bool = False,
     print(f"Timed-out cases         : {', '.join(timed_out) if timed_out else 'none'}")
     buckets = Counter(r.get("outcome_bucket", "UNCLASSIFIED") for r in rows)
     print("Outcome buckets          : " + ", ".join(f"{key}={value}" for key, value in sorted(buckets.items())))
-    return 0 if passed == n else 1
+    return 0 if (passed_normalized == n if normalized_pass else passed == n) else 1
 
 
 def main() -> None:
@@ -528,6 +555,8 @@ def main() -> None:
                     help="run fixture-only offline mode with no live network calls")
     ap.add_argument("--offline", action="store_true",
                     help="run fixture-only mode with no HSDES, LLM, or attachment calls")
+    ap.add_argument("--normalized-pass", action="store_true",
+                    help="use abstraction-aware owner matching for the process exit code; strict scoring remains reported")
     ap.add_argument("--timeout", type=int, default=CASE_TIMEOUT_SECONDS,
                     help=f"per-case live analysis timeout in seconds (default: {CASE_TIMEOUT_SECONDS})")
     ap.add_argument("--verbose", action="store_true",
@@ -537,7 +566,8 @@ def main() -> None:
     args_verbose = args.verbose
     offline = args.offline or args.no_attachments
     rc = asyncio.run(run(args.dir, fetch_attachments=not args.no_attachments and not offline,
-                         offline=offline, timeout_seconds=args.timeout))
+                         offline=offline, timeout_seconds=args.timeout,
+                         normalized_pass=args.normalized_pass))
     raise SystemExit(rc)
 
 

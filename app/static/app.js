@@ -120,6 +120,159 @@ function setBadge(id, text, on) {
   el.classList.toggle("off", !on);
 }
 
+function parseBatchIds(text) {
+  const ids = [];
+  const seen = new Set();
+  String(text || "").split(/[\s,;]+/).forEach((value) => {
+    const match = value.match(/\d{8,}/);
+    if (match && !seen.has(match[0])) {
+      seen.add(match[0]);
+      ids.push(match[0]);
+    }
+  });
+  return ids;
+}
+
+function countBatchTokens(text) {
+  return String(text || "").split(/[\s,;]+/).filter((value) => /\d{8,}/.test(value)).length;
+}
+
+function batchPreview() {
+  const ids = parseBatchIds(document.getElementById("batch-ids")?.value);
+  const preview = document.getElementById("batch-preview");
+  if (preview) {
+    preview.textContent = ids.length
+      ? `Found ${ids.length} HSD IDs, duplicates removed: ${countBatchTokens(document.getElementById("batch-ids")?.value) - ids.length}, proceed?`
+      : "No valid HSD IDs found yet.";
+  }
+  return ids;
+}
+
+function setBatchRow(id, values) {
+  const row = document.getElementById(`batch-row-${id}`);
+  if (!row) return;
+  row.querySelector(".batch-status").textContent = values.status || "Waiting";
+  row.querySelector(".batch-verdict").textContent = values.verdict || "—";
+  row.querySelector(".batch-confidence").textContent = `${values.confidence ?? 0}%`;
+  row.querySelector(".batch-owner").textContent = values.owning_ip || "—";
+  row.querySelector(".batch-repro").textContent = values.repro || "—";
+  row.querySelector(".batch-action").textContent = values.action || "—";
+  row.querySelector(".batch-report").innerHTML = values.report_url ? `<a href="${values.report_url}" target="_blank" rel="noopener">View</a>` : "—";
+  row.className = values.status === "Failed" ? "batch-failed" : values.status === "Done" ? "batch-done" : "";
+  if (values.reason) row.title = values.reason;
+}
+
+function renderSuggestedReproCard(repro) {
+  const card = document.getElementById("suggested-repro");
+  if (!card) return;
+  if (!repro) {
+    card.classList.add("hidden");
+    card.innerHTML = "";
+    return;
+  }
+  const result = repro || {};
+  const rows = Array.isArray(result.results) ? result.results : [];
+  if (!rows.length) {
+    const message = result.message || "No sufficiently similar historical case found in the Golden Corpus yet.";
+    card.classList.remove("hidden");
+    card.innerHTML = `<h3>Suggested Reproduction Test</h3><p class="muted">Historical reference only - not used in confidence or verdict calculation.</p><p>${message}</p>`;
+    return;
+  }
+  const top = rows[0];
+  const workload = `${top.tool_name || "unclassified"} ${top.subtest_or_mode || "unclassified"}`.trim();
+  const tierCounts = rows.reduce((acc, row) => {
+    const tier = String(row.evidence_tier || "UNKNOWN");
+    acc[tier] = (acc[tier] || 0) + Number(row.hit_count || 0);
+    return acc;
+  }, {});
+  const fixValidated = Number(tierCounts.LEVEL_4_FIX_VALIDATED || 0);
+  const sourceIds = Array.isArray(top.source_hsd_ids) ? top.source_hsd_ids : [];
+  const sourceLinks = sourceIds.map((id) => `<a href="https://hsdes.intel.com/appstore/article/#/${id}" target="_blank" rel="noopener">${id}</a>`).join(", ");
+  card.classList.remove("hidden");
+  card.innerHTML =
+    `<h3>Suggested Reproduction Test</h3>`
+    + `<p class="muted">Historical reference only - not used in confidence or verdict calculation.</p>`
+    + `<div class="repro-title">${workload}</div>`
+    + `<p><b>Match:</b> ${top.match_type || "UNKNOWN"}</p>`
+    + `<p>Seen in ${Number(top.hit_count || 0)} prior confirmed case(s), including ${fixValidated} fix-validated.</p>`
+    + `<p><b>Trigger context:</b> ${(top.trigger_context || ["unknown"]).join(", ")}</p>`
+    + `<p><b>View source HSDs:</b> ${sourceLinks || "none"}</p>`;
+}
+
+function renderBatchSummary(results) {
+  const summary = document.getElementById("batch-summary");
+  if (!summary) return;
+  const count = (fn) => results.filter(fn).length;
+  const verdicts = ["CONFIRMED", "LIKELY", "WORKING HYPOTHESIS"]
+    .map((name) => `${name}: ${count((r) => String(r.verdict || "").toUpperCase().includes(name))}`).join(" · ");
+  const failures = results.filter((r) => r.status === "Failed");
+  summary.innerHTML = `<h3>Final Summary</h3><p>Total processed: ${results.length} · Posted: ${count((r) => r.action === "Posted")} · Drafted: ${count((r) => r.action === "Draft")} · Failed: ${failures.length}</p><p>${verdicts} · Couldn't be analyzed: ${count((r) => r.status === "Failed")}</p>` + (failures.length ? `<p><b>Failures:</b> ${failures.map((r) => `${r.hsd_id}: ${r.reason || "unknown reason"}`).join("; ")}</p>` : "");
+  summary.classList.remove("hidden");
+}
+
+const batchFile = document.getElementById("batch-file");
+if (batchFile) batchFile.addEventListener("change", () => {
+  const file = batchFile.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const lines = String(reader.result || "").split(/\r?\n/).filter(Boolean);
+    const header = lines.shift().split(",").map((v) => v.trim().toLowerCase());
+    const index = header.indexOf("hsd_id");
+    if (index < 0) {
+      showError("batch-preview", "CSV must contain an hsd_id column.");
+      return;
+    }
+    document.getElementById("batch-ids").value = lines.map((line) => line.split(",")[index] || "").join(", ");
+    batchPreview();
+  };
+  reader.readAsText(file);
+});
+
+const batchForm = document.getElementById("batch-form");
+if (batchForm) batchForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const ids = batchPreview();
+  if (!ids.length || !window.confirm(document.getElementById("batch-preview").textContent)) return;
+  const run = document.getElementById("batch-run");
+  const rows = document.getElementById("batch-rows");
+  const summary = document.getElementById("batch-summary");
+  const progress = document.getElementById("batch-progress");
+  run.classList.remove("hidden");
+  summary.classList.add("hidden");
+  rows.innerHTML = ids.map((id) => `<tr id="batch-row-${id}"><td>${id}</td><td class="batch-status">Waiting</td><td class="batch-verdict">—</td><td class="batch-confidence">—</td><td class="batch-owner">—</td><td class="batch-repro">—</td><td class="batch-action">—</td><td class="batch-report">—</td></tr>`).join("");
+  const results = [];
+  try {
+    const response = await fetch("/api/batch/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ hsd_ids: ids, symptoms: document.getElementById("batch-symptoms").value, fetch_attachments: document.getElementById("batch-fetch").checked }) });
+    if (!response.ok) throw new Error((await response.json()).error || "Batch request failed");
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const part = await reader.read();
+      if (part.done) break;
+      buffer += decoder.decode(part.value, { stream: true });
+      const lines = buffer.split("\n");
+      buffer = lines.pop();
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const result = JSON.parse(line);
+        setBatchRow(result.hsd_id, result);
+        if (result.status === "Done" || result.status === "Failed") {
+          results.push(result);
+          progress.textContent = `${results.length}/${ids.length} complete`;
+        }
+      }
+    }
+    renderBatchSummary(results);
+    progress.textContent = "Complete";
+  } catch (error) {
+    progress.textContent = "Failed";
+    showError("batch-summary", error.message);
+    document.getElementById("batch-summary").classList.remove("hidden");
+  }
+});
+
 document.querySelectorAll(".tab").forEach((tab) => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
@@ -202,6 +355,7 @@ if (analyseForm) {
       btn.textContent = "Analysing...";
     }
     if (report) report.innerHTML = "";
+    renderSuggestedReproCard(null);
     if (meta) {
       meta.classList.add("hidden");
       meta.innerHTML = "";
@@ -229,6 +383,7 @@ if (analyseForm) {
       if (report) {
         report.innerHTML = renderMarkdown(data.report_markdown || "No report returned.");
       }
+      renderSuggestedReproCard(data.suggested_repro || {});
       // Keep the last analysis so the Interactive tab can ground its answers.
       window.__lastAnalysis = {
         hsd_id: _normalizeHsd(document.getElementById("hsd_id").value),

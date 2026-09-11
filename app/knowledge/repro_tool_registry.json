@@ -1,0 +1,75 @@
+{
+  "fallback_tool": "unclassified",
+  "tools": [
+    {
+      "name": "sandstone",
+      "aliases": ["sandstone"]
+    },
+    {
+      "name": "hammer-unified",
+      "aliases": ["hammer-unified", "hammer unified"]
+    },
+    {
+      "name": "TSL",
+      "aliases": ["TSL"]
+    },
+    {
+      "name": "IFS",
+      "aliases": ["IFS", "in-field scan"]
+    },
+    {
+      "name": "ras-unified",
+      "aliases": ["ras-unified", "ras unified"]
+    },
+    {
+      "name": "burnin",
+      "aliases": ["burnin", "burn-in", "burn in"]
+    },
+    {
+      "name": "Mixer",
+      "aliases": ["Mixer", "PAIV-Mixer", "paiv-mixer"]
+    },
+    {
+      "name": "stress-ng",
+      "aliases": ["stress-ng", "stress_ng"]
+    },
+    {
+      "name": "Xprod",
+      "aliases": ["Xprod", "xprod"]
+    },
+    {
+      "name": "custom",
+      "aliases": ["custom"]
+    }
+  ],
+  "triggers": [
+    {
+      "name": "cold_reset",
+      "patterns": ["\\bcold[-_ ]reset\\b", "\\bcold[-_ ]boot\\b", "\\bac[-_ ]cycle\\b"]
+    },
+    {
+      "name": "warm_reset",
+      "patterns": ["\\bwarm[-_ ]reset\\b", "\\breboot\\b", "\\bsoft[-_ ]reset\\b"]
+    },
+    {
+      "name": "G3_cycle",
+      "patterns": ["\\bg3[-_ ]cycle\\b", "\\bg3[-_ ]cycling\\b"]
+    },
+    {
+      "name": "steady_state",
+      "patterns": ["\\bsteady[-_ ]state\\b", "\\bduring\\b", "\\bwhile running\\b"]
+    },
+    {
+      "name": "idle",
+      "patterns": ["\\bidle\\b"]
+    },
+    {
+      "name": "instruction_class",
+      "aliases": ["AMX", "APX", "AVX512"]
+    },
+    {
+      "name": "poison_injection",
+      "patterns": ["\\bpoison\\b", "\\binjection\\b"]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 {
-  "timestamp": "20260911T191113Z",
+  "timestamp": "20260911T180638Z",
   "overall_status": "DEGRADED",
   "modules": [
     {
@@ -8,9 +8,9 @@
       "details": [
         "Interpreter: C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\.venv\\Scripts\\python.exe",
         "Required imports available: 12",
-        "Free disk: 232.92 GiB"
+        "Free disk: 233.00 GiB"
       ],
-      "duration_seconds": 2.125
+      "duration_seconds": 3.008
     },
     {
       "module_name": "regression_suite",
@@ -117,7 +117,7 @@
         "PASS: test_authoritative_bank_map_is_recorded (test_source_provenance.TestSourceProvenance.test_authoritative_bank_map_is_recorded)",
         "PASS: test_inventory_marks_internal_import_as_non_authoritative (test_source_provenance.TestSourceProvenance.test_inventory_marks_internal_import_as_non_authoritative)"
       ],
-      "duration_seconds": 2.213
+      "duration_seconds": 1.093
     },
     {
       "module_name": "source_provenance",
@@ -128,7 +128,7 @@
         "trust_counts={'INTERNAL_VALIDATED': 14, 'AUTHORITATIVE': 5, 'OFFICIAL_INTERNAL': 1}",
         "unknown=none"
       ],
-      "duration_seconds": 0.013
+      "duration_seconds": 0.005
     },
     {
       "module_name": "golden_corpus_integrity",
@@ -142,7 +142,7 @@
         "platforms={'DMR': 16, 'GNR': 4, 'ICX': 5, 'SPR': 19, 'SRF': 3}",
         "levels={'LEVEL_3_REPRODUCED': 33, 'LEVEL_4_FIX_VALIDATED': 14}"
       ],
-      "duration_seconds": 0.341
+      "duration_seconds": 0.13
     },
     {
       "module_name": "safety_invariants",
@@ -156,7 +156,7 @@
         "decoder ambiguity gate: PASS (tests.test_p0_release_gate.TestDecoderAmbiguity.test_known_0402_4a00_is_explicitly_ambiguous)",
         "write-disable force gate: PASS (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_force_true_cannot_bypass_write_disabled)"
       ],
-      "duration_seconds": 0.056
+      "duration_seconds": 0.038
     },
     {
       "module_name": "autohsd_integration",
@@ -178,7 +178,7 @@
         "PASS: test_unreachable_node_is_not_posted (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_unreachable_node_is_not_posted)",
         "PASS: test_write_enabled_allows_gate_passing_post (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_write_enabled_allows_gate_passing_post)"
       ],
-      "duration_seconds": 0.648
+      "duration_seconds": 0.277
     },
     {
       "module_name": "benchmark_sanity",
@@ -190,7 +190,7 @@
         "actionable_predictions=24",
         "outcome_buckets=ACTIONABLE=24, INSUFFICIENT_EVIDENCE=9, NO_BANK_PROVENANCE=1, NO_OWNERSHIP_SIGNAL=13"
       ],
-      "duration_seconds": 7.338
+      "duration_seconds": 4.649
     },
     {
       "module_name": "live_api_health",
@@ -198,16 +198,16 @@
       "details": [
         "API not running: URLError"
       ],
-      "duration_seconds": 2.27
+      "duration_seconds": 2.147
     },
     {
       "module_name": "repo_hygiene",
       "status": "PASS",
       "details": [
-        "dirty_files=32",
+        "dirty_files=24",
         "HSDES_WRITE_ENABLED=false"
       ],
-      "duration_seconds": 0.39
+      "duration_seconds": 0.378
     }
   ],
   "regressions": [

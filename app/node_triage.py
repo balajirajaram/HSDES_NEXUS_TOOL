@@ -89,9 +89,9 @@ _WRITE_COMMAND_PATTERN = re.compile(
 
 _REQUIREMENTS_PATH = Path(__file__).resolve().parent / "knowledge" / "failure_log_requirements.json"
 _CENTRALIZED_SCOPE_NOTE = (
-    "Centralized Elastic sol-*/qpool-*/eventlog-*/bmcjournal-* indices are "
-    "outside NEXUS direct collection scope; request Phoenix AtScale log export "
-    "when historical centralized evidence is needed."
+    "NEXUS direct collection is limited to read-only SSH commands on the node "
+    "and separately configured BMC access; historical centralized logs are not "
+    "collectible by this flow."
 )
 
 
@@ -107,9 +107,13 @@ def _failure_requirements(title: str) -> List[Tuple[str, Dict[str, Any]]]:
     found: List[Tuple[str, Dict[str, Any]]] = []
     for name, requirement in _load_failure_requirements().items():
         aliases = requirement.get("aliases") or []
-        if name == "unknown_generic" or any(re.search(re.escape(alias), text, re.I) for alias in aliases):
+        if name != "unknown_generic" and any(
+                re.search(re.escape(alias), text, re.I) for alias in aliases):
             found.append((name, requirement))
-    return found or [("unknown_generic", _load_failure_requirements().get("unknown_generic", {}))]
+    if found:
+        return found
+    requirements = _load_failure_requirements()
+    return [("unknown_generic", requirements.get("unknown_generic", {}))]
 
 
 def classify_failure(title: str) -> List[str]:
@@ -131,22 +135,20 @@ def classify_failure(title: str) -> List[str]:
 
 
 def _cmds_for(title: str) -> List[Tuple[str, str]]:
-    """Base commands + de-duplicated profile commands for the title's failure type."""
-    cmds = list(_LOG_CMDS)
-    seen = {n for n, _ in cmds}
-    for prof in classify_failure(title):
-        for name, cmd in _PROFILE_CMDS.get(prof, []):
-            if name not in seen:
-                cmds.append((name, cmd))
-                seen.add(name)
+    """Return only registry commands selected by the HSD title.
+
+    The registry is intentionally authoritative: a no-attachment collection
+    must not silently expand into the broad legacy baseline.
+    """
+    cmds: List[Tuple[str, str]] = []
+    seen = set()
     for requirement_name, requirement in _failure_requirements(title):
         for index, command in enumerate(requirement.get("ssh_commands") or []):
             name = f"{requirement_name}_ssh_{index + 1}"
-            if name not in seen:
+            if name not in seen and not _WRITE_COMMAND_PATTERN.search(command):
                 cmds.append((name, command))
                 seen.add(name)
-    return [(name, command) for name, command in cmds
-            if not _WRITE_COMMAND_PATTERN.search(command)]
+    return cmds
 
 
 # A hostname-like bracket token: starts with letters, followed by digits, and has

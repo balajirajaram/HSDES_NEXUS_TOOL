@@ -17,16 +17,22 @@
         </span>
       </div>
       <nav class="nav">
-        <button class="tab active" data-tab="analyse">Analyse</button>
+        <div class="nav-section">Core analysis</div>
+        <button class="tab active" data-tab="analyse">Single HSD Analysis</button>
+        <button class="tab" data-tab="batch">Batch Analysis</button>
         <button class="tab" data-tab="interactive">Interactive</button>
-        <button class="tab" data-tab="batchlearn">Batch Learn</button>
+        <div class="nav-section">Operations</div>
+        <button class="tab" data-tab="batchlearn">KB Batch Learning</button>
         <button class="tab" data-tab="livedebug">Live Debug</button>
         <button class="tab" data-tab="pythonsv">PythonSV</button>
+        <div class="nav-section">Toolbox</div>
         <button class="tab" data-tab="bugbatch">BugScout Batch</button>
         <button class="tab" data-tab="crashdump">Crashdump</button>
         <button class="tab" data-tab="logsearch">Log Search</button>
         <button class="tab" data-tab="handbook">Handbook RAG</button>
         <button class="tab" data-tab="kb">Knowledge Base</button>
+        <div class="nav-section">Visibility</div>
+        <button class="tab" data-tab="status">Build Status / Roadmap</button>
       </nav>
       <div class="sidebar-foot">
         <button id="theme-toggle" type="button" class="theme-toggle">🌙 Dark</button>
@@ -38,7 +44,7 @@
       <header class="topbar">
         <div class="topbar-head">
           <p class="eyebrow">HSD Triage &amp; Root-Cause Tool</p>
-          <h1>HSDES NEXUS <span class="scope">Control Center</span></h1>
+          <h1>NEXUS <span class="scope">HSDES Root-Cause Analysis</span></h1>
           <p class="sub">Reads the HSD ticket + attached logs, decodes the failure, and reports a ranked root cause with evidence and next steps.</p>
         </div>
         <div id="status" class="status-bar">
@@ -79,6 +85,7 @@
         </form>
       </div>
       <div id="meta" class="meta hidden"></div>
+      <div id="suggested-repro" class="card hidden"></div>
       <div id="report" class="report"></div>
 
       <div id="hsd-post" class="card">
@@ -100,6 +107,46 @@
           </div>
           <div id="hsd-post-status" class="hsd-status"></div>
         </div>
+      </div>
+    </section>
+
+    <section id="tab-batch" class="panel">
+      <div class="card">
+        <h2>Batch HSD Analysis</h2>
+        <p class="sub">Paste IDs or load a CSV with an <code>hsd_id</code> column. Each ticket is analyzed independently and streamed into the table below.</p>
+        <form id="batch-form" class="stack">
+          <label>
+            HSD IDs
+            <textarea id="batch-ids" rows="4" placeholder="14028507593, 21044871638, 15019342741"></textarea>
+          </label>
+          <label class="inline">
+            <input id="batch-file" type="file" accept=".csv,text/csv" />
+            <span>Load CSV with an hsd_id column</span>
+          </label>
+          <label>
+            Batch symptoms / context
+            <input id="batch-symptoms" type="text" value="Automated triage" />
+          </label>
+          <label class="inline">
+            <input id="batch-fetch" type="checkbox" checked />
+            <span>Auto-fetch ticket attachments</span>
+          </label>
+          <div id="batch-preview" class="batch-preview" aria-live="polite"></div>
+          <button type="submit" id="batch-preview-btn">Preview Batch</button>
+        </form>
+      </div>
+      <div id="batch-run" class="card hidden">
+        <div class="batch-run-head">
+          <h3>Live Progress</h3>
+          <span id="batch-progress" class="badge">Waiting</span>
+        </div>
+        <div class="table-wrap">
+          <table class="batch-table">
+            <thead><tr><th>HSD ID</th><th>Status</th><th>Verdict</th><th>Confidence</th><th>Owning IP</th><th>Repro</th><th>Action</th><th>View Report</th></tr></thead>
+            <tbody id="batch-rows"></tbody>
+          </table>
+        </div>
+        <div id="batch-summary" class="batch-summary hidden"></div>
       </div>
     </section>
 
@@ -125,7 +172,7 @@
 
     <section id="tab-batchlearn" class="panel">
       <div class="card">
-        <h2>Old Tool Batch Learning</h2>
+        <h2>KB Batch Learning (Knowledge Base Seeding)</h2>
         <form id="batch-learn-form" class="stack three-col">
           <label>
             Product
@@ -367,6 +414,24 @@
       </div>
       <div id="kb-list" class="kb-list"></div>
       <pre id="cache-output" class="console"></pre>
+    </section>
+
+    <section id="tab-status" class="panel">
+      <div class="card status-hero">
+        <p class="eyebrow">Build visibility</p>
+        <h2>Build Status / Roadmap</h2>
+        <p class="sub">A compact view of the current operating posture and the next product horizon.</p>
+      </div>
+      <div class="status-grid">
+        <div class="status-card"><span class="status-kicker">Automated checks</span><strong>91</strong><span>Continuously exercised in the current build</span></div>
+        <div class="status-card"><span class="status-kicker">Reference cases</span><strong>47</strong><span>Historically validated cases across five platforms</span></div>
+        <div class="status-card"><span class="status-kicker">Current focus</span><strong>Evidence</strong><span>Stronger ownership and provenance coverage</span></div>
+      </div>
+      <div class="roadmap-strip">
+        <div><span>Now</span><b>Guarded RCA</b><small>Single and batch analysis with evidence-aware reporting</small></div>
+        <div><span>Next</span><b>Shared deployment</b><small>Make validated workflows easier to operate across teams</small></div>
+        <div><span>Horizon</span><b>Validation at scale</b><small>Broader platform coverage and reusable engineering knowledge</small></div>
+      </div>
     </section>
   </main>
 

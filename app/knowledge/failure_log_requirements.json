@@ -4,7 +4,7 @@
     "ssh_commands": ["journalctl -k --no-pager -n 2000", "dmesg -T"],
     "bmc_commands": ["ipmitool sel elist"],
     "requires_node_reachable": true,
-    "if_unreachable": "Node unavailable -- BIOS/serial console history for this event may only exist in the centralized Elastic sol-*/bmcjournal-* pipeline outside NEXUS's reach; recommend requesting log export from that system if available.",
+    "if_unreachable": "Node unavailable -- no direct SSH evidence could be collected; attach an existing BIOS/serial capture or recover the node before rerunning.",
     "status_scope_domains": ["cpu", "mce"]
   },
   "mce_mca": {
@@ -13,7 +13,7 @@
     "pythonsv_profile": "MCA_RAS",
     "bmc_commands": ["ipmitool sel elist"],
     "requires_node_reachable": true,
-    "if_unreachable": "Node likely down due to fatal MCE/IERR -- only crashdump/ITP capture or the centralized log pipeline may have pre-failure evidence; NEXUS cannot retroactively fetch it via SSH.",
+    "if_unreachable": "Node likely down due to fatal MCE/IERR -- no direct SSH evidence could be collected; use an existing crashdump/ITP capture if available.",
     "status_scope_domains": ["mca", "ubox", "cha"]
   },
   "pcie_cxl": {
@@ -42,7 +42,7 @@
     "ssh_commands": [],
     "bmc_commands": ["ipmitool sel elist"],
     "requires_node_reachable": false,
-    "if_unreachable": "BIOS serial console capture at time of failure is NOT retroactively obtainable via SSH. This requires either the ticket's own attached SOL capture, or the centralized Elastic sol-* pipeline (outside NEXUS's access) captured live during the event.",
+    "if_unreachable": "BIOS serial console capture at time of failure is not retroactively obtainable via SSH; use an existing attached capture if available.",
     "status_scope_domains": []
   },
   "bmc_management": {
@@ -73,7 +73,7 @@
     "ssh_commands": ["dmesg -T", "journalctl --no-pager -n 500"],
     "bmc_commands": ["ipmitool sel elist"],
     "requires_node_reachable": true,
-    "if_unreachable": "Node unavailable -- no direct SSH evidence could be collected. Centralized Elastic sol-*/qpool-*/eventlog-*/bmcjournal-* indices are outside NEXUS's direct collection scope.",
+    "if_unreachable": "Node unavailable -- no direct SSH evidence could be collected through the configured node or BMC paths.",
     "status_scope_domains": []
   }
 }

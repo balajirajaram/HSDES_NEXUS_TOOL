@@ -1,0 +1,698 @@
+{
+  "schema_version": 2,
+  "source": "validated Golden Corpus",
+  "case_count": 47,
+  "entry_count": 32,
+  "recommendation_count": 37,
+  "tool_name_count": 5,
+  "tool_names": [
+    "Mixer",
+    "burnin",
+    "hammer-unified",
+    "sandstone",
+    "unclassified"
+  ],
+  "entries": [
+    {
+      "owning_ip": "Acode",
+      "failure_mechanism": "kernel_panic",
+      "platform": "GNR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "G3_cycle",
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "22019405820"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "CHA",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "cold_reset"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14014613214"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "ConfigROM",
+      "failure_mechanism": "IERR/CATERR",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "46",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14012462331"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "3-strike",
+      "platform": "ICX",
+      "recommendations": [
+        {
+          "tool_name": "Mixer",
+          "subtest_or_mode": "run",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "1707238410"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "3-strike",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "Mixer",
+          "subtest_or_mode": "core-3-strike",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "22014056631"
+          ]
+        },
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "chaos",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14013789944"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "3-strike",
+      "platform": "SRF",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "chaos-lockstep",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "16022337351"
+          ]
+        },
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "poison-error-injection",
+          "trigger_context": [
+            "poison_injection"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14019137156"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "IERR/CATERR",
+      "platform": "DMR",
+      "recommendations": [
+        {
+          "tool_name": "hammer-unified",
+          "subtest_or_mode": "C6-MonitorMWait-0x1",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "14026464067"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "IERR/CATERR",
+      "platform": "SRF",
+      "recommendations": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "15016126803"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "coredump/segfault",
+      "platform": "ICX",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "content",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14011352071"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "other",
+      "platform": "DMR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "branch_tree_icache_focused",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 5,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "15019342741",
+            "15019357856",
+            "15019358385",
+            "15019382716",
+            "15019383400"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "other",
+      "platform": "ICX",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "spinlock-all",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "22010039282"
+          ]
+        },
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "Combo",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14011439924"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "parity",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14013775827"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "poison",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "Combo-Error-found",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "22011493992"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core/BPU",
+      "failure_mechanism": "3-strike",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "Mixer",
+          "subtest_or_mode": "core-3-strike",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "22014056631"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core/FE/BPU",
+      "failure_mechanism": "other",
+      "platform": "DMR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "branch_tree_icache_focused",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 5,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "15019342741",
+            "15019357856",
+            "15019358385",
+            "15019382716",
+            "15019383400"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core/FE/HAM",
+      "failure_mechanism": "coredump/segfault",
+      "platform": "DMR",
+      "recommendations": [
+        {
+          "tool_name": "hammer-unified",
+          "subtest_or_mode": "sandstone-branch_tree_aliasing_type1_prefixed_apx-DSBFE",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 2,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14028507593"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core/FE/HAM",
+      "failure_mechanism": "other",
+      "platform": "DMR",
+      "recommendations": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 2,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "21044871638"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "DSA",
+      "failure_mechanism": "3-strike",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "Povray-Cold-cycle",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14015263050"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "DSA",
+      "failure_mechanism": "other",
+      "platform": "DMR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "subtest-is-detecting",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14026093607"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "MDF",
+      "failure_mechanism": "other",
+      "platform": "GNR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "SBO_BL_DATA_PAR_ERR-IO/Compute",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "16024409170"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "MDF",
+      "failure_mechanism": "parity",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "steady_state",
+            "idle"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14015143476"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Memory/IMC",
+      "failure_mechanism": "IERR/CATERR",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "Warm/IMunch",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14016417265"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Mesh/Fabric",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "burnin",
+          "subtest_or_mode": "cold/warm",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "22015416586"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "RAS",
+      "failure_mechanism": "poison",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "within-TDX-Guest",
+          "trigger_context": [
+            "steady_state",
+            "poison_injection"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14015196045"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Security",
+      "failure_mechanism": "kernel_panic",
+      "platform": "GNR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "sub-tests",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14020056414"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "UNKNOWN",
+      "failure_mechanism": "poison",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "instruction_class:AMX",
+            "poison_injection"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "14015032086"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "UPI",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "burnin",
+          "subtest_or_mode": "Cold_Resest",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14015800984"
+          ]
+        },
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "memcpy-WARM_Cyles",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "22012724143"
+          ]
+        },
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "stress",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14016376372"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "UPI Initialization",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "burnin",
+          "subtest_or_mode": "Cold_Resest",
+          "trigger_context": [
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "14015800984"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Uncore",
+      "failure_mechanism": "kernel_panic",
+      "platform": "GNR",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "G3_cycle",
+            "steady_state"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "22019405820"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Uncore",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "cold_reset"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "14014613214"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "uCode",
+      "failure_mechanism": "other",
+      "platform": "ICX",
+      "recommendations": [
+        {
+          "tool_name": "sandstone",
+          "subtest_or_mode": "spinlock-all",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "22010039282"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "uCode",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "recommendations": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unclassified",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "1404503208"
+          ]
+        }
+      ]
+    }
+  ]
+}

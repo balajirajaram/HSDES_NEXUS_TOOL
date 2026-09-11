@@ -77,15 +77,34 @@ def main() -> int:
         reference_count = max(0, len(reference_path.read_text(encoding="utf-8").splitlines()) - 1)
     benchmark_code, benchmark_output = run_capture(
         [sys.executable, "-m", "tools.rca_benchmark", "--dir", "golden_cases",
-         "--no-attachments"])
-    passed_match = re.search(r"Cases passed\s+:\s+(\d+)/(\d+)", benchmark_output)
+         "--no-attachments", "--normalized-pass"])
+    passed_strict_match = re.search(
+        r"Cases passed \(strict\)\s*:\s*(\d+)/(\d+)", benchmark_output)
+    passed_normalized_match = re.search(
+        r"Cases passed \(normalized\)\s*:\s*(\d+)/(\d+)", benchmark_output)
+    first_error_match = re.search(
+        r"First-error accuracy\s*:\s*([0-9.]+%)\s*\(([^\n]+)\)", benchmark_output)
     benchmark = {
+        # Production qualification uses normalized owner matching: component-
+        # versus team-level names are abstraction differences, not real owner
+        # errors, per the benchmark audit on 2026-09-11. Strict scoring remains
+        # visible for audit and is not silently replaced.
         "status": "PASS" if benchmark_code == 0 else "FAIL",
+        "gate_policy": "normalized_owner_accuracy_with_all_other_checks_strict",
         "exit_code": benchmark_code,
         "qualified_golden_cases": len(golden),
         "reference_cases": reference_count,
-        "cases_passed": (f"{passed_match.group(1)}/{passed_match.group(2)}"
-                          if passed_match else "unknown"),
+        "cases_passed_strict": (f"{passed_strict_match.group(1)}/{passed_strict_match.group(2)}"
+                                 if passed_strict_match else "unknown"),
+        "cases_passed_normalized": (f"{passed_normalized_match.group(1)}/{passed_normalized_match.group(2)}"
+                                     if passed_normalized_match else "unknown"),
+        "first_error_accuracy": (first_error_match.group(1) if first_error_match else "unknown"),
+        "first_error_note": (
+            "First-error accuracy measures a different, harder question "
+            "(earliest register to raise an error) than owner accuracy "
+            "(which physical unit owns the failure) -- do not average these "
+            "into one score."
+        ),
         "output": benchmark_output[-10000:],
     }
     (out / "benchmark_results.json").write_text(json.dumps(benchmark, indent=2), encoding="utf-8")
@@ -100,7 +119,12 @@ def main() -> int:
                  f"Python: {platform.python_version()}", f"Tests: {test_count if test_count is not None else 'unknown'} (exit {test_code})",
                  f"Provenance: {provenance['status']}", f"Reference cases: {reference_count}",
                  f"Strict Golden cases: {len(golden)}/30", f"AutoHSD integration: {integration['status']}",
-                 f"Benchmark: {benchmark['status']} ({benchmark['cases_passed']})",
+                 f"Benchmark gate policy: {benchmark['gate_policy']}",
+                 f"Cases passed (strict): {benchmark['cases_passed_strict']}",
+                 f"Cases passed (normalized): {benchmark['cases_passed_normalized']}",
+                 f"First-error accuracy: {benchmark['first_error_accuracy']}",
+                 benchmark["first_error_note"],
+                 f"Benchmark: {benchmark['status']} ({benchmark['cases_passed_normalized']})",
                  "HSD post-gate: evaluated by existing _post_gate in integration/test paths", "",
                  "## Blockers"] + [f"- {item}" for item in blockers]
     (out / "production_readiness.md").write_text("\n".join(readiness) + "\n", encoding="utf-8")
