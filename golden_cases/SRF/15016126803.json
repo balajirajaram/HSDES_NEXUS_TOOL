@@ -33,5 +33,16 @@
     "mscod": null,
     "verdict": "CONFIRMED",
     "root_cause": "14022573510"
+  },
+  "title": "[BHS SRF-SP][QS][CoVal][DELL][HS7][HSIO] Observe MCERR in GPU pytorch + Xprod_Home_Grown_XORCYST concurrency workload",
+  "description": "Summary: - Observe &quot;SAD Err Non Corrupting other due to 3.Non Nem Cacheable MMIO&quot; while running Pytorch AI workload with NVIDIA L4 GPU + Xprod_Home_Grown_XORCYST(sandstone + fio + mprime) concurrency. - SUT will reset once hit this failure. Dell HS7 platform configuration \ufeff H/W Component Version S/W Component Version Target host name NGSPAIVR17B01H2.gar.corp.intel.com BIOS Version 0.3.33 based on 0030.D.85 CPU (Stepping; QDF) QS Q4VY OSM Version X58 Socket topology 2S OS Version CentOS Stream 9 Memory Config 8+0 Kernel Version 5.14 DIMM Size 64GB CPLD/FPGA Version X12 DIMM type RA64 PCIE device NVIDIA GPU L4 *2, NIC *2 DIMM Vendor Samsung SSD BP 8xE.3 Gen5 BP DIMM Date code NA SSD PM1743 DIMM Speed Rate 6400MT/s This issue can be reproduced on RP(BNC), here is RP configuration. H/W Component Version S/W Component Version Target host name NGSPAIVR18B02H2.gar.corp.intel.com BIOS Version BHSDCRB1.IPC.0030.D85.2403260323 CPU (Stepping; QDF) QS Q4VY BMC Version Socket topology 2S OS Version CentOS Stream 9 Memory Config 8+0 Kernel Version 5.14 DIMM Size 32GB CPLD/FPGA Version DIMM type RC32 PCIE device NVIDIA GPU L4 *2, NIC *1 DIMM Vendor Hynix SSD Micron 7450 MAX NVMe SSD *4 DIMM Date code WW05 2023 DIMM Speed Rate 5600MT/s",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [],
+    "first_error": [
+      {
+        "source_text": "MCERR in GPU pytorch + Xprod_Home_Grown_XORCYST concurrency workload"
+      }
+    ]
   }
 }

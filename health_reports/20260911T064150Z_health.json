@@ -1,0 +1,107 @@
+{
+  "timestamp": "20260911T064150Z",
+  "overall_status": "DEGRADED",
+  "modules": [
+    {
+      "module_name": "environment_sanity",
+      "status": "PASS",
+      "details": [
+        "Interpreter: C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\.venv\\Scripts\\python.exe",
+        "Required imports available: 12",
+        "Free disk: 232.59 GiB"
+      ],
+      "duration_seconds": 2.371
+    },
+    {
+      "module_name": "regression_suite",
+      "status": "PASS",
+      "details": [
+        "exit_code=0",
+        "tests=82"
+      ],
+      "duration_seconds": 1.874
+    },
+    {
+      "module_name": "source_provenance",
+      "status": "PASS",
+      "details": [
+        "resources=18",
+        "coverage=100.0%",
+        "trust_counts={'INTERNAL_VALIDATED': 12, 'AUTHORITATIVE': 5, 'OFFICIAL_INTERNAL': 1}",
+        "unknown=none"
+      ],
+      "duration_seconds": 0.01
+    },
+    {
+      "module_name": "golden_corpus_integrity",
+      "status": "PASS",
+      "details": [
+        "files=49",
+        "parsed=49",
+        "malformed=none",
+        "qualified=47",
+        "platforms={'DMR': 16, 'GNR': 4, 'ICX': 5, 'SPR': 19, 'SRF': 3}",
+        "levels={'LEVEL_3_REPRODUCED': 33, 'LEVEL_4_FIX_VALIDATED': 14}"
+      ],
+      "duration_seconds": 0.409
+    },
+    {
+      "module_name": "safety_invariants",
+      "status": "PASS",
+      "details": [
+        "comment-only root cause: PASS (tests.test_evidence_isolation.TestEvidenceIsolation.test_1_comment_only_root_cause_never_confirmed)",
+        "comment confidence isolation: PASS (tests.test_evidence_isolation.TestEvidenceIsolation.test_12_comment_does_not_change_machine_verdict_or_confidence)",
+        "comment-only KB eligibility: PASS (tests.test_evidence_isolation.TestEvidenceIsolation.test_kb_comment_only_is_unvalidated_and_ineligible)",
+        "UC/PCC fatality: PASS (tests.test_evidence_isolation.TestEvidenceIsolation.test_8_uc_pcc_never_corrected)",
+        "ownership conflict gate: PASS (tests.test_decoder_correctness.TestOwnershipConflict.test_punit_vs_ccf_emits_conflict_and_blocks)",
+        "decoder ambiguity gate: PASS (tests.test_p0_release_gate.TestDecoderAmbiguity.test_known_0402_4a00_is_explicitly_ambiguous)",
+        "write-disable force gate: PASS (tests.test_autohsd_integration.TestAutoHsdClosedLoop.test_force_true_cannot_bypass_write_disabled)"
+      ],
+      "duration_seconds": 0.042
+    },
+    {
+      "module_name": "autohsd_integration",
+      "status": "PASS",
+      "details": [
+        "tests=10",
+        "failed=0",
+        "errors=0"
+      ],
+      "duration_seconds": 0.189
+    },
+    {
+      "module_name": "benchmark_sanity",
+      "status": "WARN",
+      "details": [
+        "completed_within_timeout=Y",
+        "cases=47",
+        "insufficient_evidence=9",
+        "actionable_predictions=2"
+      ],
+      "duration_seconds": 5.712
+    },
+    {
+      "module_name": "live_api_health",
+      "status": "PASS",
+      "details": [
+        "API running: HTTP 200",
+        "/api/me: HTTP 200",
+        "/api/products: HTTP 200"
+      ],
+      "duration_seconds": 0.157
+    },
+    {
+      "module_name": "repo_hygiene",
+      "status": "PASS",
+      "details": [
+        "dirty_files=197",
+        "HSDES_WRITE_ENABLED=false"
+      ],
+      "duration_seconds": 0.479
+    }
+  ],
+  "regressions": [
+    "BASELINE RUN \u2014 no comparison available"
+  ],
+  "interpreter": "C:\\Users\\rbalaji\\OneDrive - Intel Corporation\\Documents\\Intel\\projects_GHCP\\Auto_HSD_analyser_RDT and UPI\\.venv\\Scripts\\python.exe"
+}

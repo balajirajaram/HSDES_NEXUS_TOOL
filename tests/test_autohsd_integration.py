@@ -5,7 +5,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, PropertyMock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -21,6 +21,69 @@ class FakeClient:
 
 
 class TestAutoHsdClosedLoop(unittest.TestCase):
+    def test_kernel_panic_requirements_use_read_only_ssh_commands(self):
+        commands = dict(nt._cmds_for("Kernel Panic: not syncing"))
+        self.assertIn("kernel_panic_ssh_1", commands)
+        self.assertIn("kernel_panic_ssh_2", commands)
+        self.assertIn("journalctl -k --no-pager -n 2000", commands.values())
+        self.assertIn("dmesg -T", commands.values())
+        self.assertNotIn("sol-", " ".join(commands.values()))
+
+    def test_unreachable_kernel_reports_insufficient_evidence(self):
+        result = nt._collect_bmc_sync.__name__
+        self.assertEqual(result, "_collect_bmc_sync")
+        requirements = nt._failure_requirements("Kernel Panic: not syncing")
+        kernel = dict(requirements)["kernel_panic"]
+        self.assertTrue(kernel["requires_node_reachable"])
+        self.assertIn("Node unavailable", kernel["if_unreachable"])
+        self.assertIn("centralized Elastic", kernel["if_unreachable"])
+
+    def test_unreachable_bmc_management_attempts_independent_bmc_path(self):
+        fake_proc = type("Proc", (), {"stdout": "SEL event", "returncode": 0})()
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+            def read(self, _limit):
+                return b"Redfish event"
+
+        with patch.object(nt.config, "BMC_ACCESS_ENABLED", True), \
+             patch.object(nt.config, "BMC_HOST", "bmc.example"), \
+             patch.object(nt.config, "BMC_USER", "admin"), \
+             patch.object(type(nt.config), "BMC_CREDENTIAL", new_callable=PropertyMock, return_value="secret"), \
+             patch.object(nt.subprocess, "run", return_value=fake_proc) as run, \
+             patch.object(nt.urllib.request, "urlopen", return_value=FakeResponse()):
+            result = nt._collect_bmc_sync("BMC Critical Event / Controller Down")
+        self.assertTrue(result["attempted"])
+        self.assertTrue(result["configured"])
+        run.assert_called_once()
+        self.assertNotIn("secret", str(result))
+
+    def test_unreachable_bmc_without_config_is_not_hard_error(self):
+        with patch.object(nt.config, "BMC_ACCESS_ENABLED", False), \
+             patch.object(nt.config, "BMC_HOST", ""), \
+             patch.object(nt.config, "BMC_USER", ""), \
+             patch.object(type(nt.config), "BMC_CREDENTIAL", new_callable=PropertyMock, return_value=""):
+            result = nt._collect_bmc_sync("BMC Critical Event")
+        self.assertFalse(result["attempted"])
+        self.assertEqual(result["status"], "BMC access not configured")
+
+    def test_existing_attachments_skip_direct_collection(self):
+        initial = {"report_markdown": "initial", "attachments": ["document-1"],
+                   "ownership": {}, "extracted_ownership": {}}
+        with tempfile.TemporaryDirectory() as tmp, patch("app.hsdes_client.HSDESClient", return_value=FakeClient()), \
+             patch.object(analyzer, "analyze", new=AsyncMock(return_value=initial)), \
+             patch.object(nt, "collect_node_logs", new=AsyncMock()) as collect, \
+             patch.object(analyzer, "update_hsd_report", new=AsyncMock(return_value={"posted": None, "comment_html": "draft"})), \
+             patch.object(analyzer, "_post_gate", return_value={"allow": False}):
+            with patch.dict("os.environ", {"AUTOHSD_RUN_ROOT": tmp, "AUTOHSD_ALLOW_SSH_COLLECTION": "true"}):
+                result = asyncio.run(nt.triage_auto_hsd_end_to_end("16031734105", dry_run=True))
+        collect.assert_not_awaited()
+        self.assertEqual(result["before_after"]["collection_status"], "NOT RUN")
+
     def test_reachable_collection_creates_before_after_and_dry_run(self):
         initial = {"report_markdown": "initial", "ownership": {}, "extracted_ownership": {}}
         final = {"report_markdown": "final", "ownership": {}, "extracted_ownership": {}}

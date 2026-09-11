@@ -33,5 +33,9 @@
     "mscod": null,
     "verdict": "CONFIRMED",
     "root_cause": "14011358274"
-  }
+  },
+  "title": "[ICX] [Whitley] [Cluster] [memcpy] Multiple systems failing Sandstone Combo Tests - memcpy tests as main failure signature",
+  "description": "log.keyword:\n Descending \n \n \n Not ok memcpy_shuffle_v2 AND ok\n memcpy_variations_dyn \n \n \n not ok memcpy_shuffle_v2 AND ok\n memcpy_variations_dyn \n \n \n ok memcpy_variations_dyn AND not ok\n memcpy_shuffle_v2",
+  "evidence_source": "none",
+  "machine_evidence": null
 }

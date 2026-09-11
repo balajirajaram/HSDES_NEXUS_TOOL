@@ -33,5 +33,9 @@
     "mscod": null,
     "verdict": "CONFIRMED",
     "root_cause": "14014426996"
-  }
+  },
+  "title": "[Cluster][EGS SPR B0] [C2] MCA_PKGS_UNIT_TYPE_SCFUBOX_TIMEOUT issue running ive-stressng-memory - sandstone memcpy : WARM_Cyles and Jasper-Oasis",
+  "description": "-MCA_PKGS_UNIT_TYPE_SCFUBOX_TIMEOUT found during execution ive-stressng-memory Logs attached : r06s17.zp31l10b01zip &gt;&gt;&gt; sv.socket0.uncore.punit.mc_status.show() 0x00000001 : valid (63:63) -- Indicates that this register contains a valid... 0x00000000 : ovr (62:62) -- Another MCA error was detected when VALID was a... 0x00000001 : uc (61:61) -- Indicates (when set) that the processor did not ... 0x00000001 : en (60:60) -- Enable bit - Whether the logged error was enable... 0x00000001 : miscv (59:59) -- MISCV: The value held in the MC4_MISC_MSR is ... 0x00000000 : addrv (58:58) -- ADDRV: The address held in the MC4_ADDR_MSR i... 0x00000001 : pcc (57:57) -- &lt;p&gt;PCC: Processor context corrupt&lt;/p&gt; &lt;p&gt;Indica... 0x00000000 : s (56:56) -- &lt;p&gt;Signals the reporting of uncorrected, but reco... 0x00000000 : ar (55:55) -- Indicates (when set) that MCA error code specifi... 0x00000000 : thrs_err_st (54:53) -- Status tracking for Green/Yellow 0x00000000 : corr_err_count (52:38) -- Correctable error count. Indicated t... 0x00000000 : fw_upd (37:37) -- Indicates that the BIOS has updated the cont... 0x00000000 : other_info (36:32) -- If IA32_MCG_CAP.MCG_ELOG_P is 1, &quot;Other ... 0x0000007d : msec_fw (31:24) -- MCA_PKGS_UNIT_TYPE_SCFUBOX_TIMEOUT - SCFUBO... 0x00000000 : msec_hw (23:20) -- No Error -- Model specific error code bits ... 0x00000000 : msec_uc (19:16) -- No Error -- Model specific error code bits ... 0x00000402 : mccod (15:00) -- PCU errors (uC, FW) -- Machine Check Error Code System Configuration: IFWI: EGSDCRB1.86B.0054.D26.2103101340 BMC: egs-0.43-0-gb61473-983ec41 OS: CentOS 8.3 Intel-Next 5.11",
+  "evidence_source": "none",
+  "machine_evidence": null
 }

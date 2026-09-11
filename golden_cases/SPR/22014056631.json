@@ -33,5 +33,9 @@
     "mscod": null,
     "verdict": "CONFIRMED",
     "root_cause": "14015246479"
-  }
+  },
+  "title": "Mixer core 3-strike with sandstone tsx x bit_test, and DFV",
+  "description": "With these two DFV set: al_cr_testmode.force_2jeu_watchdog=0x1 rat_cr_defeature1_h.immf_sync_lfsr_enable=0x1 , I am observing a repeatable single core-3 strike with mixer that I was able boil down to this repro recipe: /root/sandstone-90 --beta --cpuset=0 -o /dev/null -e tsx_test_nested -q -s LCG:67551390 -T 60s &gt; /dev/null & /root/sandstone-90 --beta --cpuset=$c0t1 -o /dev/null -e bit_test -q -s LCG:273795509 -T 60s where $c0t1 is the thread1 sibling of CPU0 Ilya has taken a look at an AFD, provided this feedback. We are running single-uops flow. \n\n Some sort of tight software loop. \n\n You can see that last uop in IDQ is the same as last uop\nbefore series of UNFOLD uops, which are probably some sort of repeated inserted\nflow. \n\n I would guess, that the uop comes as reaction to something\non thread 1 after we already got stuck and only when thread 1 also got stuck,\nthey ceased to appear. \n\n Bottom line \u2013 in the failure FE is stuck and not bringing\nany new uops. Not sure if it\u2019s IQ or BPU. AFD is located here: \\\\amr\\ec\\proj\\debug\\SPR\\Sightings\\SPR_D0\\ Israel Paz provided feedback that he is not aware of any known issues with these specific DFV. Tomer Hazan is queuing this up for PSMI in IDC given its relative ease of reproducibility... this will be the best next step. Weak datapoint: I have seen some evidence that this recovers with the powerdown override bpu1_cr_pwrdnovrd.tbiq_jeu_port set, though I feel I need more time testing that to state it definitively.",
+  "evidence_source": "none",
+  "machine_evidence": null
 }

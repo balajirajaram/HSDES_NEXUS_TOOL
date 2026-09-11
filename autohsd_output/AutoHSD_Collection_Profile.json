@@ -1,0 +1,1945 @@
+{
+  "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+  "profiles": [
+    {
+      "hsd_id": "14023430059",
+      "platform": "CWF",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "vseethar",
+      "missing_evidence": [],
+      "required_data": [],
+      "commands": [
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14023750934",
+      "platform": "CWF",
+      "domain": "MCA",
+      "current_tier": "BRONZE",
+      "owner": "gmuppala",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13013365493",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "shashish",
+      "missing_evidence": [
+        "independent root cause"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        }
+      ],
+      "commands": [
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13013365497",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "hkuzhicx",
+      "missing_evidence": [
+        "independent root cause"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        }
+      ],
+      "commands": [
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14023830786",
+      "platform": "CWF",
+      "domain": "Memory",
+      "current_tier": "BRONZE",
+      "owner": "gmuppala",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set",
+        "# Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141641",
+      "platform": "SRF",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "linmatt2",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14021933054",
+      "platform": "UNKNOWN",
+      "domain": "PCIe/CXL",
+      "current_tier": "REJECT",
+      "owner": "jquianzo",
+      "missing_evidence": [
+        "independent root cause"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        }
+      ],
+      "commands": [
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect PCIe AER/CXL error status and device topology"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14022039307",
+      "platform": "UNKNOWN",
+      "domain": "PCIe/CXL",
+      "current_tier": "REJECT",
+      "owner": "vimarti",
+      "missing_evidence": [
+        "independent root cause"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        }
+      ],
+      "commands": [
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect PCIe AER/CXL error status and device topology"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14023779609",
+      "platform": "CWF",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "gmuppala",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010785700",
+      "platform": "GNR",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "dtoralva",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010785701",
+      "platform": "GNR",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "dtoralva",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010785702",
+      "platform": "GNR",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "dtoralva",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141638",
+      "platform": "SRF",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "linmatt2",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13013367911",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "shashish",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13013368252",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "shashish",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "22019703105",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "vimarti",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "22019799080",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "vimarti",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14023831173",
+      "platform": "CWF",
+      "domain": "PCIe/CXL",
+      "current_tier": "REJECT",
+      "owner": "vhosaman",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect PCIe AER/CXL error status and device topology"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010785698",
+      "platform": "GNR",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jadelaoy",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010788085",
+      "platform": "GNR",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jadelaoy",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010788087",
+      "platform": "GNR",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jadelaoy",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010788089",
+      "platform": "GNR",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jadelaoy",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010788090",
+      "platform": "GNR",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jadelaoy",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010788091",
+      "platform": "GNR",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jadelaoy",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13010788093",
+      "platform": "GNR",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jadelaoy",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141637",
+      "platform": "SRF",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jessielu",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141639",
+      "platform": "SRF",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "linmatt2",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141640",
+      "platform": "SRF",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "linmatt2",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141642",
+      "platform": "SRF",
+      "domain": "PCIe/CXL",
+      "current_tier": "REJECT",
+      "owner": "jessielu",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect PCIe AER/CXL error status and device topology"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141643",
+      "platform": "SRF",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "ptonongi",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141645",
+      "platform": "SRF",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "ptonongi",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141646",
+      "platform": "SRF",
+      "domain": "PCIe/CXL",
+      "current_tier": "REJECT",
+      "owner": "jessielu",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect PCIe AER/CXL error status and device topology"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13011141647",
+      "platform": "SRF",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jessielu",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13013364737",
+      "platform": "UNKNOWN",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "shashish",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13013365077",
+      "platform": "UNKNOWN",
+      "domain": "Memory",
+      "current_tier": "REJECT",
+      "owner": "shashish",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set",
+        "# Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13013365080",
+      "platform": "UNKNOWN",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "shashish",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13013368254",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "shashish",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13013368257",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "shashish",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "13014085149",
+      "platform": "UNKNOWN",
+      "domain": "Memory",
+      "current_tier": "REJECT",
+      "owner": "ryakkati",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set",
+        "# Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14021914647",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "vimarti",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14021933048",
+      "platform": "UNKNOWN",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "jquianzo",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14022048858",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "vimarti",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027087976",
+      "platform": "UNKNOWN",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027098529",
+      "platform": "UNKNOWN",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027098531",
+      "platform": "UNKNOWN",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027098532",
+      "platform": "UNKNOWN",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027098533",
+      "platform": "UNKNOWN",
+      "domain": "PCIe/CXL",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect PCIe AER/CXL error status and device topology"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027147092",
+      "platform": "UNKNOWN",
+      "domain": "Other",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027184382",
+      "platform": "UNKNOWN",
+      "domain": "Memory",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set",
+        "# Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027184398",
+      "platform": "UNKNOWN",
+      "domain": "Memory",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set",
+        "# Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027187022",
+      "platform": "UNKNOWN",
+      "domain": "Memory",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set",
+        "# Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14027187037",
+      "platform": "UNKNOWN",
+      "domain": "Memory",
+      "current_tier": "REJECT",
+      "owner": "rbalaji",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set",
+        "# Recommendation only: collect IMC/DDR retry, CRC, DIMM/rank, and memory-controller status"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "22019684757",
+      "platform": "UNKNOWN",
+      "domain": "PCIe/CXL",
+      "current_tier": "REJECT",
+      "owner": "jquianzo",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect PCIe AER/CXL error status and device topology"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "22019741379",
+      "platform": "UNKNOWN",
+      "domain": "PCIe/CXL",
+      "current_tier": "REJECT",
+      "owner": "vimarti",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect PCIe AER/CXL error status and device topology"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "22019783231",
+      "platform": "UNKNOWN",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "vimarti",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14023830004",
+      "platform": "CWF",
+      "domain": "BIOS/Boot",
+      "current_tier": "REJECT",
+      "owner": "",
+      "missing_evidence": [
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect POST/checkpoint history and BIOS/IFWI/BMC versions"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14023960264",
+      "platform": "CWF",
+      "domain": "MCA",
+      "current_tier": "REJECT",
+      "owner": "gmuppala",
+      "missing_evidence": [
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14018231367",
+      "platform": "GNR",
+      "domain": "MCA",
+      "current_tier": "BRONZE",
+      "owner": "diegog3",
+      "missing_evidence": [
+        "attachments/logs",
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "SOL/PythonSV/crashdump logs",
+          "why": "No machine evidence is attached",
+          "benefit": "Enables MCA, boot, socket, and ownership decoding"
+        },
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: collect and attach SOL/serial + PythonSV + crashdump artifacts",
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "rdmsr -a 0x401+4*N  # collect MCi_STATUS for each relevant bank",
+        "rdmsr -a 0x402+4*N  # collect MCi_ADDR when ADDRV is set",
+        "rdmsr -a 0x403+4*N  # collect MCi_MISC when MISCV is set"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14018914786",
+      "platform": "GNR",
+      "domain": "BIOS/Boot",
+      "current_tier": "BRONZE",
+      "owner": "kvannam",
+      "missing_evidence": [
+        "attachments/logs",
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "SOL/PythonSV/crashdump logs",
+          "why": "No machine evidence is attached",
+          "benefit": "Enables MCA, boot, socket, and ownership decoding"
+        },
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: collect and attach SOL/serial + PythonSV + crashdump artifacts",
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect POST/checkpoint history and BIOS/IFWI/BMC versions"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    },
+    {
+      "hsd_id": "14023010765",
+      "platform": "GNR",
+      "domain": "BIOS/Boot",
+      "current_tier": "BRONZE",
+      "owner": "srkeesar",
+      "missing_evidence": [
+        "attachments/logs",
+        "independent root cause",
+        "reproduction or fix validation"
+      ],
+      "required_data": [
+        {
+          "data": "SOL/PythonSV/crashdump logs",
+          "why": "No machine evidence is attached",
+          "benefit": "Enables MCA, boot, socket, and ownership decoding"
+        },
+        {
+          "data": "Independent RCA evidence",
+          "why": "Current RCA is absent or not independently supported",
+          "benefit": "Separates machine evidence from human hypothesis"
+        },
+        {
+          "data": "Reproduction or pass/fail comparison",
+          "why": "No reproducibility or fix-validation record is present",
+          "benefit": "Supports Level 3/Level 4 qualification"
+        }
+      ],
+      "commands": [
+        "# Recommendation only: collect and attach SOL/serial + PythonSV + crashdump artifacts",
+        "# Recommendation only: capture failing and passing runs with identical ingredients",
+        "# Recommendation only; do not execute automatically",
+        "sv.sockets  # enumerate actual sockets before selecting a socket-specific read",
+        "sv.<resolved_socket>.uncore.mca.dump()  # collect MCA status/address/misc",
+        "# Recommendation only: collect POST/checkpoint history and BIOS/IFWI/BMC versions"
+      ],
+      "execution_policy": "RECOMMENDATION_ONLY_NOT_EXECUTED",
+      "expected_benefit": "Increase evidence completeness and permit re-analysis"
+    }
+  ]
+}

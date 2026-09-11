@@ -33,5 +33,9 @@
     "mscod": null,
     "verdict": "CONFIRMED",
     "root_cause": "14011358274"
-  }
+  },
+  "title": "ICX segfault with sandstone content",
+  "description": "Seeing segfaults with sandstone content (primarily memcpy_shuffle_v2) when run with new devious minds &quot;mixer&quot; script. This has been seen both with and without M2I mitigations in place. Failures stop when BPU is disabled (big hammer). Some data that also suggests it goes away when DSB is disabled (also big hammer), but less time was spent here. Has not responded to several smaller hammer bits (e.g. all powerdown overrides, other DFV). Lining up to get a PSMI trace next.",
+  "evidence_source": "none",
+  "machine_evidence": null
 }

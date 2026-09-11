@@ -117,6 +117,16 @@ class Config:
     SUT_SSH_PORT = int(os.getenv("SUT_SSH_PORT", "22"))
     SUT_SSH_DOMAIN = os.getenv("SUT_SSH_DOMAIN", "")  # optional FQDN suffix
 
+    # Optional independent BMC collection. Credentials are never returned or
+    # written to audit artifacts.
+    BMC_ACCESS_ENABLED = os.getenv("BMC_ACCESS_ENABLED", "false").lower() in {"1", "true", "yes"}
+    BMC_HOST = os.getenv("BMC_HOST", "")
+    BMC_USER = os.getenv("BMC_USER", "")
+
+    @property
+    def BMC_CREDENTIAL(self) -> str:
+        return os.getenv("BMC_CREDENTIAL", "")
+
     @property
     def SUT_SSH_PASSWORD(self) -> str:
         return os.getenv("SUT_SSH_PASSWORD", "")

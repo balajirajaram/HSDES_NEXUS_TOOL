@@ -33,5 +33,21 @@
     "mscod": null,
     "verdict": "CONFIRMED",
     "root_cause": "14026515562"
+  },
+  "title": "[DMR][BugNinja] System hang with 3Strike while running hammer-unified and C6 (MonitorMWait=0x1)",
+  "description": "Description: The system gets hit a 3strike while running sandstone-dsa-ops-mix during hammer-unified # PRNG seed = 0x1c1ecb43ef06ccdaa7a6e266776fcb613e9b3c6e615ca2abe00ae9c401c38d03\n# executing sandstone-dsa-ops-mix\n# subtest runtime 1200.0s\n# subtest 12.1 cmd: sandstone -e @dsa -T 20m -F -o /dev/null\n# [\u2801 \u28ff\u287f\u285f| CPU: 6.90% @ 1237 MHz | Mem: 1.00% | \u2588\u2588\u2588\u2588\u2588\u2588\u258d 25%\n Error Signature: FOUND VALID MCA\nsocket0.cbb0.compute2.module22.ml2_cr_mc3_status = 0xbe000000e1c20400 \nsocket0.cbb0.compute2.module22.ml2_cr_mc3_addr = 0xffffffff812fa210 \nsocket0.cbb0.compute2.pma22.pmsb.error_report = 0x3f\nsocket0.imh0.rasip.root_ras.rasip_regs_block.rasip_reg_msg_mem_rasip_error_handler_domain.reg_ierrloggingreg = 0x306e8\nsocket0.imh0.rasip.root_ras.rasip_regs_block.rasip_reg_msg_mem_rasip_error_handler_domain.reg_cbb0_ierrloggingreg = 0x306e8",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0xbe000000e1c20400",
+        "source_text": "0xbe000000e1c20400"
+      }
+    ],
+    "first_error": [
+      {
+        "source_text": "ierrloggingreg = 0x306e8"
+      }
+    ]
   }
 }

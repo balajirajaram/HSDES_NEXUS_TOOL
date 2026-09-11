@@ -33,5 +33,16 @@
     "mscod": null,
     "verdict": "CONFIRMED",
     "root_cause": "22012599236"
+  },
+  "title": "[EGS][SPR B0,D0] [Cluster] [Lemongrass]Core 3-strike running sandstone-chaos",
+  "description": "Core 3-strike found during execution ive-vt-auto-reboot, sandstone-chaos and DoL. Logs attached : r15s18-cluster-core4-3strike-afd.zip socket0.cpu.core4.ml2_cr_mc3_status = 0xe200000000800400 0x00000400 : mcacod (15:00) -- Machine Check Architecture Error Code 0x00000080 : mscod (31:16) -- Model Specific Error Code 0x00000000 : enh_mca_avail0 (37:32) -- Available when Enhanced MCA is in use 0x00000000 : cec (52:38) -- Correctable Error Count 0x00000000 : bitfix_allocated (53:53) -- Status tracking is Green if this bit is set when a logged error is allocate... 0x00000000 : bitfix_overcapacity (54:54) -- Status tracking is Yellow if this bit is set when a logged error overflo... 0x00000000 : ar (55:55) -- set on SRAR error type 0x00000000 : s (56:56) -- set on SRAR and SRAO error types 0x00000001 : pcc (57:57) -- Processor Context Corrupt 0x00000000 : addrv (58:58) -- MC3_ADDR register valid 0x00000000 : miscv (59:59) -- MC3_MISC register valid 0x00000000 : en (60:60) -- Error Enabled 0x00000001 : uc (61:61) -- Uncorrectable Error 0x00000001 : over (62:62) -- Machine Check Overflow 0x00000001 : val (63:63) -- Status register Valid None &gt;&gt;&gt; &gt;&gt;&gt; &gt;&gt;&gt; from sapphirerapids import debug &gt;&gt;&gt; debug.core.core_live_status(4) Socket 0: ################################################## ############## Socket0 Core4 status ############## ################################################## socket0.core4 is active Thread active is:3 UIP tracker info +----------------+------------+------------+ | Title | Thread 0 | Thread 1 | +================+============+============+ | MSBusy | 1 | 0 | +----------------+------------+------------+ | Current MS UIP | 0x49ad | 0x6d54 | +----------------+------------+------------+ | Next MS UIP | 0x0 | 0x0 | +----------------+------------+------------+ | Next ROB UIP | 0x0 | 0x0 | +----------------+------------+------------+ | Next ROB label | U0000 | U0000 | +----------------+------------+------------+ | RONuke | 1 | 0 | +----------------+------------+------------+ ROB tail info +------------------+------------+-------------+ | Title | Thread 0 | Thread 1 | +==================+============+=============+ | ROB/RAT pointers | 0x0/0x106 | 0x18a/0x217 | +------------------+------------+-------------+ | ROB tail check | Hung | Hung | +------------------+------------+-------------+ SQ status info No valid SQ entries Lock-FSM check broken!!! System Configuration: EGS 2S B0: QWNY EBG A1 Pre-ES2 QDF QV5V IFWI: 53.D52 BMC: BMCv36 CPLD: 629.1 OS: CentOS 8.3 Intel-Next 5.11",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0xe200000000800400",
+        "source_text": "0xe200000000800400"
+      }
+    ]
   }
 }

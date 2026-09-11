@@ -9,6 +9,7 @@ if str(ROOT) not in sys.path:
 
 from app.analyzer import _post_gate
 from app.historical_repro import match_historical_repro, render_section
+from tools.rca_benchmark import _fixture_machine_input
 
 
 class TestHistoricalRepro(unittest.TestCase):
@@ -55,6 +56,19 @@ class TestHistoricalRepro(unittest.TestCase):
         result["report_markdown"] += "\n" + render_section(None)
         after = _post_gate(result)
         self.assertEqual(before, after)
+
+    def test_fixture_without_raw_evidence_is_insufficient(self):
+        target, log_text, source = _fixture_machine_input({"hsd_id": "1", "notes": "expected MCACOD 0x402"})
+        self.assertIsNone(target)
+        self.assertEqual(log_text, "")
+        self.assertEqual(source, "")
+
+    def test_title_evidence_is_reconstructed_and_marked(self):
+        target, log_text, source = _fixture_machine_input({
+            "hsd_id": "1", "title": "MCE status: 0xBD80000000100134"})
+        self.assertIsNotNone(target)
+        self.assertEqual(source, "reconstructed_from_hsd_title")
+        self.assertIn("0xBD80000000100134", log_text)
 
 
 if __name__ == "__main__":

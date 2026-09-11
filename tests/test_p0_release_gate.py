@@ -62,6 +62,8 @@ class TestGoldenFixture(unittest.TestCase):
         case = json.loads(path.read_text(encoding="utf-8"))
         self.assertEqual(case["hsd_id"], "16031734105")
         self.assertTrue(case["expected_contradiction"])
+        self.assertEqual(case["expected_reporting_ip"], "CCF")
+        self.assertEqual(case["expected_bank"], "6")
         self.assertEqual(case["expected_socket"], "1")
         self.assertEqual(case["expected_banks"], ["4", "6"])
         self.assertEqual(case["expected_decoder_state"], "AMBIGUOUS_DECODER")

@@ -1,0 +1,6 @@
+hsd_id,platform,current_tier,recommended_tier,evidence_found,evidence_missing,confidence,gold_eligible,platinum_eligible,owner,reviewer_needed,recommendation,why
+14023750934,CWF,BRONZE,BRONZE,PASS_FAIL_EXPERIMENT;REPRODUCTION,,0.30,No,No,gmuppala,No,REJECT,Evidence signal requires human validation
+14023830786,CWF,BRONZE,BRONZE,REPRODUCTION,,0.30,No,No,gmuppala,No,REJECT,Evidence signal requires human validation
+14018231367,GNR,BRONZE,BRONZE,PASS_FAIL_EXPERIMENT;RELATED_VALIDATED_CASE,,0.30,No,No,diegog3,No,REJECT,Evidence signal requires human validation
+14018914786,GNR,BRONZE,BRONZE,ENGINEER_AGREEMENT,independent validation,0.30,No,No,kvannam,No,REJECT,independent validation
+14023010765,GNR,BRONZE,BRONZE,PASS_FAIL_EXPERIMENT;RELATED_VALIDATED_CASE,,0.30,No,No,srkeesar,No,REJECT,Evidence signal requires human validation

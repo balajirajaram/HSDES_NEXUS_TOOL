@@ -1,0 +1,62 @@
+test_bank4_status_also_uncorrected_fatal (test_decoder_correctness.TestFatalityClassifier.test_bank4_status_also_uncorrected_fatal) ... ok
+test_corrected_status (test_decoder_correctness.TestFatalityClassifier.test_corrected_status) ... ok
+test_invalid_status (test_decoder_correctness.TestFatalityClassifier.test_invalid_status) ... ok
+test_uc_pcc_is_uncorrected_fatal_never_corrected (test_decoder_correctness.TestFatalityClassifier.test_uc_pcc_is_uncorrected_fatal_never_corrected) ... ok
+test_ownership_fatality_never_corrected (test_decoder_correctness.TestOwnershipConflict.test_ownership_fatality_never_corrected) ... ok
+test_punit_vs_ccf_emits_conflict_and_blocks (test_decoder_correctness.TestOwnershipConflict.test_punit_vs_ccf_emits_conflict_and_blocks) ... ok
+test_same_ip_no_conflict (test_decoder_correctness.TestOwnershipConflict.test_same_ip_no_conflict) ... ok
+test_bank4 (test_decoder_correctness.TestRegisterAddrs.test_bank4) ... ok
+test_bank6 (test_decoder_correctness.TestRegisterAddrs.test_bank6) ... ok
+test_12_comment_does_not_change_machine_verdict_or_confidence (test_evidence_isolation.TestEvidenceIsolation.test_12_comment_does_not_change_machine_verdict_or_confidence) ... ok
+test_1_comment_only_root_cause_never_confirmed (test_evidence_isolation.TestEvidenceIsolation.test_1_comment_only_root_cause_never_confirmed) ... ok
+test_8_uc_pcc_never_corrected (test_evidence_isolation.TestEvidenceIsolation.test_8_uc_pcc_never_corrected) ... ok
+test_extract_findings_comment_only_not_confirmed (test_evidence_isolation.TestEvidenceIsolation.test_extract_findings_comment_only_not_confirmed) ... ok
+test_kb_comment_only_is_unvalidated_and_ineligible (test_evidence_isolation.TestEvidenceIsolation.test_kb_comment_only_is_unvalidated_and_ineligible) ... ok
+test_blind_comparison_detects_machine_influence (test_golden_candidates.TestGoldenCandidates.test_blind_comparison_detects_machine_influence) ... ok
+test_comment_only_rca_cannot_be_gold (test_golden_candidates.TestGoldenCandidates.test_comment_only_rca_cannot_be_gold) ... ok
+test_fix_validated_candidate_is_pending_platinum (test_golden_candidates.TestGoldenCandidates.test_fix_validated_candidate_is_pending_platinum) ... ok
+test_open_case_is_rejected (test_golden_candidates.TestGoldenCandidates.test_open_case_is_rejected) ... ok
+test_queues_and_thresholds_are_deterministic (test_golden_candidates.TestGoldenCandidates.test_queues_and_thresholds_are_deterministic) ... ok
+test_review_pool_applies_platform_quotas (test_golden_candidates.TestGoldenCandidates.test_review_pool_applies_platform_quotas) ... ok
+test_unapproved_candidate_cannot_promote (test_golden_candidates.TestGoldenCandidates.test_unapproved_candidate_cannot_promote) ... ok
+test_writer_creates_csv_only (test_golden_candidates.TestGoldenCandidates.test_writer_creates_csv_only) ... ok
+test_known_0402_4a00_is_explicitly_ambiguous (test_p0_release_gate.TestDecoderAmbiguity.test_known_0402_4a00_is_explicitly_ambiguous) ... ok
+test_unrelated_code_is_not_marked_ambiguous (test_p0_release_gate.TestDecoderAmbiguity.test_unrelated_code_is_not_marked_ambiguous) ... ok
+test_16031734105_fixture_is_p0_case (test_p0_release_gate.TestGoldenFixture.test_16031734105_fixture_is_p0_case) ... ok
+test_socket_provenance_preserves_socket_one_without_default_zero (test_p0_release_gate.TestSocketAndBanks.test_socket_provenance_preserves_socket_one_without_default_zero) ... ok
+test_two_banks_are_preserved_in_normalized_evidence (test_p0_release_gate.TestSocketAndBanks.test_two_banks_are_preserved_in_normalized_evidence) ... Loaded 712 MCA decode entries
+ok
+test_explicit_inband_preserved (test_pythonsv_debug_runner.TestAccessMode.test_explicit_inband_preserved) ... ok
+test_linux_auto_defaults_oob (test_pythonsv_debug_runner.TestAccessMode.test_linux_auto_defaults_oob) ... ok
+test_svos_forces_oob (test_pythonsv_debug_runner.TestAccessMode.test_svos_forces_oob) ... ok
+test_uefi_forces_oob (test_pythonsv_debug_runner.TestAccessMode.test_uefi_forces_oob) ... ok
+test_read_only_bundle_builds (test_pythonsv_debug_runner.TestBuildDriver.test_read_only_bundle_builds) ... ok
+test_writing_bundle_refused (test_pythonsv_debug_runner.TestBuildDriver.test_writing_bundle_refused) ... ok
+test_collect_exec_failure (test_pythonsv_debug_runner.TestDebugRunner.test_collect_exec_failure) ... ok
+test_collect_no_payload (test_pythonsv_debug_runner.TestDebugRunner.test_collect_no_payload) ... ok
+test_collect_returns_data (test_pythonsv_debug_runner.TestDebugRunner.test_collect_returns_data) ... ok
+test_readiness_block_on_unreachable (test_pythonsv_debug_runner.TestDebugRunner.test_readiness_block_on_unreachable) ... ok
+test_readiness_pass (test_pythonsv_debug_runner.TestDebugRunner.test_readiness_pass) ... ok
+test_healthy_probe_all_pass (test_pythonsv_debug_runner.TestEvaluateGates.test_healthy_probe_all_pass) ... ok
+test_locked_target_warns_g6 (test_pythonsv_debug_runner.TestEvaluateGates.test_locked_target_warns_g6) ... ok
+test_no_jtag_blocks_g4 (test_pythonsv_debug_runner.TestEvaluateGates.test_no_jtag_blocks_g4) ... ok
+test_no_pysv_blocks_g2 (test_pythonsv_debug_runner.TestEvaluateGates.test_no_pysv_blocks_g2) ... ok
+test_product_mismatch_blocks_g3 (test_pythonsv_debug_runner.TestEvaluateGates.test_product_mismatch_blocks_g3) ... ok
+test_transport_down_blocks_all (test_pythonsv_debug_runner.TestEvaluateGates.test_transport_down_blocks_all) ... ok
+test_transport_up_no_probe_unknowns (test_pythonsv_debug_runner.TestEvaluateGates.test_transport_up_no_probe_unknowns) ... ok
+test_bad_json_returns_none (test_pythonsv_debug_runner.TestExtractResult.test_bad_json_returns_none) ... ok
+test_extracts_payload (test_pythonsv_debug_runner.TestExtractResult.test_extracts_payload) ... ok
+test_missing_sentinels_returns_none (test_pythonsv_debug_runner.TestExtractResult.test_missing_sentinels_returns_none) ... ok
+test_explicit_ssh (test_pythonsv_debug_runner.TestMakeTransport.test_explicit_ssh) ... ok
+test_linux_host_auto_ssh (test_pythonsv_debug_runner.TestMakeTransport.test_linux_host_auto_ssh) ... ok
+test_windows_host_auto_winrm (test_pythonsv_debug_runner.TestMakeTransport.test_windows_host_auto_winrm) ... ok
+test_blocked_when_any_block (test_pythonsv_debug_runner.TestReadinessReport.test_blocked_when_any_block) ... ok
+test_ready_when_only_warn (test_pythonsv_debug_runner.TestReadinessReport.test_ready_when_only_warn) ... ok
+test_all_json_resources_have_inventory_rows (test_source_provenance.TestSourceProvenance.test_all_json_resources_have_inventory_rows) ... ok
+test_authoritative_bank_map_is_recorded (test_source_provenance.TestSourceProvenance.test_authoritative_bank_map_is_recorded) ... ok
+test_inventory_marks_unknown_as_zero_trust (test_source_provenance.TestSourceProvenance.test_inventory_marks_unknown_as_zero_trust) ... ok
+
+----------------------------------------------------------------------
+Ran 56 tests in 0.136s
+
+OK

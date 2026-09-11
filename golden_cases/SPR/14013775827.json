@@ -33,5 +33,16 @@
     "mscod": null,
     "verdict": "CONFIRMED",
     "root_cause": "22012523370"
+  },
+  "title": "[Cluster][EGS SPR B0]spurious DTLB parity machine check",
+  "description": "DTLB parity machine check found during execution ive-vt-auto-reboot Logs attached : r20s03.zip r20s02.zip socket1.cpu.core22.dtlb_cr_mc2_status = 0xf200000000030019 0x00000019 : mcacod (15:00) -- Model Specific Error Code 0x00000003 : mscod (31:16) -- Error type - Dat-parity = 0x0001 Tag-parity = 0x0000 0x00000000 : enh_mca_avail0 (37:32) -- Available when Enhanced MCA is in use 0x00000000 : cor_err_cnt (52:38) -- Correctable error counter 0x00000000 : enh_mca_avail1 (56:53) -- Available when Enhanced MCA is in use 0x00000001 : pcc (57:57) -- Processor Context Corrupt - State damage has occurred 0x00000000 : adrv (58:58) -- MCi_ADDR register is valid for signalled MCA error 0x00000000 : miscv (59:59) -- MCi_MISC register is valid for signalled MCA error 0x00000001 : en (60:60) -- Error Enabled 0x00000001 : uc (61:61) -- Uncorrectable Error 0x00000001 : over (62:62) -- Set if MCA error detected and valid bit already set for previous error 0x00000001 : valid (63:63) -- Set if MCA error detected CBs set: sv.sockets.cpu.cores.ifu_cr_debug_mode.en_inuseclear_dsbmiss=1 sv.sockets.cpu.cores.dsbfe_cr_cr_ctl.dsb_enable_one_way_dsbq_read=1 System Configuration: EGS 2S B0: QWNY EBG A1 Pre-ES2 QDF QV5V Memory: HYNIX 32GB 1Rx4 @ 4800 -1DPC IFWI: 53.D52, ucode: 0x8b0002e0 BMC: BMCv36 CPLD: 629.1 OS: CentOS 8.3 Intel-Next 5.11",
+  "evidence_source": "reconstructed_from_hsd_title",
+  "machine_evidence": {
+    "mca_events": [
+      {
+        "status": "0xf200000000030019",
+        "source_text": "0xf200000000030019"
+      }
+    ]
   }
 }

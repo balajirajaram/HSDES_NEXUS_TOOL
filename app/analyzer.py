@@ -349,6 +349,45 @@ def _historical_repro_section(platform: str, target: Optional[Dict[str, Any]],
     return render_section(match_historical_repro(signature, load_cases(root)))
 
 
+def _repro_vector_section(platform: str, target: Optional[Dict[str, Any]],
+                          log_findings: Optional[Dict[str, Any]],
+                          report_md: str) -> str:
+    """Append ranked stress vectors as research context only."""
+    from .repro_recommender import recommend_repro_vectors
+    from .repro_signature_extractor import extract_failure_mechanism
+
+    ownership = extract_ownership({"report_markdown": report_md,
+                                   "log_findings": log_findings or {}})
+    target = dict(target or {})
+    decoded = (log_findings or {}).get("decoded") or {}
+    labels = " ".join(str(item.get("label", "")) for item in
+                      (log_findings or {}).get("signatures", []))
+    target["keywords"] = " ".join(filter(None, [target.get("title", ""),
+                                                   target.get("description", ""), labels]))
+    mechanism = (decoded.get("failure_mechanism") or
+                 target.get("failure_mechanism") or extract_failure_mechanism(target))
+    recommendations = recommend_repro_vectors(
+        ownership.get("owning_ip", ""), mechanism, platform or "", top_n=5)
+    lines = ["## Suggested Reproduction Vectors", "",
+             "Historical reference only -- not used in confidence or verdict calculation.", ""]
+    if not recommendations:
+        lines.append("No historical reproduction vector found.")
+        return "\n".join(lines) + "\n"
+    for index, recommendation in enumerate(recommendations, 1):
+        lines.extend([
+            f"### Recommendation {index}",
+            f"- **Tool:** {recommendation.get('tool_name', 'unclassified')}",
+            f"- **Subtest / mode:** {recommendation.get('subtest_or_mode', 'unknown')}",
+            f"- **Trigger context:** {', '.join(recommendation.get('trigger_context', []))}",
+            f"- **Match:** {recommendation.get('match_type')}",
+            f"- **Hit count:** {recommendation.get('hit_count', 0)}",
+            f"- **Evidence tier:** {recommendation.get('evidence_tier', 'UNKNOWN')}",
+            f"- **Source HSDs:** {', '.join(recommendation.get('source_hsd_ids', []))}",
+            "",
+        ])
+    return "\n".join(lines)
+
+
 def _specific_next_steps(decoded: Optional[Dict[str, Any]]) -> List[str]:
     """IP-specific next reads derived from the decoded bank/unit."""
     ev = _mc_evidence(decoded)
@@ -822,7 +861,9 @@ async def analyze(hsd_id: str, symptoms: str,
                   log_text: Optional[str] = None,
                   fetch_attachments: bool = False,
                   follow_transferred: bool = True,
-                  reference_hsd_ids: Optional[List[str]] = None) -> Dict[str, Any]:
+                  reference_hsd_ids: Optional[List[str]] = None,
+                  target_override: Optional[Dict[str, Any]] = None,
+                  offline_mode: bool = False) -> Dict[str, Any]:
     def _normalize_ref_ids(ids: Optional[List[str]], self_id: str) -> List[str]:
         out: List[str] = []
         seen: set = set()
@@ -866,11 +907,11 @@ async def analyze(hsd_id: str, symptoms: str,
     recall = kb.search(symptoms, exclude_id=hsd_id)
 
     # Step 2 - INVESTIGATE
-    target = await client.get_article(hsd_id)
+    target = target_override if target_override is not None else await client.get_article(hsd_id)
     # Discover REAL file attachments via the HSDES attachments API (SOL zips,
     # PythonSV dumps, crashdump JSON), falling back to inline resource links.
     attachment_meta: List[Dict[str, Any]] = []
-    if target and not target.get("error"):
+    if target and not target.get("error") and not offline_mode:
         try:
             _tenant = str((target.get("raw") or {}).get("tenant") or "server_platf")
             attachment_meta = await client.list_attachments(hsd_id, tenant=_tenant)
@@ -890,7 +931,7 @@ async def analyze(hsd_id: str, symptoms: str,
     # Optional MCP enrichment: also ask the Geni + Co-Design HSDES agents and fold
     # their answers into the ticket context (grounds the report in every source).
     mcp_sources: List[str] = []
-    if target and not target.get("error") and enrichment_enabled():
+    if target and not target.get("error") and not offline_mode and enrichment_enabled():
         try:
             # Pass ticket text + typed symptoms so need-based sources (BIOS/S3M,
             # kernel-crash, Redfish) are only queried when the evidence is relevant.
@@ -939,7 +980,7 @@ async def analyze(hsd_id: str, symptoms: str,
     # decode + metadata into the report, so Axon evidence is triaged too.
     axon_records: List[Dict[str, Any]] = []
     axon_uuids = sorted(extract_axon_uuids((target or {}).get("full_text", "") or ""))
-    if axon_uuids and target and not target.get("error"):
+    if axon_uuids and target and not target.get("error") and not offline_mode:
         try:
             axon_records = await fetch_axon_records(axon_uuids)
         except Exception:
@@ -994,7 +1035,7 @@ async def analyze(hsd_id: str, symptoms: str,
     log_known = _has_strong_log_evidence(log_findings)
     auto_history = not (kb_known or comment_known or log_known)
 
-    if auto_history and target and not target.get("error"):
+    if auto_history and target and not target.get("error") and not offline_mode:
         merged_ref_ids = _normalize_ref_ids(reference_hsd_ids, str(hsd_id))
         auto_ref_ids = _extract_clone_ref_ids(target, str(hsd_id))
         merged_ref_ids = _normalize_ref_ids(merged_ref_ids + auto_ref_ids, str(hsd_id))
@@ -1058,14 +1099,14 @@ async def analyze(hsd_id: str, symptoms: str,
     if auto_history and recall["confidence"] != "High":
         similar = await client.search_similar(symptoms)
 
-    if auto_history and follow_transferred and target and not target.get("error"):
+    if auto_history and follow_transferred and target and not target.get("error") and not offline_mode:
         try:
             transferred = await sync_transferred(client, target)
         except Exception:
             transferred = None
 
     # Step 4 - REPORT
-    if llm.enabled:
+    if llm.enabled and not offline_mode:
         report_md, kb_entry = await _llm_report(
             hsd_id, symptoms, platform, recall, target, similar, client.enabled,
             log_findings, comment_findings, transferred
@@ -1081,6 +1122,8 @@ async def analyze(hsd_id: str, symptoms: str,
     # report inputs used for confidence, verdict, KB validation, and post gating.
     report_md = (report_md or "").rstrip() + "\n\n" + _historical_repro_section(
         platform, target, log_findings)
+    report_md = (report_md or "").rstrip() + "\n\n" + _repro_vector_section(
+        platform, target, log_findings, report_md)
 
     # Step 3 - WRITE-BACK
     _kb_state, _kb_eligible = _kb_validation_state(log_findings, comment_findings)
@@ -2793,6 +2836,8 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         ceilings.append((75, "no crashdump attached"))
     if contradictions:
         ceilings.append((65, "unresolved contradiction(s) with the leading hypothesis"))
+    if str(target.get("evidence_source", "")).startswith("reconstructed_from_"):
+        ceilings.append((35, "source evidence was reconstructed from HSD text, not an original log or crashdump"))
     cap = min([c for c, _ in ceilings], default=100)
     capped = min(score, cap)
     L.append("## Root-Cause Confidence")
@@ -2999,7 +3044,10 @@ def _offline_report(hsd_id, symptoms, platform, recall, target, similar,
         # Evidence completeness lifts confidence a few points per key fact present,
         # so a fully-instrumented failing log reads higher than a generic one.
         score += 2 * sum(1 for a in evidence_audit if a["present"])
-        return min(97, score)
+        score = min(97, score)
+        if str(target.get("evidence_source", "")).startswith("reconstructed_from_"):
+            score = min(score, 35)
+        return score
 
 
     top_sig = None

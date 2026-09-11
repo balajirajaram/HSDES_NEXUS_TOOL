@@ -1,0 +1,501 @@
+{
+  "schema_version": "1.0",
+  "source": "validated Golden Corpus",
+  "entries": [
+    {
+      "owning_ip": "Acode",
+      "failure_mechanism": "other",
+      "platform": "GNR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "22019405820"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "CHA",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14014613214"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "ConfigROM",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14012462331"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "other",
+      "platform": "DMR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 6,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "14026464067",
+            "15019342741",
+            "15019357856",
+            "15019358385",
+            "15019382716",
+            "15019383400"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "other",
+      "platform": "ICX",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 4,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "14011352071",
+            "14011439924",
+            "1707238410",
+            "22010039282"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 4,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14013775827",
+            "14013789944",
+            "22011493992",
+            "22014056631"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core",
+      "failure_mechanism": "other",
+      "platform": "SRF",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 3,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14019137156",
+            "15016126803",
+            "16022337351"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core/BPU",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "22014056631"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core/FE/BPU",
+      "failure_mechanism": "other",
+      "platform": "DMR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "power_state"
+          ],
+          "hit_count": 5,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "15019342741",
+            "15019357856",
+            "15019358385",
+            "15019382716",
+            "15019383400"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Core/FE/HAM",
+      "failure_mechanism": "other",
+      "platform": "DMR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 4,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14028507593",
+            "21044871638"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "DSA",
+      "failure_mechanism": "other",
+      "platform": "DMR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14026093607"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "DSA",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14015263050"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "MDF",
+      "failure_mechanism": "other",
+      "platform": "GNR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "16024409170"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "MDF",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14015143476"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Memory/IMC",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14016417265"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Mesh/Fabric",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "22015416586"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "RAS",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14015196045"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Security",
+      "failure_mechanism": "other",
+      "platform": "GNR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14020056414"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "UNKNOWN",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "14015032086"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "UPI",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 3,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "14015800984",
+            "14016376372",
+            "22012724143"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "UPI Initialization",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "14015800984"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Uncore",
+      "failure_mechanism": "other",
+      "platform": "GNR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_3_REPRODUCED",
+          "source_hsd_ids": [
+            "22019405820"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "Uncore",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "14014613214"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "uCode",
+      "failure_mechanism": "other",
+      "platform": "ICX",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "22010039282"
+          ]
+        }
+      ]
+    },
+    {
+      "owning_ip": "uCode",
+      "failure_mechanism": "other",
+      "platform": "SPR",
+      "vectors": [
+        {
+          "tool_name": "unclassified",
+          "subtest_or_mode": "unknown",
+          "trigger_context": [
+            "unknown"
+          ],
+          "hit_count": 1,
+          "evidence_tier": "LEVEL_4_FIX_VALIDATED",
+          "source_hsd_ids": [
+            "1404503208"
+          ]
+        }
+      ]
+    }
+  ]
+}

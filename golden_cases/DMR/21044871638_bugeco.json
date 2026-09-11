@@ -35,5 +35,9 @@
     "root_cause": "HA ordering issue; WA in ucode (defeature). Fix is WIP and not yet confirmed."
   },
   "bugeco_id": "13013348392",
-  "secondary_ip": "Core/FE/DSB"
+  "secondary_ip": "Core/FE/DSB",
+  "title": "RTL_BUG: Hit on fetch old + legacy Ifclear on fetch YNG with short tag match but no full tag match (different itlb way) makes a corrupt entry point",
+  "description": "We get on the same cycle: 1)HaM on fetch OLD 2)IFClear on fetch YNG 3)short tag hit + full tag miss on fetch YNG 4)YNG is sequential cycle. 5)fetch YNG is sequential cycle. for the 4 to happened together we need that the fetch OLD which hit would end at offset 40. CFLI case is impossible as ifclear happens on YNG so fetch OLD must have been invalidated as ifclear on YNG means data is not in IFU and DSB is included in IFU. The outcome is that on the ifclear cycle the entry point was sent correctly to IFU, but after the ifclear the send entry point was corrupted by the tag hit as DSB view ifclear from such &quot;legacy&quot; cases as cycle valid. From IFU perspective the entry point sent in both times the same.",
+  "evidence_source": "none",
+  "machine_evidence": null
 }

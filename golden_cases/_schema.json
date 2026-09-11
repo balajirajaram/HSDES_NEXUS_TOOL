@@ -7,13 +7,26 @@
     "hsd_id": {"type": "string", "description": "HSD/sighting numeric id"},
     "platform": {"type": "string", "description": "GNR/SRF/CWF/DMR/COR"},
     "expected_owner": {"type": "string", "description": "Validated owning IP (CHA/UPI/PCIe/IMC/DCU/...)"},
+    "expected_reporting_ip": {"type": "string", "description": "MCA reporting IP, distinct from originating owner when applicable"},
     "expected_first_error": {"type": "string", "description": "First-error source unit if captured"},
+    "expected_bank": {"type": "string", "description": "Validated primary MCA bank"},
     "expected_socket": {"type": "string", "description": "Validated failing socket if captured"},
     "expected_banks": {"type": "array", "items": {"type": "string"}, "description": "All validated MCA banks that must survive normalization"},
     "expected_decoder_state": {"type": "string", "enum": ["AMBIGUOUS_DECODER", ""], "description": "Expected explicit decoder state when interpretations conflict"},
+    "expected_mcacod": {"type": "string", "description": "Validated MCACOD"},
+    "expected_mscod": {"type": "string", "description": "Validated MSCOD"},
+    "validation_level": {"type": "string", "enum": ["LEVEL_1_OPINION", "LEVEL_2_AGREEMENT", "LEVEL_3_REPRODUCED", "LEVEL_4_FIX_VALIDATED", "UNKNOWN"]},
+    "validated_by": {"type": "string"},
+    "validation_date": {"type": "string"},
+    "expected_disposition": {"type": "string"},
+    "expected_fix": {"type": "string"},
     "expected_verdict": {"type": "string", "enum": ["CONFIRMED", "LIKELY", "WORKING HYPOTHESIS", ""]},
     "min_confidence": {"type": "integer", "minimum": 0, "maximum": 100},
     "expected_contradiction": {"type": "boolean", "description": "True if the case has a known contradiction the tool should flag (scores contradiction-miss)"},
-    "notes": {"type": "string"}
+    "notes": {"type": "string"},
+    "title": {"type": "string", "description": "Source HSD title; retained for evidence reconstruction and workload context"},
+    "description": {"type": "string", "description": "Source HSD description; retained as raw source context"},
+    "evidence_source": {"type": "string", "description": "original_hsdes_article, reconstructed_from_hsd_title, reconstructed_from_hsd_description, or none"},
+    "machine_evidence": {"type": ["object", "null"], "description": "Minimal source-derived MCA/first-error evidence; never copied from expected answer fields"}
   }
 }
