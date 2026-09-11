@@ -28,7 +28,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from app.analyzer import analyze, extract_ownership  # noqa: E402
+from app.analyzer import analyze, extract_ownership, normalize_owner_group  # noqa: E402
 
 CASE_TIMEOUT_SECONDS = 30
 
@@ -65,37 +65,16 @@ def _match(expected: str, detected: str) -> bool:
     return e in d or d in e
 
 
-# Abstraction-level synonym groups for the owner-accuracy report. A component
-# name (e.g. "IFU (Core)", "DTLB") and a broader owning-team label (e.g.
-# "Core") are treated as the SAME owner for normalized_owner_accuracy, per the
-# existing bank-map convention of grouping component decodes under their
-# owning team. This does NOT change verdict/confidence scoring — it is a
-# reporting-only comparison, applied strictly after strict_owner_accuracy is
-# computed and printed alongside it.
-_OWNER_SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
-    ("Core", "IFU", "DCU", "MLC", "DTLB", "BPU", "MSE", "HAM"),
-    ("UPI", "NCU", "Fabric", "Mesh"),
-    ("RAS", "CCF"),
-)
-
-
-def _normalize_owner_group(name: str) -> str:
-    """Map a detected/expected owner string to its canonical abstraction
-    group (e.g. "IFU (Core)" -> "core"), falling back to the original
-    lowercased string when no synonym group matches."""
-    n = (name or "").strip().lower()
-    if not n:
-        return n
-    for group in _OWNER_SYNONYM_GROUPS:
-        if any(token.lower() in n for token in group):
-            return group[0].lower()
-    return n
-
-
+# Abstraction-level owner comparison for the report's normalized_owner_accuracy
+# metric. The synonym table itself lives in app.analyzer (shared with the
+# ownership-conflict detectors) — this module only adds the substring-match
+# wrapper needed for benchmark comparison. This does NOT change verdict/
+# confidence scoring — it is a reporting-only comparison, applied strictly
+# after strict_owner_accuracy is computed and printed alongside it.
 def _normalized_match(expected: str, detected: str) -> bool:
     """Abstraction-aware owner match: normalize both sides to their owning
     group before comparing, so "IFU (Core)" matches an expected "Core"."""
-    return _match(_normalize_owner_group(expected), _normalize_owner_group(detected))
+    return _match(normalize_owner_group(expected), normalize_owner_group(detected))
 
 
 def _optional_match(expected: Any, detected: Any) -> Any:

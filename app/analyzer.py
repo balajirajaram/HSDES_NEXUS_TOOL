@@ -187,6 +187,77 @@ def _norm_ip(unit: str) -> str:
     return re.sub(r"[^a-z]", "", str(unit or "").lower())[:4]
 
 
+# Shared abstraction-level synonym groups: a component decode (e.g. "IFU
+# (Core)") and its broader owning team ("Core") are the SAME owner for
+# comparison purposes. Canonical home for this table — tools/rca_benchmark.py
+# imports it rather than keeping its own copy.
+OWNER_SYNONYM_GROUPS: tuple[tuple[str, ...], ...] = (
+    ("Core", "IFU", "DCU", "MLC", "DTLB", "BPU", "MSE", "HAM"),
+    ("UPI", "NCU", "Fabric", "Mesh"),
+    ("RAS", "CCF"),
+)
+
+
+def normalize_owner_group(name: str) -> str:
+    """Map an owner/unit string to its canonical abstraction group (lowercase),
+    falling back to the lowercased original when no synonym group matches."""
+    n = (name or "").strip().lower()
+    if not n:
+        return n
+    for group in OWNER_SYNONYM_GROUPS:
+        if any(token.lower() in n for token in group):
+            return group[0].lower()
+    return n
+
+
+# Named units commonly seen in HSD titles/descriptions/comments that are NOT
+# necessarily captured by the structured first-error register (e.g. an
+# aggregated title naming "Acode" or "Punit" as the failing unit while the
+# reporting MCA bank decodes to a core-cache IP). Kept narrow and explicit —
+# no loose/general keyword scanning.
+_NAMED_UNIT_PATTERNS: tuple[tuple[str, "re.Pattern[str]"], ...] = (
+    ("Acode", re.compile(r"(?i)\bacode\b")),
+    ("Punit", re.compile(r"(?i)\bp[\s-]?unit\b")),
+    ("Pcode", re.compile(r"(?i)\bp[\s-]?code\b")),
+    ("DSA", re.compile(r"(?i)\bdsa\b")),
+    ("MDF", re.compile(r"(?i)\bmdf\b")),
+    ("UPI", re.compile(r"(?i)\bupi\b")),
+    ("CHA", re.compile(r"(?i)\bcha\b")),
+    ("IMC", re.compile(r"(?i)\bimc\b")),
+    ("PCIe", re.compile(r"(?i)\bpcie\b")),
+    ("BIOS", re.compile(r"(?i)\bbios\b")),
+)
+
+# A named-unit mention only counts as a root-cause candidate when it appears
+# near one of these words — prevents firing on incidental mentions (e.g. a
+# changelog line "BIOS version 1.2" with no error context).
+_TEXTUAL_ROOT_CAUSE_CONTEXT_RE = re.compile(
+    r"(?i)\b(error|timeout|fatal|mca_|root\s*cause|hang|busy|crash|panic)\b")
+
+
+def find_textual_root_cause_conflict(text: str, bank_unit: str,
+                                     window: int = 80) -> Optional[Dict[str, str]]:
+    """Conservative scan for a named unit (Acode/Punit/DSA/...) mentioned within
+    *window* characters of a root-cause context keyword. Returns the first such
+    mention whose normalized unit differs from the decoded bank owner, or None.
+    Never overrides bank_unit — this only surfaces a candidate for the report
+    and contradiction detector to reconcile."""
+    if not text or not bank_unit:
+        return None
+    bank_group = normalize_owner_group(bank_unit)
+    for unit, pattern in _NAMED_UNIT_PATTERNS:
+        for match in pattern.finditer(text):
+            if normalize_owner_group(unit) == bank_group:
+                continue
+            start = max(0, match.start() - window)
+            end = min(len(text), match.end() + window)
+            snippet = text[start:end]
+            if not _TEXTUAL_ROOT_CAUSE_CONTEXT_RE.search(snippet):
+                continue
+            return {"unit": unit, "snippet": " ".join(snippet.split())}
+    return None
+
+
 def _specific_root_cause(decoded: Optional[Dict[str, Any]],
                          target: Optional[Dict[str, Any]] = None) -> Optional[str]:
     """Narrowed, evidence-grounded root-cause line, or None when nothing decoded."""
@@ -1440,6 +1511,8 @@ def extract_ownership(result: Dict[str, Any]) -> Dict[str, Any]:
     own_conf = _md_line(ladder, "Ownership Confidence")
     conf_sec = _md_section(md, "## Root-Cause Confidence")
     m = re.search(r"(\d{1,3})\s*%", conf_sec)
+    _textual_conflict_match = re.search(
+        r"TEXTUAL_OWNERSHIP_MENTION_CONFLICT\*\* — ticket text names \*\*([^*]+)\*\*", md)
     return {
         "owning_ip": owning_ip,
         "reporting_ip": mcs.get("bank_unit", "") or "",
@@ -1455,6 +1528,9 @@ def extract_ownership(result: Dict[str, Any]) -> Dict[str, Any]:
         "ownership_confidence": own_conf,
         "suggested_team": _suggested_team(owning_ip),
         "contradiction": "## Contradiction Detector" in md,
+        "ownership_evidence_conflict": "OWNERSHIP_EVIDENCE_CONFLICT" in md,
+        "textual_ownership_conflict": "TEXTUAL_OWNERSHIP_MENTION_CONFLICT" in md,
+        "textual_named_unit": _textual_conflict_match.group(1) if _textual_conflict_match else "",
     }
 
 
@@ -2455,6 +2531,17 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
     # 'root cause identified' requires hardware ownership evidence.
     have_root_cause = bool(have_first_error and (have_crashdump or have_tor_dump) and not poison)
 
+    # Textually-named root cause (e.g. title names "Acode"/"Punit") that may
+    # differ from the reporting MCA bank owner — independent of, and computed
+    # alongside, the register-based first-error-vs-bank conflict below.
+    _comment_texts = " ".join(
+        str(c.get("text") or c.get("description") or "")
+        for c in (target.get("comments_structured") or target.get("comments") or [])
+        if isinstance(c, dict))
+    _textual_scan_text = "\n".join(part for part in (txt, _comment_texts) if part)
+    _textual_conflict = find_textual_root_cause_conflict(
+        _textual_scan_text, mcs.get("bank_unit") or first_ierr.get("source_unit") or "")
+
     # ---------- RCA Scorecard (manager-friendly, top of report) ----------
     _present = sum(1 for a in evidence_audit if a.get("present"))
     _total = len(evidence_audit) or 1
@@ -2564,6 +2651,12 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
         else:
             L.append(f"- **PRIMARY_ERROR:** {mcs.get('bank_unit') or 'the logged bank'} "
                      f"({mcs.get('mcacod','?')}/{mcs.get('mscod','?')}).")
+        if _textual_conflict:
+            L.append(f"- **Reporting IP (decoded bank):** {mcs.get('bank_unit') or '—'}")
+            L.append(f"- **Textually-Named Candidate Cause:** {_textual_conflict['unit']} "
+                     f"— \"{_textual_conflict['snippet']}\" (not yet reconciled with the "
+                     "reporting bank; may be the true upstream origin, or the reporting bank "
+                     "may be correct and the mention incidental)")
         L.append("")
 
     # ---------- First-Error Provenance & Debug Decision Tree ----------
@@ -2784,6 +2877,17 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
             f"**OWNERSHIP_EVIDENCE_CONFLICT** — first-error source (**{_fe_unit}**) differs "
             f"from the reporting MCA bank owner (**{_bank_unit}**); the originating IP is "
             "unresolved (reporting IP ≠ first-error source). Reconcile before naming an owner")
+    # TEXTUAL_OWNERSHIP_MENTION_CONFLICT: independent of the register-based check
+    # above — fires when the ticket TEXT names a different unit as the cause
+    # (e.g. "Acode"/"Punit") than the decoded reporting bank, even when no
+    # structured first-error register was captured.
+    textual_ownership_conflict = _textual_conflict is not None
+    if textual_ownership_conflict:
+        contradictions.append(
+            f"**TEXTUAL_OWNERSHIP_MENTION_CONFLICT** — ticket text names **{_textual_conflict['unit']}**"
+            f" (\"{_textual_conflict['snippet']}\"), which differs from the reporting MCA bank "
+            f"owner (**{_bank_unit or 'unknown'}**); this may be a reporting-bank-vs-originating-"
+            "cause situation, not necessarily a decoder error — reconcile before naming an owner")
     decoder_ambiguity = bool((mcs.get("decoder_ambiguity") or {}).get("state"))
     _decoder_sources = mcs.get("source_provenance") or []
     provenance_unknown = bool(_decoder_sources) and any(
@@ -2881,7 +2985,7 @@ def _render_causality_sections(L: List[str], target: Dict[str, Any],
     # Poison consumption never proves the origin — the consumer is only the victim.
     ownership_proven = (have_first_error and (have_tor_dump or have_crashdump)
                         and not poison and not ownership_conflict and not decoder_ambiguity
-                        and not provenance_unknown)
+                        and not provenance_unknown and not textual_ownership_conflict)
     # A comment-thread claim is an OBSERVATION, never proof — it can never set CONFIRMED
     # and never lifts the verdict on its own; it is only noted in the reason.
     _cf_note = ("; a comment-thread claim exists but is NOT independently verified by "

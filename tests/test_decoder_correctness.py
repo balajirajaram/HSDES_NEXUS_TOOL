@@ -113,6 +113,65 @@ class TestOwnershipConflict(unittest.TestCase):
         own = A._md_section(md, "## MCA Ownership Analysis")
         self.assertNotIn("corrected", own.lower().replace("uncorrected", ""))
 
+    def _render_text_only(self, bank_unit, full_text):
+        """Same shape as _render but with an EMPTY first-error register table
+        (no structured IERR source) — isolates the textual conflict detector
+        from the register-based OWNERSHIP_EVIDENCE_CONFLICT check."""
+        decoded = {
+            "evidence": {
+                "mc_status": {"status": "0xB200000000400405", "mscod": "0x0040",
+                              "mcacod": "0x0405", "bank": "3", "bank_unit": bank_unit,
+                              "decode": ""},
+                "sockets": ["0"],
+                "status_flags": {"VAL": True, "UC": True, "PCC": True, "EN": True},
+            },
+            "ierr_table": [],
+            "boot_flow": {"reached_os": True},
+        }
+        lf = {"decoded": decoded, "lines_scanned": 100, "signatures": []}
+        target = {"id": "22019405820", "title": full_text, "full_text": full_text}
+        recall = {"confidence": "Low", "matches": []}
+        L = []
+        A._render_causality_sections(L, target, lf, recall, None,
+                                     A._audit_root_cause_evidence(target, lf, recall, []))
+        md = "\n".join(L)
+        return md, {"report_markdown": md, "log_findings": lf, "target": target}
+
+    def test_textual_acode_punit_conflict_emits_and_blocks(self):
+        # HSD 22019405820 shape: title names Acode/Punit, bank decodes to MLC.
+        md, result = self._render_text_only(
+            "MLC (Module)",
+            "Acode MCA_HAL_IOSF_BRIDGE_RUN_BUSY_TIMEOUT_E and Punit "
+            "MCA_DISP_RUN_BUSY_TIMEOUT (GPSB hardhang) fatal Acode MCA")
+        self.assertIn("TEXTUAL_OWNERSHIP_MENTION_CONFLICT", md)
+        self.assertNotIn("OWNERSHIP_EVIDENCE_CONFLICT", md)
+        self.assertIn("## Contradiction Detector", md)
+        self.assertIn("Textually-Named Candidate Cause", md)
+        self.assertIn("Reporting IP (decoded bank)", md)
+        verdict = A._md_line(A._md_section(md, "## Engineer Verdict Audit"), "Verdict type")
+        self.assertNotIn("CONFIRMED", verdict.upper())
+        self.assertFalse(A._post_gate(result)["allow"])
+
+    def test_textual_conflict_does_not_duplicate_register_conflict(self):
+        # The existing PUNIT-vs-CCF register-based case must still fire only
+        # OWNERSHIP_EVIDENCE_CONFLICT, unchanged by the new textual detector.
+        md, result = self._render("PUNIT compute2", "CCF")
+        self.assertIn("OWNERSHIP_EVIDENCE_CONFLICT", md)
+        self.assertNotIn("TEXTUAL_OWNERSHIP_MENTION_CONFLICT", md)
+
+    def test_textual_conflict_no_false_positive_on_synonym_match(self):
+        # "DTLB" normalizes to the same group as "Core" — must NOT conflict.
+        md, _ = self._render_text_only(
+            "Core", "Fatal DTLB error timeout observed during stress")
+        self.assertNotIn("TEXTUAL_OWNERSHIP_MENTION_CONFLICT", md)
+
+    def test_textual_conflict_no_false_positive_on_incidental_mention(self):
+        # "BIOS" appears with no root-cause context keyword nearby — must not fire.
+        md, _ = self._render_text_only(
+            "Core", "System running BIOS version 1.2.3, unrelated core cache failure "
+            "reported during workload")
+        self.assertNotIn("TEXTUAL_OWNERSHIP_MENTION_CONFLICT", md)
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
